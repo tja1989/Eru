@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Tier {
+  explorer
+  engager
+  influencer
+  champion
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum ContentType {
+  post
+  reel
+  poll
+  thread
+}
+
+enum ModerationStatus {
+  pending
+  published
+  declined
+}
+
+enum MediaType {
+  image
+  video
+}
+
+enum TranscodeStatus {
+  pending
+  processing
+  complete
+  failed
+}
+
+enum InteractionType {
+  like
+  save
+  share
+}
+
+enum ModerationDecision {
+  approved
+  declined
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  firebaseUid         String    @unique @map("firebase_uid")
+  phone               String    @unique
+  email               String?
+  name                String
+  username            String    @unique
+  avatarUrl           String?   @map("avatar_url")
+  bio                 String?
+  gender              Gender?
+  dob                 DateTime? @db.Date
+  primaryPincode      String    @map("primary_pincode") @db.VarChar(6)
+  secondaryPincodes   String[]  @default([]) @map("secondary_pincodes")
+  interests           String[]  @default([])
+  contentLanguages    String[]  @default(["en"]) @map("content_languages")
+  appLanguage         String    @default("en") @map("app_language")
+  tier                Tier      @default(explorer)
+  lifetimePoints      Int       @default(0) @map("lifetime_points")
+  currentBalance      Int       @default(0) @map("current_balance")
+  streakDays          Int       @default(0) @map("streak_days")
+  streakLastDate      DateTime? @map("streak_last_date") @db.Date
+  isVerified          Boolean   @default(false) @map("is_verified")
+  notificationPush    Boolean   @default(true) @map("notification_push")
+  notificationEmail   Boolean   @default(false) @map("notification_email")
+  isPrivate           Boolean   @default(false) @map("is_private")
+  shareDataWithBrands Boolean   @default(false) @map("share_data_with_brands")
+  fcmToken            String?   @map("fcm_token")
+  role                UserRole  @default(user)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  lastActive          DateTime  @default(now()) @map("last_active")
+
+  content           Content[]
+  pointsLedger      PointsLedger[]
+  interactions      Interaction[]
+  comments          Comment[]
+  streaks           Streak[]
+  leaderboardEntries LeaderboardEntry[]
+  notifications     Notification[]
+  followers         Follow[]  @relation("following")
+  following         Follow[]  @relation("follower")
+
+  @@index([primaryPincode])
+  @@map("users")
+}
+
+model Content {
+  id               String           @id @default(uuid())
+  userId           String           @map("user_id")
+  type             ContentType
+  text             String?
+  hashtags         String[]         @default([])
+  locationPincode  String?          @map("location_pincode") @db.VarChar(6)
+  moderationStatus ModerationStatus @default(pending) @map("moderation_status")
+  declineReason    String?          @map("decline_reason")
+  isTrending       Boolean          @default(false) @map("is_trending")
+  likeCount        Int              @default(0) @map("like_count")
+  commentCount     Int              @default(0) @map("comment_count")
+  shareCount       Int              @default(0) @map("share_count")
+  viewCount        Int              @default(0) @map("view_count")
+  pointsEarned     Int              @default(0) @map("points_earned")
+  publishedAt      DateTime?        @map("published_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  user             User             @relation(fields: [userId], references: [id])
+  media            ContentMedia[]
+  interactions     Interaction[]
+  comments         Comment[]
+  moderationQueue  ModerationQueue[]
+  pointsLedger     PointsLedger[]
+
+  @@index([userId])
+  @@index([moderationStatus])
+  @@index([locationPincode])
+  @@index([publishedAt(sort: Desc)])
+  @@index([isTrending])
+  @@map("content")
+}
+
+model ContentMedia {
+  id              String          @id @default(uuid())
+  contentId       String          @map("content_id")
+  type            MediaType
+  originalUrl     String          @map("original_url")
+  thumbnailUrl    String?         @map("thumbnail_url")
+  video360pUrl    String?         @map("video_360p_url")
+  video720pUrl    String?         @map("video_720p_url")
+  video1080pUrl   String?         @map("video_1080p_url")
+  durationSeconds Int?            @map("duration_seconds")
+  width           Int
+  height          Int
+  sortOrder       Int             @default(1) @map("sort_order")
+  transcodeStatus TranscodeStatus @default(pending) @map("transcode_status")
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@map("content_media")
+}
+
+model PointsLedger {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  actionType        String   @map("action_type")
+  contentId         String?  @map("content_id")
+  points            Int
+  multiplierApplied Decimal  @map("multiplier_applied") @db.Decimal(3, 2)
+  expiresAt         DateTime @map("expires_at")
+  redeemedAt        DateTime? @map("redeemed_at")
+  expired           Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user    User     @relation(fields: [userId], references: [id])
+  content Content? @relation(fields: [contentId], references: [id])
+
+  @@index([userId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("points_ledger")
+}
+
+model Follow {
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("follower", fields: [followerId], references: [id])
+  following User @relation("following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Interaction {
+  id        String          @id @default(uuid())
+  userId    String          @map("user_id")
+  contentId String          @map("content_id")
+  type      InteractionType
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id])
+  content Content @relation(fields: [contentId], references: [id])
+
+  @@unique([userId, contentId, type])
+  @@map("interactions")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  contentId String   @map("content_id")
+  text      String
+  parentId  String?  @map("parent_id")
+  likeCount Int      @default(0) @map("like_count")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User     @relation(fields: [userId], references: [id])
+  content Content  @relation(fields: [contentId], references: [id])
+  parent  Comment? @relation("replies", fields: [parentId], references: [id])
+  replies Comment[] @relation("replies")
+
+  @@index([contentId])
+  @@map("comments")
+}
+
+model ModerationQueue {
+  id              String              @id @default(uuid())
+  contentId       String              @map("content_id")
+  autoCheckResult Json?               @map("auto_check_result")
+  autoApproved    Boolean             @default(false) @map("auto_approved")
+  reviewerId      String?             @map("reviewer_id")
+  decision        ModerationDecision?
+  declineCode     String?             @map("decline_code")
+  isAppeal        Boolean             @default(false) @map("is_appeal")
+  reviewedAt      DateTime?           @map("reviewed_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  content Content @relation(fields: [contentId], references: [id])
+
+  @@index([contentId])
+  @@map("moderation_queue")
+}
+
+model Streak {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  date         DateTime @db.Date
+  pointsEarned Int      @default(0) @map("points_earned")
+  actionsCount Int      @default(0) @map("actions_count")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("streaks")
+}
+
+model LeaderboardEntry {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  pincode      String   @db.VarChar(6)
+  scope        String
+  periodStart  DateTime @map("period_start") @db.Date
+  periodEnd    DateTime @map("period_end") @db.Date
+  pointsEarned Int      @map("points_earned")
+  rank         Int?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([pincode, scope, periodStart])
+  @@map("leaderboard_entries")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  body      String
+  data      Json?
+  deepLink  String?  @map("deep_link")
+  isRead    Boolean  @default(false) @map("is_read")
+  isPushed  Boolean  @default(false) @map("is_pushed")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
