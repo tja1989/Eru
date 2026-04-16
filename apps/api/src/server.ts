@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { buildApp } from './app.js';
 import { getConfig } from './config/index.js';
+import { startCronJobs } from './jobs/index.js';
 
 async function start() {
   const config = getConfig();
@@ -12,6 +13,10 @@ async function start() {
   } catch (err) {
     app.log.error(err);
     process.exit(1);
+  }
+
+  if (config.NODE_ENV !== 'test') {
+    startCronJobs();
   }
 }
 
