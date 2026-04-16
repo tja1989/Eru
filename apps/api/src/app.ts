@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { AppError } from './utils/errors.js';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
+import { actionRoutes } from './routes/actions.js';
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -38,6 +39,7 @@ export function buildApp(): FastifyInstance {
 
   app.register(authRoutes, { prefix: '/api/v1' });
   app.register(userRoutes, { prefix: '/api/v1' });
+  app.register(actionRoutes, { prefix: '/api/v1' });
 
   return app;
 }
