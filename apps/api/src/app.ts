@@ -1,5 +1,8 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { AppError } from './utils/errors.js';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
@@ -13,6 +16,9 @@ import { reelsRoutes } from './routes/reels.js';
 import { walletRoutes } from './routes/wallet.js';
 import { leaderboardRoutes } from './routes/leaderboard.js';
 import { notificationRoutes } from './routes/notifications.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -58,6 +64,12 @@ export function buildApp(): FastifyInstance {
   app.register(walletRoutes, { prefix: '/api/v1' });
   app.register(leaderboardRoutes, { prefix: '/api/v1' });
   app.register(notificationRoutes, { prefix: '/api/v1' });
+
+  app.register(fastifyStatic, {
+    root: join(__dirname, 'admin-panel'),
+    prefix: '/admin/',
+    decorateReply: false,
+  });
 
   return app;
 }
