@@ -10,7 +10,8 @@
     "test": "vitest",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-mediaconvert": "^3.1030.0",
