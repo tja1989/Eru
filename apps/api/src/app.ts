@@ -8,6 +8,11 @@ import { contentRoutes } from './routes/content.js';
 import { mediaRoutes } from './routes/media.js';
 import { adminRoutes } from './routes/admin.js';
 import { feedRoutes } from './routes/feed.js';
+import { exploreRoutes } from './routes/explore.js';
+import { reelsRoutes } from './routes/reels.js';
+import { walletRoutes } from './routes/wallet.js';
+import { leaderboardRoutes } from './routes/leaderboard.js';
+import { notificationRoutes } from './routes/notifications.js';
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
@@ -48,6 +53,11 @@ export function buildApp(): FastifyInstance {
   app.register(mediaRoutes, { prefix: '/api/v1' });
   app.register(adminRoutes, { prefix: '/api/v1' });
   app.register(feedRoutes, { prefix: '/api/v1' });
+  app.register(exploreRoutes, { prefix: '/api/v1' });
+  app.register(reelsRoutes, { prefix: '/api/v1' });
+  app.register(walletRoutes, { prefix: '/api/v1' });
+  app.register(leaderboardRoutes, { prefix: '/api/v1' });
+  app.register(notificationRoutes, { prefix: '/api/v1' });
 
   return app;
 }
