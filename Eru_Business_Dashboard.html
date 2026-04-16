@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Eru — Business Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#F1F5F9;--card:#FFF;--navy:#1A3C6E;--orange:#E8792B;--teal:#0D9488;--purple:#7C3AED;--pink:#EC4899;--red:#EF4444;--blue:#2563EB;--green:#10B981;--gold:#D97706;--cyan:#06B6D4;--g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;--g300:#CBD5E1;--g400:#94A3B8;--g500:#64748B;--g600:#475569;--g700:#334155;--g800:#1E293B;--g900:#0F172A;}
+body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px;}
+.hdr{text-align:center;margin-bottom:8px;}
+.hdr h1{font-size:13px;font-weight:800;color:var(--orange);letter-spacing:4px;}
+.hdr p{font-size:11px;color:#6B7280;margin-top:2px;}
+.snav{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;justify-content:center;}
+.snav button{padding:4px 9px;border-radius:14px;font-size:9.5px;font-weight:600;border:none;cursor:pointer;background:rgba(255,255,255,0.06);color:#94A3B8;transition:all 0.2s;}
+.snav button.active{background:var(--navy);color:#fff;}
+.phone{width:393px;height:852px;background:var(--bg);border-radius:44px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.35);display:flex;flex-direction:column;position:relative;transform:scale(0.82);transform-origin:top center;}
+.sbar{height:54px;background:var(--card);display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;flex-shrink:0;position:relative;z-index:10;}
+.sbar .time{font-size:15px;font-weight:600;color:var(--g800);}
+.notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:32px;background:#000;border-radius:20px;}
+.ct{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.ct::-webkit-scrollbar{display:none;}
+.btab{height:50px;background:var(--card);border-top:0.5px solid var(--g200);display:flex;flex-shrink:0;}
+.btab button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:18px;opacity:0.35;gap:2px;}
+.btab button.active{opacity:1;}
+.btab button span{font-size:8px;font-weight:600;color:var(--g700);}
+.screen{display:none;flex-direction:column;min-height:100%;}
+.screen.active{display:flex;}
+.topbar{padding:4px 14px 8px;background:var(--card);display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--g200);}
+.topbar .logo{font-size:20px;font-weight:800;font-style:italic;font-family:Georgia,serif;color:var(--navy);}
+.topbar .biz{font-size:11px;color:var(--g500);}
+.topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+/* Cards */
+.kpi{display:flex;gap:8px;padding:12px;flex-wrap:wrap;}
+.kpi .k{flex:1;min-width:calc(50% - 6px);background:var(--card);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.kpi .k .v{font-size:22px;font-weight:800;color:var(--g800);}
+.kpi .k .l{font-size:11px;color:var(--g500);margin-top:2px;}
+.kpi .k .d{font-size:10px;font-weight:600;margin-top:4px;}
+.up{color:var(--green);}
+.dn{color:var(--red);}
+.sec{padding:0 12px 12px;}
+.sec h3{font-size:14px;font-weight:700;color:var(--g800);margin-bottom:8px;}
+.crd{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden;margin-bottom:8px;}
+.crd .hd{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);}
+.crd .hd h4{font-size:13px;font-weight:700;color:var(--g800);}
+.row{display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;}
+.pill{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;}
+.bar{height:6px;background:var(--g200);border-radius:3px;overflow:hidden;margin-top:4px;}
+.bar div{height:100%;border-radius:3px;}
+/* Chart fake */
+.chart{height:100px;display:flex;align-items:flex-end;gap:4px;padding:0 14px 12px;}
+.chart .b{flex:1;border-radius:4px 4px 0 0;min-height:6px;transition:height 0.3s;}
+/* Stepper */
+.steps{display:flex;padding:12px;gap:4px;}
+.steps .st{flex:1;text-align:center;padding:8px 0;border-radius:8px;font-size:10px;font-weight:600;cursor:pointer;}
+.steps .st.act{background:var(--navy);color:#fff;}
+.steps .st.done{background:rgba(16,185,129,0.1);color:var(--green);}
+.steps .st.pend{background:var(--g100);color:var(--g400);}
+/* Toggle */
+.tog{width:40px;height:24px;border-radius:12px;position:relative;cursor:pointer;}
+.tog.on{background:var(--green);}
+.tog.off{background:var(--g300);}
+.tog .dot{width:20px;height:20px;border-radius:10px;background:#fff;position:absolute;top:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+.tog.on .dot{right:2px;}
+.tog.off .dot{left:2px;}
+.btn{border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-p{background:var(--navy);color:#fff;}
+.btn-o{background:var(--orange);color:#fff;}
+.btn-g{background:var(--green);color:#fff;}
+.btn-s{background:var(--g100);color:var(--g700);}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--g200);border-radius:8px;font-size:14px;font-family:inherit;outline:none;}
+.inp:focus{border-color:var(--navy);}
+textarea.inp{min-height:60px;resize:none;}
+</style>
+</head>
+<body>
+<div class="hdr"><h1>ERU BUSINESS</h1><p>Business Dashboard — PWA Presentation</p></div>
+<div class="snav" id="sn">
+  <button class="active" onclick="go('overview')">📊 Overview</button>
+  <button onclick="go('campaigns')">📢 Campaigns</button>
+  <button onclick="go('createad')">✨ Create Ad</button>
+  <button onclick="go('ugc')">🎬 Creator UGC</button>
+  <button onclick="go('feedback')">💬 Feedback</button>
+  <button onclick="go('audience')">👥 Audience</button>
+  <button onclick="go('offers')">🎫 Offers</button>
+  <button onclick="go('influencers')">⭐ Influencers</button>
+  <button onclick="go('billing')">💳 Billing</button>
+</div>
+
+<div class="phone">
+  <div class="sbar"><div class="time">9:41</div><div class="notch"></div><div style="display:flex;gap:5px;align-items:center;"><svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="8" width="3" height="4" rx="0.5" fill="#262626"/><rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="#262626"/><rect x="9" y="2" width="3" height="10" rx="0.5" fill="#262626"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#DBDBDB"/></svg><div style="width:25px;height:12px;border:1.5px solid #262626;border-radius:3px;position:relative;"><div style="position:absolute;right:1.5px;top:1.5px;bottom:1.5px;left:28%;background:#10B981;border-radius:1.5px;"></div></div></div></div>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="screen active" id="s-overview">
+    <div class="ct">
+      <div class="topbar"><div class="logo">Eru</div><div><div style="font-size:14px;font-weight:700;color:var(--g800);">Kashi Bakes</div><div class="biz">Growth Plan • 682016</div></div><div class="right"><span style="font-size:18px;">🔔</span><span style="font-size:18px;">⚙️</span></div></div>
+      <!-- Period selector -->
+      <div style="display:flex;gap:6px;padding:10px 12px;">
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--navy);color:#fff;">This Week</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">This Month</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">Last 90d</span>
+      </div>
+      <!-- KPIs -->
+      <div class="kpi">
+        <div class="k"><div class="v">12,840</div><div class="l">Impressions</div><div class="d up">↑ 24% vs last week</div></div>
+        <div class="k"><div class="v">1,026</div><div class="l">Clicks</div><div class="d up">↑ 18% • 8% CTR</div></div>
+        <div class="k"><div class="v">87</div><div class="l">Offer Claims</div><div class="d up">↑ 32% conversions</div></div>
+        <div class="k"><div class="v">34</div><div class="l">Store Visits</div><div class="d"><span class="up">Verified</span> via QR</div></div>
+        <div class="k"><div class="v">₹4,200</div><div class="l">Spent This Week</div><div class="d">of ₹5,000 budget</div></div>
+        <div class="k"><div class="v">₹124</div><div class="l">Cost per Visit</div><div class="d dn">↓ 8% (improving)</div></div>
+      </div>
+      <!-- Chart -->
+      <div class="sec">
+        <div class="crd">
+          <div class="hd"><h4>📈 Daily Impressions</h4><span style="font-size:11px;color:var(--blue);font-weight:600;">Details →</span></div>
+          <div class="chart">
+            <div class="b" style="height:30%;background:var(--blue);opacity:0.4;"></div>
+            <div class="b" style="height:45%;background:var(--blue);opacity:0.5;"></div>
+            <div class="b" style="height:38%;background:var(--blue);opacity:0.5;"></div>
+            <div class="b" style="height:62%;background:var(--blue);opacity:0.6;"></div>
+            <div class="b" style="height:55%;background:var(--blue);opacity:0.6;"></div>
+            <div class="b" style="height:80%;background:var(--blue);opacity:0.7;"></div>
+            <div class="b" style="height:100%;background:var(--blue);border:2px solid var(--navy);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:0 14px 10px;font-size:9px;color:var(--g400);">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span style="font-weight:700;color:var(--navy);">Sun</span>
+          </div>
+        </div>
+      </div>
+      <!-- Sentiment -->
+      <div class="sec">
+        <div class="crd">
+          <div class="hd"><h4>😊 Customer Sentiment</h4><span style="font-size:11px;color:var(--g400);">Last 30 days</span></div>
+          <div style="padding:12px 14px;">
+            <div style="display:flex;gap:12px;margin-bottom:10px;">
+              <div style="text-align:center;flex:1;"><div style="font-size:24px;">😊</div><div style="font-size:18px;font-weight:800;color:var(--green);">72%</div><div style="font-size:10px;color:var(--g400);">Positive</div></div>
+              <div style="text-align:center;flex:1;"><div style="font-size:24px;">😐</div><div style="font-size:18px;font-weight:800;color:var(--gold);">21%</div><div style="font-size:10px;color:var(--g400);">Neutral</div></div>
+              <div style="text-align:center;flex:1;"><div style="font-size:24px;">😞</div><div style="font-size:18px;font-weight:800;color:var(--red);">7%</div><div style="font-size:10px;color:var(--g400);">Negative</div></div>
+            </div>
+            <div class="bar" style="height:10px;display:flex;overflow:hidden;border-radius:5px;gap:0;">
+              <div style="width:72%;background:var(--green);"></div>
+              <div style="width:21%;background:var(--gold);"></div>
+              <div style="width:7%;background:var(--red);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Recent activity -->
+      <div class="sec">
+        <div class="crd">
+          <div class="hd"><h4>🕐 Recent Activity</h4></div>
+          <div class="row"><span style="font-size:16px;">📢</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">Weekend Cake Fest campaign live</div><div style="font-size:10px;color:var(--g400);">2h ago • 3,400 impressions</div></div></div>
+          <div class="row"><span style="font-size:16px;">🎬</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">Creator @FoodiePreethi tagged you!</div><div style="font-size:10px;color:var(--teal);">New UGC reel • <span style="font-weight:600;" onclick="go('ugc')">View & Boost →</span></div></div></div>
+          <div class="row"><span style="font-size:16px;">⭐</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">New 5-star review from Meera.N</div><div style="font-size:10px;color:var(--g400);">1d ago • "Best plum cake in Kochi!"</div></div></div>
+          <div class="row"><span style="font-size:16px;">🎫</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">12 offers redeemed today</div><div style="font-size:10px;color:var(--green);">₹3,600 in customer transactions</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="btab">
+      <button class="active"><span>📊</span><span>Overview</span></button>
+      <button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button>
+      <button onclick="go('createad')"><span>✨</span><span>Create</span></button>
+      <button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button>
+      <button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button>
+    </div>
+  </div>
+
+  <!-- ===== CAMPAIGNS ===== -->
+  <div class="screen" id="s-campaigns">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Campaigns</div><div class="right"><button class="btn btn-o" style="padding:6px 12px;font-size:11px;" onclick="go('createad')">+ New</button></div></div>
+      <!-- Filter -->
+      <div style="display:flex;gap:6px;padding:10px 12px;">
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--g800);color:#fff;">All (5)</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--green);border:0.5px solid var(--g200);">🟢 Active (2)</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g400);border:0.5px solid var(--g200);">Completed (2)</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--gold);border:0.5px solid var(--g200);">Draft (1)</span>
+      </div>
+      <!-- Campaign cards -->
+      <div class="sec">
+        <!-- Active 1 -->
+        <div class="crd" style="border-left:3px solid var(--green);">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">🎂 Weekend Cake Fest</div>
+              <span class="pill" style="background:rgba(16,185,129,0.1);color:var(--green);">🟢 ACTIVE</span>
+            </div>
+            <div style="font-size:11px;color:var(--g400);margin-top:4px;">📍 682016, 682017, 682018 • Apr 12–20</div>
+            <div style="display:flex;gap:16px;margin-top:10px;">
+              <div><div style="font-size:10px;color:var(--g400);">Impressions</div><div style="font-size:15px;font-weight:700;color:var(--g800);">8,420</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Clicks</div><div style="font-size:15px;font-weight:700;color:var(--g800);">672</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Claims</div><div style="font-size:15px;font-weight:700;color:var(--green);">98</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Cost/Claim</div><div style="font-size:15px;font-weight:700;color:var(--blue);">₹43</div></div>
+            </div>
+            <div class="bar" style="margin-top:8px;"><div style="width:68%;background:var(--green);"></div></div>
+            <div style="font-size:10px;color:var(--g400);margin-top:3px;">₹3,400 of ₹5,000 spent • 3 days left</div>
+          </div>
+        </div>
+        <!-- Active 2 -->
+        <div class="crd" style="border-left:3px solid var(--green);">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">☕ Morning Coffee Combo</div>
+              <span class="pill" style="background:rgba(16,185,129,0.1);color:var(--green);">🟢 ACTIVE</span>
+            </div>
+            <div style="font-size:11px;color:var(--g400);margin-top:4px;">📍 682016 only • Apr 1–30</div>
+            <div style="display:flex;gap:16px;margin-top:10px;">
+              <div><div style="font-size:10px;color:var(--g400);">Impressions</div><div style="font-size:15px;font-weight:700;color:var(--g800);">4,420</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Clicks</div><div style="font-size:15px;font-weight:700;color:var(--g800);">354</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Claims</div><div style="font-size:15px;font-weight:700;color:var(--green);">42</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Cost/Claim</div><div style="font-size:15px;font-weight:700;color:var(--blue);">₹36</div></div>
+            </div>
+            <div class="bar" style="margin-top:8px;"><div style="width:45%;background:var(--blue);"></div></div>
+            <div style="font-size:10px;color:var(--g400);margin-top:3px;">₹1,500 of ₹3,000 spent • 15 days left</div>
+          </div>
+        </div>
+        <!-- Completed -->
+        <div class="crd" style="border-left:3px solid var(--g300);opacity:0.7;">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">🧁 Easter Special</div>
+              <span class="pill" style="background:var(--g100);color:var(--g500);">COMPLETED</span>
+            </div>
+            <div style="font-size:11px;color:var(--g400);margin-top:4px;">Mar 28–Apr 5 • ₹4,000 spent • 156 claims • ₹26/claim</div>
+          </div>
+        </div>
+        <!-- Draft -->
+        <div class="crd" style="border-left:3px solid var(--gold);">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">🎂 Mother's Day Special</div>
+              <span class="pill" style="background:rgba(217,119,6,0.1);color:var(--gold);">DRAFT</span>
+            </div>
+            <div style="font-size:11px;color:var(--g400);margin-top:4px;">Not yet published • Budget: ₹8,000</div>
+            <button class="btn btn-o" style="margin-top:8px;padding:6px 14px;font-size:11px;" onclick="go('createad')">Edit & Launch →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button class="active"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== CREATE AD ===== -->
+  <div class="screen" id="s-createad">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('campaigns')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Create Campaign</div><div class="right"><span style="font-size:12px;color:var(--g400);" id="stepLabel">Step 1/4</span></div></div>
+      <div class="steps" id="stepNav">
+        <div class="st act" onclick="goStep(1)">1. Content</div>
+        <div class="st pend" onclick="goStep(2)">2. Target</div>
+        <div class="st pend" onclick="goStep(3)">3. Budget</div>
+        <div class="st pend" onclick="goStep(4)">4. Review</div>
+      </div>
+
+      <!-- STEP 1: CONTENT -->
+      <div class="step-panel" id="step1" style="padding:12px;">
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:8px;">What's your offer?</div>
+        <textarea class="inp" placeholder="e.g. 20% off all cakes this weekend!">30% off custom cakes for Mother's Day! Personalised messages on every cake 🎂💝</textarea>
+        <div style="margin-top:10px;background:rgba(37,99,235,0.04);border:0.5px solid rgba(37,99,235,0.12);border-radius:10px;padding:10px;">
+          <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:6px;">✨ AI Suggestions</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="padding:5px 10px;border-radius:6px;font-size:11px;background:rgba(37,99,235,0.06);color:var(--blue);border:0.5px solid rgba(37,99,235,0.15);cursor:pointer;">Add urgency: "This weekend only!"</span>
+            <span style="padding:5px 10px;border-radius:6px;font-size:11px;background:rgba(37,99,235,0.06);color:var(--blue);border:0.5px solid rgba(37,99,235,0.15);cursor:pointer;">Add CTA: "Order now on WhatsApp"</span>
+          </div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin:16px 0 8px;">Add Photos</div>
+        <div style="display:flex;gap:6px;">
+          <div style="width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,#FF6B35,#FBB03B);">🎂</div>
+          <div style="width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,#be185d,#f9a8d4);">💝</div>
+          <div style="width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--g100);color:var(--g400);border:1.5px dashed var(--g300);cursor:pointer;">📷 +</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin:16px 0 8px;">AI-Generated Preview</div>
+        <div style="background:linear-gradient(135deg,#FF6B35,#FBB03B);border-radius:12px;padding:20px;text-align:center;position:relative;">
+          <div style="font-size:10px;color:rgba(255,255,255,0.7);position:absolute;top:8px;left:10px;">Sponsored • Kashi Bakes</div>
+          <div style="font-size:42px;margin-bottom:6px;">🎂</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;">30% OFF</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.9);margin-top:2px;">Custom Mother's Day Cakes</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;">📍 682016, 682017 • May 8–12</div>
+          <div style="margin-top:12px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px;color:#fff;font-size:13px;font-weight:700;">Claim Offer →</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn btn-s" style="flex:1;">🔄 Regenerate</button>
+          <button class="btn btn-p" style="flex:1;" onclick="goStep(2)">Next: Targeting →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: TARGET -->
+      <div class="step-panel" id="step2" style="padding:12px;display:none;">
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:10px;">📍 Select Target Pincodes</div>
+        <div style="font-size:12px;color:var(--g500);margin-bottom:12px;">Choose which areas will see your ad. More pincodes = wider reach.</div>
+        <!-- Pincode selector -->
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:10px;border:1.5px solid var(--navy);"><div style="width:20px;height:20px;border-radius:4px;background:var(--navy);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">✓</div><div style="flex:1;"><div style="font-size:14px;font-weight:700;color:var(--g800);">682016</div><div style="font-size:11px;color:var(--g400);">Ernakulam Central • ~12,000 users</div></div><span style="font-size:10px;color:var(--navy);font-weight:600;">Primary</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:10px;border:1.5px solid var(--teal);"><div style="width:20px;height:20px;border-radius:4px;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">✓</div><div style="flex:1;"><div style="font-size:14px;font-weight:700;color:var(--g800);">682017</div><div style="font-size:11px;color:var(--g400);">Edappally • ~9,400 users</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:10px;border:1.5px solid var(--teal);"><div style="width:20px;height:20px;border-radius:4px;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">✓</div><div style="flex:1;"><div style="font-size:14px;font-weight:700;color:var(--g800);">682018</div><div style="font-size:11px;color:var(--g400);">Palarivattom • ~8,100 users</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--g200);opacity:0.6;"><div style="width:20px;height:20px;border-radius:4px;border:1.5px solid var(--g300);"></div><div style="flex:1;"><div style="font-size:14px;font-weight:600;color:var(--g500);">682001</div><div style="font-size:11px;color:var(--g400);">Fort Kochi • ~6,200 users</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--g200);opacity:0.6;"><div style="width:20px;height:20px;border-radius:4px;border:1.5px solid var(--g300);"></div><div style="flex:1;"><div style="font-size:14px;font-weight:600;color:var(--g500);">682024</div><div style="font-size:11px;color:var(--g400);">Kakkanad • ~10,800 users</div></div></div>
+        </div>
+        <div style="background:rgba(13,148,136,0.05);border:0.5px solid rgba(13,148,136,0.15);border-radius:10px;padding:10px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--teal);">📊 Estimated reach: 29,500 users across 3 pincodes</div>
+          <div style="font-size:11px;color:var(--g400);margin-top:2px;">Based on active Eru users in selected areas</div>
+        </div>
+        <!-- Audience -->
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:10px;">👥 Target Audience</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+          <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;background:var(--g800);color:#fff;">All Ages</span>
+          <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);">18–25</span>
+          <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);">25–35</span>
+          <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);">35–50</span>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--g600);margin-bottom:6px;">Interests</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+          <span style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(232,121,43,0.08);color:var(--orange);border:1px solid rgba(232,121,43,0.2);">🍜 Food ✓</span>
+          <span style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(236,72,153,0.06);color:var(--pink);border:1px solid rgba(236,72,153,0.15);">🎂 Baking ✓</span>
+          <span style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(13,148,136,0.06);color:var(--teal);border:1px solid rgba(13,148,136,0.15);">👨‍👩‍👧 Family ✓</span>
+          <span style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g400);border:0.5px solid var(--g200);">🎉 Events</span>
+          <span style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g400);border:0.5px solid var(--g200);">☕ Coffee</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-s" style="flex:1;" onclick="goStep(1)">← Back</button>
+          <button class="btn btn-p" style="flex:1;" onclick="goStep(3)">Next: Budget →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: BUDGET -->
+      <div class="step-panel" id="step3" style="padding:12px;display:none;">
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:10px;">💰 Set Your Budget</div>
+        <!-- Budget plans -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <div style="flex:1;background:var(--card);border-radius:10px;padding:12px;text-align:center;border:0.5px solid var(--g200);cursor:pointer;">
+            <div style="font-size:16px;font-weight:800;color:var(--g800);">₹2,000</div>
+            <div style="font-size:10px;color:var(--g400);margin-top:2px;">Basic</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:4px;">~5K impressions</div>
+          </div>
+          <div style="flex:1;background:var(--card);border-radius:10px;padding:12px;text-align:center;border:2px solid var(--orange);cursor:pointer;position:relative;">
+            <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--orange);color:#fff;font-size:8px;font-weight:700;padding:2px 8px;border-radius:4px;">RECOMMENDED</div>
+            <div style="font-size:16px;font-weight:800;color:var(--orange);">₹5,000</div>
+            <div style="font-size:10px;color:var(--g400);margin-top:2px;">Growth</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:4px;">~12K impressions</div>
+          </div>
+          <div style="flex:1;background:var(--card);border-radius:10px;padding:12px;text-align:center;border:0.5px solid var(--g200);cursor:pointer;">
+            <div style="font-size:16px;font-weight:800;color:var(--g800);">₹10,000</div>
+            <div style="font-size:10px;color:var(--g400);margin-top:2px;">Pro</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:4px;">~28K impressions</div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--g600);margin-bottom:6px;">Or enter custom amount</div>
+        <input class="inp" type="text" value="₹5,000" style="margin-bottom:14px;">
+        <!-- Duration -->
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:10px;">📅 Campaign Duration</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <div style="flex:1;background:var(--card);border-radius:10px;padding:12px;border:0.5px solid var(--g200);"><div style="font-size:11px;color:var(--g400);">Start Date</div><div style="font-size:14px;font-weight:600;color:var(--g800);margin-top:2px;">May 8, 2026</div></div>
+          <div style="flex:1;background:var(--card);border-radius:10px;padding:12px;border:0.5px solid var(--g200);"><div style="font-size:11px;color:var(--g400);">End Date</div><div style="font-size:14px;font-weight:600;color:var(--g800);margin-top:2px;">May 12, 2026</div></div>
+        </div>
+        <!-- Projections -->
+        <div style="background:rgba(16,185,129,0.04);border:0.5px solid rgba(16,185,129,0.15);border-radius:10px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;">📊 Estimated Results (₹5,000 budget)</div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--g800);">12,400</div><div style="font-size:10px;color:var(--g400);">Impressions</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--g800);">992</div><div style="font-size:10px;color:var(--g400);">Est. Clicks</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--green);">~80</div><div style="font-size:10px;color:var(--g400);">Est. Claims</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--blue);">₹63</div><div style="font-size:10px;color:var(--g400);">Est. Cost/Claim</div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-s" style="flex:1;" onclick="goStep(2)">← Back</button>
+          <button class="btn btn-p" style="flex:1;" onclick="goStep(4)">Next: Review →</button>
+        </div>
+      </div>
+
+      <!-- STEP 4: REVIEW & LAUNCH -->
+      <div class="step-panel" id="step4" style="padding:12px;display:none;">
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:12px;">✅ Review Your Campaign</div>
+        <!-- Summary card -->
+        <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);overflow:hidden;margin-bottom:12px;">
+          <!-- Ad preview mini -->
+          <div style="background:linear-gradient(135deg,#FF6B35,#FBB03B);padding:14px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:4px;">🎂</div>
+            <div style="font-size:16px;font-weight:800;color:#fff;">30% OFF — Mother's Day Cakes</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:2px;">Kashi Bakes • Sponsored</div>
+          </div>
+          <!-- Details -->
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Pincodes</span><span style="font-size:12px;font-weight:600;color:var(--g800);">682016, 682017, 682018</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Audience</span><span style="font-size:12px;font-weight:600;color:var(--g800);">All Ages • Food, Baking, Family</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Budget</span><span style="font-size:12px;font-weight:700;color:var(--orange);">₹5,000</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Duration</span><span style="font-size:12px;font-weight:600;color:var(--g800);">May 8–12 (5 days)</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Est. Reach</span><span style="font-size:12px;font-weight:600;color:var(--g800);">29,500 users</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Est. Impressions</span><span style="font-size:12px;font-weight:600;color:var(--g800);">12,400</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--g100);"><span style="font-size:12px;color:var(--g500);">Est. Claims</span><span style="font-size:12px;font-weight:700;color:var(--green);">~80</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;"><span style="font-size:12px;color:var(--g500);">Est. Cost/Claim</span><span style="font-size:12px;font-weight:700;color:var(--blue);">₹63</span></div>
+          </div>
+        </div>
+        <!-- Payment method -->
+        <div style="background:var(--card);border-radius:10px;border:0.5px solid var(--g200);padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--navy),var(--blue));display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">Growth Plan Balance</div><div style="font-size:11px;color:var(--g400);">₹800 remaining of ₹5,000/month</div></div>
+          <span style="font-size:11px;color:var(--blue);font-weight:600;">Change</span>
+        </div>
+        <div style="background:rgba(217,119,6,0.06);border:0.5px solid rgba(217,119,6,0.12);border-radius:10px;padding:10px;margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--gold);">⚠️ Your plan balance (₹800) won't cover the full ₹5,000. You'll be charged ₹4,200 extra via UPI.</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-s" style="flex:1;" onclick="goStep(3)">← Back</button>
+          <button class="btn btn-g" style="flex:2;font-size:14px;padding:12px;" onclick="go('campaigns')">🚀 Launch Campaign — ₹5,000</button>
+        </div>
+        <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--g400);">By launching, you agree to Eru's <span style="color:var(--blue);cursor:pointer;">Advertising Terms</span></div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button class="active"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== CREATOR UGC ===== -->
+  <div class="screen" id="s-ugc">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Creator Content</div><div class="right"><span class="pill" style="background:rgba(13,148,136,0.1);color:var(--teal);">3 new tags</span></div></div>
+      <!-- UGC stats -->
+      <div class="kpi">
+        <div class="k" style="border-top:3px solid var(--teal);"><div class="v">7</div><div class="l">Creators Tagged You</div></div>
+        <div class="k" style="border-top:3px solid var(--green);"><div class="v">3</div><div class="l">Boosted Posts</div></div>
+        <div class="k" style="border-top:3px solid var(--blue);"><div class="v">42.8K</div><div class="l">Total UGC Reach</div></div>
+        <div class="k" style="border-top:3px solid var(--orange);"><div class="v">₹9,000</div><div class="l">Total Boost Spend</div></div>
+      </div>
+      <!-- New UGC tags -->
+      <div class="sec">
+        <h3>🆕 New Tags — Review & Boost</h3>
+        <!-- Tag 1 -->
+        <div class="crd" style="border:1.5px solid var(--teal);">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:10px;">
+              <div style="width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;background:linear-gradient(135deg,#7c2d12,#f97316);">🎂</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                  <span style="font-size:13px;font-weight:700;color:var(--g800);">@FoodiePreethi</span>
+                  <span class="pill" style="background:rgba(13,148,136,0.1);color:var(--teal);">🆕 NEW</span>
+                </div>
+                <div style="font-size:12px;color:var(--g700);margin-top:3px;line-height:1.4;">"Best plum cake in Kochi! Kashi Bakes never disappoints 🎂🔥"</div>
+                <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--g400);">
+                  <span>▶ Reel 0:32</span><span>5.2K views</span><span>420 likes</span><span>89 comments</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-g" style="flex:1;font-size:12px;padding:9px;">🚀 Boost This — ₹3,000</button>
+              <button class="btn btn-s" style="padding:9px 14px;font-size:12px;">💬 Message</button>
+              <button class="btn btn-s" style="padding:9px 14px;font-size:12px;">👁️</button>
+            </div>
+            <div style="font-size:10px;color:var(--g400);margin-top:6px;">Boost = promote as sponsored content. Creator earns 20% (₹600). Eru takes 15% (₹450). You get 25K+ reach across 3 pincodes.</div>
+          </div>
+        </div>
+        <!-- Tag 2 -->
+        <div class="crd" style="border:1.5px solid var(--teal);">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:10px;">
+              <div style="width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;background:linear-gradient(135deg,#065f46,#14b8a6);">📸</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:13px;font-weight:700;color:var(--g800);">@KeralaDiaries</span>
+                  <span class="pill" style="background:rgba(13,148,136,0.1);color:var(--teal);">🆕 NEW</span>
+                  <span class="pill" style="background:rgba(37,99,235,0.08);color:var(--blue);">✓ Verified</span>
+                </div>
+                <div style="font-size:12px;color:var(--g700);margin-top:3px;line-height:1.4;">"Weekend breakfast at Kashi Bakes — the croissants are unreal 🥐"</div>
+                <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--g400);">
+                  <span>📸 Photo carousel</span><span>2.1K views</span><span>310 likes</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-g" style="flex:1;font-size:12px;padding:9px;">🚀 Boost — ₹2,000</button>
+              <button class="btn btn-s" style="padding:9px 14px;font-size:12px;">💬</button>
+              <button class="btn btn-s" style="padding:9px 14px;font-size:12px;">👁️</button>
+            </div>
+          </div>
+        </div>
+        <!-- Tag 3 -->
+        <div class="crd" style="border:1.5px solid var(--teal);">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:10px;">
+              <div style="width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#a5b4fc);">🎬</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:var(--g800);">@Rohit.M</div>
+                <div style="font-size:12px;color:var(--g700);margin-top:3px;line-height:1.4;">"Taste test: every cake at Kashi Bakes ranked! 🎂📊"</div>
+                <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--g400);">
+                  <span>▶ Reel 1:20</span><span>8.4K views</span><span>🔥 Trending</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-g" style="flex:1;font-size:12px;padding:9px;">🚀 Boost — ₹5,000</button>
+              <button class="btn btn-s" style="padding:9px 14px;font-size:12px;">💬</button>
+              <button class="btn btn-s" style="padding:9px 14px;font-size:12px;">👁️</button>
+            </div>
+            <div style="font-size:10px;color:var(--orange);font-weight:600;margin-top:6px;">🔥 Recommended boost — 8.4K organic views, trending reel. High conversion potential.</div>
+          </div>
+        </div>
+      </div>
+      <!-- Active boosts -->
+      <div class="sec">
+        <h3>🚀 Active Sponsored UGC</h3>
+        <div class="crd" style="border-left:3px solid var(--green);">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div><span style="font-size:13px;font-weight:700;color:var(--g800);">@FoodBloggerArun</span><span style="font-size:11px;color:var(--g400);"> • "Kerala banana cake review"</span></div>
+              <span class="pill" style="background:rgba(16,185,129,0.1);color:var(--green);">LIVE</span>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:8px;">
+              <div><div style="font-size:10px;color:var(--g400);">Reach</div><div style="font-size:14px;font-weight:700;">18.2K</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Clicks</div><div style="font-size:14px;font-weight:700;">1,456</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Claims</div><div style="font-size:14px;font-weight:700;color:var(--green);">67</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Spent</div><div style="font-size:14px;font-weight:700;">₹2,800/₹4K</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button class="active"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== FEEDBACK ===== -->
+  <div class="screen" id="s-feedback">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Customer Feedback</div><div class="right"><span style="font-size:11px;color:var(--g400);">42 total</span></div></div>
+      <div style="display:flex;gap:6px;padding:10px 12px;">
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--g800);color:#fff;">All</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--green);border:0.5px solid var(--g200);">😊 Positive</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--gold);border:0.5px solid var(--g200);">😐 Neutral</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--red);border:0.5px solid var(--g200);">😞 Negative</span>
+      </div>
+      <div class="sec">
+        <div class="crd">
+          <div class="row" style="flex-wrap:wrap;">
+            <div style="width:36px;height:36px;border-radius:18px;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;font-size:16px;">👩</div>
+            <div style="flex:1;min-width:200px;"><div style="font-size:13px;font-weight:600;color:var(--g800);">Meera.N <span style="color:var(--gold);">★★★★★</span></div><div style="font-size:12px;color:var(--g700);margin-top:2px;">"Best plum cake in Kochi! Ordered for my birthday and everyone loved it."</div><div style="font-size:10px;color:var(--g400);margin-top:3px;">2h ago • via Eru Review • 📍 682016</div></div>
+            <div style="width:100%;display:flex;gap:6px;margin-top:6px;padding-left:46px;">
+              <button class="btn btn-s" style="font-size:10px;padding:5px 10px;">💬 Reply</button>
+              <button class="btn btn-s" style="font-size:10px;padding:5px 10px;">✨ AI Reply</button>
+              <button class="btn btn-s" style="font-size:10px;padding:5px 10px;">📌 Pin</button>
+            </div>
+          </div>
+        </div>
+        <div class="crd">
+          <div class="row">
+            <div style="width:36px;height:36px;border-radius:18px;background:linear-gradient(135deg,#1e3a5f,#60a5fa);display:flex;align-items:center;justify-content:center;font-size:16px;">👨</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">Arjun.S <span style="color:var(--gold);">★★★★</span></div><div style="font-size:12px;color:var(--g700);margin-top:2px;">"Good cakes but wish they had more eggless options."</div><div style="font-size:10px;color:var(--g400);margin-top:3px;">1d ago • via Eru Poll</div></div>
+          </div>
+          <div style="padding:4px 14px 10px 60px;background:rgba(37,99,235,0.03);border-top:0.5px solid var(--g100);">
+            <div style="font-size:10px;color:var(--blue);font-weight:600;">✨ AI Suggested Reply:</div>
+            <div style="font-size:11px;color:var(--g600);margin-top:2px;font-style:italic;">"Thanks for the feedback Arjun! We're launching 5 new eggless options next week — stay tuned! 🌱"</div>
+            <div style="display:flex;gap:6px;margin-top:4px;">
+              <button class="btn btn-p" style="font-size:10px;padding:4px 10px;">Send This</button>
+              <button class="btn btn-s" style="font-size:10px;padding:4px 10px;">Edit</button>
+            </div>
+          </div>
+        </div>
+        <div class="crd">
+          <div class="row">
+            <div style="width:36px;height:36px;border-radius:18px;background:linear-gradient(135deg,#be185d,#f9a8d4);display:flex;align-items:center;justify-content:center;font-size:16px;">👩‍🎨</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">Divya.R <span style="color:var(--gold);">★★</span></div><div style="font-size:12px;color:var(--g700);margin-top:2px;">"Cake was dry this time. Disappointing compared to usual quality."</div><div style="font-size:10px;color:var(--red);margin-top:3px;">⚠️ Negative • 3d ago • Needs attention</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button class="active"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== AUDIENCE ===== -->
+  <div class="screen" id="s-audience">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Audience Insights</div></div>
+      <div class="kpi">
+        <div class="k"><div class="v">4,820</div><div class="l">Unique Reach (30d)</div></div>
+        <div class="k"><div class="v">72%</div><div class="l">Female Audience</div></div>
+      </div>
+      <div class="sec">
+        <div class="crd">
+          <div class="hd"><h4>📊 Age Distribution</h4></div>
+          <div style="padding:12px 14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;color:var(--g500);width:40px;">18–24</span><div class="bar" style="flex:1;"><div style="width:18%;background:var(--blue);"></div></div><span style="font-size:11px;font-weight:600;">18%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;color:var(--g500);width:40px;">25–34</span><div class="bar" style="flex:1;"><div style="width:42%;background:var(--navy);"></div></div><span style="font-size:11px;font-weight:600;">42%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;color:var(--g500);width:40px;">35–44</span><div class="bar" style="flex:1;"><div style="width:25%;background:var(--teal);"></div></div><span style="font-size:11px;font-weight:600;">25%</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--g500);width:40px;">45+</span><div class="bar" style="flex:1;"><div style="width:15%;background:var(--purple);"></div></div><span style="font-size:11px;font-weight:600;">15%</span></div>
+          </div>
+        </div>
+        <div class="crd">
+          <div class="hd"><h4>📍 Top Pincodes</h4></div>
+          <div class="row"><span style="font-size:14px;font-weight:700;color:var(--navy);">682016</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;">Ernakulam Central</div></div><span style="font-size:12px;font-weight:700;color:var(--green);">38%</span></div>
+          <div class="row"><span style="font-size:14px;font-weight:700;color:var(--blue);">682017</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;">Edappally</div></div><span style="font-size:12px;font-weight:700;">24%</span></div>
+          <div class="row"><span style="font-size:14px;font-weight:700;color:var(--teal);">682018</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;">Palarivattom</div></div><span style="font-size:12px;font-weight:700;">16%</span></div>
+          <div class="row"><span style="font-size:14px;font-weight:700;color:var(--purple);">682001</span><div style="flex:1;"><div style="font-size:12px;font-weight:600;">Fort Kochi</div></div><span style="font-size:12px;font-weight:700;">12%</span></div>
+        </div>
+        <div class="crd">
+          <div class="hd"><h4>⏰ Peak Hours</h4></div>
+          <div style="padding:12px 14px;display:flex;gap:4px;align-items:flex-end;height:80px;">
+            <div style="flex:1;text-align:center;"><div style="height:15px;background:var(--g200);border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">8am</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:35px;background:var(--blue);opacity:0.5;border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">10</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:50px;background:var(--blue);opacity:0.7;border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">12</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:30px;background:var(--blue);opacity:0.4;border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">2pm</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:40px;background:var(--blue);opacity:0.6;border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">4</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:60px;background:var(--navy);border-radius:2px;"></div><div style="font-size:8px;font-weight:700;color:var(--navy);margin-top:2px;">6pm</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:55px;background:var(--blue);opacity:0.8;border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">8</div></div>
+            <div style="flex:1;text-align:center;"><div style="height:25px;background:var(--g200);border-radius:2px;"></div><div style="font-size:8px;color:var(--g400);margin-top:2px;">10</div></div>
+          </div>
+          <div style="padding:0 14px 10px;font-size:10px;color:var(--g400);">Best time to run campaigns: <strong style="color:var(--navy);">5–8 PM</strong></div>
+        </div>
+        <div class="crd">
+          <div class="hd"><h4>❤️ Top Interests</h4></div>
+          <div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px;">
+            <span style="padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(232,121,43,0.08);color:var(--orange);">🍜 Food 68%</span>
+            <span style="padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(236,72,153,0.06);color:var(--pink);">🎂 Baking 52%</span>
+            <span style="padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(13,148,136,0.06);color:var(--teal);">👨‍👩‍👧 Family 41%</span>
+            <span style="padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(124,58,237,0.06);color:var(--purple);">🎉 Events 34%</span>
+            <span style="padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(37,99,235,0.06);color:var(--blue);">☕ Coffee 29%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== OFFERS ===== -->
+  <div class="screen" id="s-offers">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Offers & Redemptions</div><div class="right"><button class="btn btn-o" style="padding:5px 10px;font-size:10px;">+ New Offer</button></div></div>
+      <div class="kpi">
+        <div class="k" style="border-top:3px solid var(--green);"><div class="v">247</div><div class="l">Total Claims</div><div class="d up">↑ 45% this month</div></div>
+        <div class="k" style="border-top:3px solid var(--blue);"><div class="v">89</div><div class="l">Verified Redeemed</div><div class="d">36% redemption rate</div></div>
+      </div>
+      <div class="sec">
+        <h3>Active Offers</h3>
+        <div class="crd">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">🎂 20% off all cakes</div>
+              <span class="pill" style="background:rgba(16,185,129,0.1);color:var(--green);">ACTIVE</span>
+            </div>
+            <div style="font-size:11px;color:var(--g400);margin-top:3px;">200 pts to claim • Valid Apr 12–20</div>
+            <div style="display:flex;gap:12px;margin-top:8px;">
+              <div><div style="font-size:10px;color:var(--g400);">Claimed</div><div style="font-size:16px;font-weight:700;color:var(--g800);">98</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Redeemed</div><div style="font-size:16px;font-weight:700;color:var(--green);">34</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Revenue</div><div style="font-size:16px;font-weight:700;color:var(--blue);">₹10,200</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Avg Basket</div><div style="font-size:16px;font-weight:700;">₹300</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="crd">
+          <div style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">☕ Free coffee with any cake</div>
+              <span class="pill" style="background:rgba(16,185,129,0.1);color:var(--green);">ACTIVE</span>
+            </div>
+            <div style="font-size:11px;color:var(--g400);margin-top:3px;">150 pts to claim • Valid all April</div>
+            <div style="display:flex;gap:12px;margin-top:8px;">
+              <div><div style="font-size:10px;color:var(--g400);">Claimed</div><div style="font-size:16px;font-weight:700;">42</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Redeemed</div><div style="font-size:16px;font-weight:700;color:var(--green);">18</div></div>
+              <div><div style="font-size:10px;color:var(--g400);">Revenue</div><div style="font-size:16px;font-weight:700;color:var(--blue);">₹6,840</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== BILLING ===== -->
+  <div class="screen" id="s-billing">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Billing & Plans</div></div>
+      <!-- Current plan -->
+      <div style="margin:12px;background:linear-gradient(135deg,var(--navy),#0F2544);border-radius:16px;padding:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:10px;color:var(--g400);letter-spacing:1px;font-weight:600;">CURRENT PLAN</div><div style="font-size:22px;font-weight:800;color:#fff;margin-top:2px;">Growth</div></div>
+          <div style="text-align:right;"><div style="font-size:22px;font-weight:800;color:var(--orange);">₹5,000<span style="font-size:12px;font-weight:500;color:var(--g400);">/mo</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:var(--green);">₹4,200</div>
+            <div style="font-size:9px;color:var(--g400);">Spent this month</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:#fff;">₹800</div>
+            <div style="font-size:9px;color:var(--g400);">Remaining</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:var(--orange);">3</div>
+            <div style="font-size:9px;color:var(--g400);">Pincodes</div>
+          </div>
+        </div>
+        <button style="width:100%;margin-top:14px;background:var(--orange);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">Upgrade to Pro (₹12,000/mo) →</button>
+      </div>
+      <!-- Plan comparison -->
+      <div class="sec">
+        <h3>All Plans</h3>
+        <div style="display:flex;gap:8px;">
+          <div class="crd" style="flex:1;"><div style="padding:12px;text-align:center;">
+            <div style="font-size:12px;font-weight:700;color:var(--g800);">Starter</div>
+            <div style="font-size:20px;font-weight:800;color:var(--g800);margin-top:4px;">₹500</div>
+            <div style="font-size:10px;color:var(--g400);">/campaign</div>
+            <div style="font-size:10px;color:var(--g500);margin-top:8px;">1 pincode<br>Basic analytics<br>5 campaigns/mo</div>
+          </div></div>
+          <div class="crd" style="flex:1;border:2px solid var(--orange);"><div style="padding:12px;text-align:center;">
+            <div style="font-size:10px;font-weight:700;color:var(--orange);">CURRENT</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);">Growth</div>
+            <div style="font-size:20px;font-weight:800;color:var(--orange);margin-top:4px;">₹5K</div>
+            <div style="font-size:10px;color:var(--g400);">/month</div>
+            <div style="font-size:10px;color:var(--g500);margin-top:8px;">3 pincodes<br>Full analytics<br>Unlimited campaigns</div>
+          </div></div>
+          <div class="crd" style="flex:1;"><div style="padding:12px;text-align:center;">
+            <div style="font-size:12px;font-weight:700;color:var(--g800);">Pro</div>
+            <div style="font-size:20px;font-weight:800;color:var(--navy);margin-top:4px;">₹12K</div>
+            <div style="font-size:10px;color:var(--g400);">/month</div>
+            <div style="font-size:10px;color:var(--g500);margin-top:8px;">10 pincodes<br>AI insights<br>Priority support<br>UGC boost credits</div>
+          </div></div>
+        </div>
+      </div>
+      <!-- Recent transactions -->
+      <div class="sec">
+        <div class="crd">
+          <div class="hd"><h4>📝 Recent Transactions</h4></div>
+          <div class="row"><div style="flex:1;"><div style="font-size:12px;font-weight:600;">Campaign: Weekend Cake Fest</div><div style="font-size:10px;color:var(--g400);">Apr 12</div></div><span style="font-size:12px;font-weight:700;color:var(--red);">-₹3,400</span></div>
+          <div class="row"><div style="flex:1;"><div style="font-size:12px;font-weight:600;">UGC Boost: @FoodBloggerArun</div><div style="font-size:10px;color:var(--g400);">Apr 10</div></div><span style="font-size:12px;font-weight:700;color:var(--red);">-₹4,000</span></div>
+          <div class="row"><div style="flex:1;"><div style="font-size:12px;font-weight:600;">Monthly Plan: Growth</div><div style="font-size:10px;color:var(--g400);">Apr 1</div></div><span style="font-size:12px;font-weight:700;color:var(--red);">-₹5,000</span></div>
+          <div class="row"><div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--green);">Top-up</div><div style="font-size:10px;color:var(--g400);">Apr 1</div></div><span style="font-size:12px;font-weight:700;color:var(--green);">+₹5,000</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+  <!-- ===== INFLUENCERS ===== -->
+  <div class="screen" id="s-influencers">
+    <div class="ct">
+      <div class="topbar"><span style="cursor:pointer;" onclick="go('overview')">←</span><div style="font-size:15px;font-weight:700;color:var(--g800);">Top Creators</div><div class="right"><span style="font-size:11px;color:var(--g400);">📍 682016 area</span></div></div>
+
+      <!-- Search & filter -->
+      <div style="padding:10px 12px;background:var(--card);border-bottom:0.5px solid var(--g200);">
+        <div style="background:var(--g100);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:14px;color:var(--g400);">🔍</span>
+          <span style="font-size:13px;color:var(--g400);">Search creators by name or niche...</span>
+        </div>
+        <div style="display:flex;gap:5px;overflow-x:auto;">
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;background:var(--g800);color:#fff;white-space:nowrap;">🔥 All</span>
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);white-space:nowrap;">🍜 Food</span>
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);white-space:nowrap;">✈️ Travel</span>
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);white-space:nowrap;">💻 Tech</span>
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);white-space:nowrap;">🏋️ Fitness</span>
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);white-space:nowrap;">🎬 Film</span>
+          <span style="padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g600);border:0.5px solid var(--g200);white-space:nowrap;">🎨 Art</span>
+        </div>
+      </div>
+
+      <!-- Sort -->
+      <div style="display:flex;justify-content:space-between;padding:10px 12px;align-items:center;">
+        <span style="font-size:12px;color:var(--g500);">24 creators near you</span>
+        <div style="display:flex;gap:4px;">
+          <span style="padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;background:var(--navy);color:#fff;">Top Rated</span>
+          <span style="padding:4px 10px;border-radius:5px;font-size:10px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">Most Active</span>
+          <span style="padding:4px 10px;border-radius:5px;font-size:10px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">Highest Reach</span>
+        </div>
+      </div>
+
+      <div class="sec">
+        <!-- Creator 1: Top performer -->
+        <div class="crd" style="border:1.5px solid var(--gold);position:relative;overflow:visible;">
+          <div style="position:absolute;top:-10px;left:14px;background:linear-gradient(135deg,var(--gold),#F59E0B);color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:0.5px;">👑 #1 CREATOR IN YOUR AREA</div>
+          <div style="padding:14px;padding-top:18px;">
+            <div style="display:flex;gap:12px;">
+              <div style="width:64px;height:64px;border-radius:32px;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;background:linear-gradient(135deg,#7c2d12,#f97316);border:3px solid var(--gold);">👨‍🍳</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                  <span style="font-size:15px;font-weight:700;color:var(--g800);">ChefRaju</span>
+                  <span style="width:14px;height:14px;border-radius:7px;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">✓</span>
+                  <span class="pill" style="background:rgba(232,121,43,0.1);color:var(--orange);">🔥 Champion</span>
+                </div>
+                <div style="font-size:12px;color:var(--g500);margin-top:2px;">Kerala Food • Recipes • Restaurant Reviews</div>
+                <div style="display:flex;gap:12px;margin-top:8px;">
+                  <div><div style="font-size:15px;font-weight:700;color:var(--g800);">12.4K</div><div style="font-size:9px;color:var(--g400);">Followers</div></div>
+                  <div><div style="font-size:15px;font-weight:700;color:var(--g800);">8.2%</div><div style="font-size:9px;color:var(--g400);">Eng. Rate</div></div>
+                  <div><div style="font-size:15px;font-weight:700;color:var(--green);">156</div><div style="font-size:9px;color:var(--g400);">Posts</div></div>
+                  <div><div style="font-size:15px;font-weight:700;color:var(--blue);">4.8★</div><div style="font-size:9px;color:var(--g400);">Biz Rating</div></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:10px;flex-wrap:wrap;">
+              <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(232,121,43,0.06);color:var(--orange);">🍜 Food</span>
+              <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(13,148,136,0.06);color:var(--teal);">📍 682016</span>
+              <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(16,185,129,0.06);color:var(--green);">Avg reach: 8.1K/post</span>
+              <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(124,58,237,0.06);color:var(--purple);">3 sponsored posts</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-o" style="flex:1;font-size:12px;padding:9px;">💬 Connect & Collaborate</button>
+              <button class="btn btn-s" style="padding:9px 12px;font-size:12px;">👁️ Profile</button>
+              <button class="btn btn-s" style="padding:9px 12px;font-size:12px;">⭐</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creator 2 -->
+        <div class="crd">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:12px;">
+              <div style="width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background:linear-gradient(135deg,#065f46,#14b8a6);border:2px solid var(--teal);">📸</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:14px;font-weight:700;color:var(--g800);">KeralaDiaries</span>
+                  <span style="width:14px;height:14px;border-radius:7px;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">✓</span>
+                  <span class="pill" style="background:rgba(232,121,43,0.1);color:var(--orange);">🔥 Influencer</span>
+                </div>
+                <div style="font-size:11px;color:var(--g500);margin-top:2px;">Travel • Photography • Culture</div>
+                <div style="display:flex;gap:12px;margin-top:6px;">
+                  <div><div style="font-size:14px;font-weight:700;">8.9K</div><div style="font-size:9px;color:var(--g400);">Followers</div></div>
+                  <div><div style="font-size:14px;font-weight:700;">6.4%</div><div style="font-size:9px;color:var(--g400);">Eng. Rate</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--green);">89</div><div style="font-size:9px;color:var(--g400);">Posts</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--blue);">4.6★</div><div style="font-size:9px;color:var(--g400);">Biz Rating</div></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-o" style="flex:1;font-size:11px;padding:8px;">💬 Connect</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">👁️</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">⭐</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creator 3 -->
+        <div class="crd">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:12px;">
+              <div style="width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background:linear-gradient(135deg,#be185d,#f9a8d4);border:2px solid var(--pink);">👩‍🍳</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:14px;font-weight:700;color:var(--g800);">FoodiePreethi</span>
+                  <span class="pill" style="background:rgba(13,148,136,0.1);color:var(--teal);">⚡ Engager</span>
+                  <span class="pill" style="background:rgba(16,185,129,0.1);color:var(--green);">Previously worked with you</span>
+                </div>
+                <div style="font-size:11px;color:var(--g500);margin-top:2px;">Food Reviews • Vlogs • Local Cafes</div>
+                <div style="display:flex;gap:12px;margin-top:6px;">
+                  <div><div style="font-size:14px;font-weight:700;">5.2K</div><div style="font-size:9px;color:var(--g400);">Followers</div></div>
+                  <div><div style="font-size:14px;font-weight:700;">9.1%</div><div style="font-size:9px;color:var(--g400);">Eng. Rate</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--green);">67</div><div style="font-size:9px;color:var(--g400);">Posts</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--blue);">4.9★</div><div style="font-size:9px;color:var(--g400);">Biz Rating</div></div>
+                </div>
+              </div>
+            </div>
+            <div style="background:rgba(16,185,129,0.04);border:0.5px solid rgba(16,185,129,0.12);border-radius:8px;padding:8px 10px;margin-top:8px;">
+              <div style="font-size:10px;color:var(--green);font-weight:600;">✓ Past collaboration: "Best plum cake" reel → 25.4K reach, 98 claims, ₹3K spend</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-g" style="flex:1;font-size:11px;padding:8px;">🔄 Collab Again</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">👁️</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">⭐</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creator 4 -->
+        <div class="crd">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:12px;">
+              <div style="width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background:linear-gradient(135deg,#0891b2,#67e8f9);border:2px solid var(--cyan);">🧘‍♀️</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:14px;font-weight:700;color:var(--g800);">FitMaya</span>
+                  <span class="pill" style="background:rgba(232,121,43,0.1);color:var(--orange);">🔥 Influencer</span>
+                </div>
+                <div style="font-size:11px;color:var(--g500);margin-top:2px;">Fitness • Healthy Eating • Wellness</div>
+                <div style="display:flex;gap:12px;margin-top:6px;">
+                  <div><div style="font-size:14px;font-weight:700;">6.7K</div><div style="font-size:9px;color:var(--g400);">Followers</div></div>
+                  <div><div style="font-size:14px;font-weight:700;">7.3%</div><div style="font-size:9px;color:var(--g400);">Eng. Rate</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--green);">112</div><div style="font-size:9px;color:var(--g400);">Posts</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--blue);">4.5★</div><div style="font-size:9px;color:var(--g400);">Biz Rating</div></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-o" style="flex:1;font-size:11px;padding:8px;">💬 Connect</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">👁️</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">⭐</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creator 5 -->
+        <div class="crd">
+          <div style="padding:14px;">
+            <div style="display:flex;gap:12px;">
+              <div style="width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#a5b4fc);border:2px solid var(--purple);">💻</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:14px;font-weight:700;color:var(--g800);">TechAjna</span>
+                  <span class="pill" style="background:rgba(13,148,136,0.1);color:var(--teal);">⚡ Engager</span>
+                </div>
+                <div style="font-size:11px;color:var(--g500);margin-top:2px;">Tech Reviews • Gadgets • Local Startups</div>
+                <div style="display:flex;gap:12px;margin-top:6px;">
+                  <div><div style="font-size:14px;font-weight:700;">4.1K</div><div style="font-size:9px;color:var(--g400);">Followers</div></div>
+                  <div><div style="font-size:14px;font-weight:700;">11.2%</div><div style="font-size:9px;color:var(--g400);">Eng. Rate</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--green);">45</div><div style="font-size:9px;color:var(--g400);">Posts</div></div>
+                  <div><div style="font-size:14px;font-weight:700;color:var(--blue);">4.7★</div><div style="font-size:9px;color:var(--g400);">Biz Rating</div></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-o" style="flex:1;font-size:11px;padding:8px;">💬 Connect</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">👁️</button>
+              <button class="btn btn-s" style="padding:8px 12px;font-size:11px;">⭐</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invite CTA -->
+        <div style="margin-top:4px;background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.12);border-radius:12px;padding:16px;text-align:center;">
+          <div style="font-size:24px;margin-bottom:6px;">📣</div>
+          <div style="font-size:14px;font-weight:700;color:var(--g800);">Invite Creators to Review You</div>
+          <div style="font-size:12px;color:var(--g500);margin-top:4px;line-height:1.4;">Share your Eru Business link with any creator. When they visit your store and post a tagged review, you'll see it in Creator UGC and can boost it instantly.</div>
+          <button class="btn btn-p" style="margin-top:12px;width:100%;">📋 Copy Invite Link</button>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-s" style="flex:1;font-size:11px;">Share on WhatsApp</button>
+            <button class="btn btn-s" style="flex:1;font-size:11px;">Share on Instagram</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btab"><button onclick="go('overview')"><span>📊</span><span>Overview</span></button><button onclick="go('campaigns')"><span>📢</span><span>Campaigns</span></button><button onclick="go('createad')"><span>✨</span><span>Create</span></button><button onclick="go('ugc')"><span>🎬</span><span>UGC</span></button><button onclick="go('feedback')"><span>💬</span><span>Feedback</span></button></div>
+  </div>
+
+</div>
+
+<script>
+const M={overview:'Overview',campaigns:'Campaigns',createad:'Create Ad',ugc:'Creator UGC',feedback:'Feedback',audience:'Audience',offers:'Offers',influencers:'Influencers',billing:'Billing'};
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.querySelectorAll('.snav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.snav button').forEach(b=>{
+    const t=b.textContent.replace(/[📊📢✨🎬💬👥🎫⭐💳]/g,'').trim();
+    if(t===M[id])b.classList.add('active');
+  });
+  const c=document.querySelector('#s-'+id+' .ct');if(c)c.scrollTop=0;
+  if(id==='createad')goStep(1);
+}
+function goStep(n){
+  document.querySelectorAll('.step-panel').forEach(p=>p.style.display='none');
+  const panel=document.getElementById('step'+n);
+  if(panel)panel.style.display='block';
+  const nav=document.getElementById('stepNav');
+  if(nav){
+    const tabs=nav.querySelectorAll('.st');
+    tabs.forEach((t,i)=>{
+      t.className='st '+(i<n-1?'done':i===n-1?'act':'pend');
+    });
+  }
+  const lbl=document.getElementById('stepLabel');
+  if(lbl)lbl.textContent='Step '+n+'/4';
+  const ct=document.querySelector('#s-createad .ct');
+  if(ct)ct.scrollTop=0;
+}
+</script>
+</body>
+</html>

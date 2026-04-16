@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eru — Consumer App</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#FAFAFA;--card:#FFF;--black:#000;--navy:#1A3C6E;--orange:#E8792B;
+  --teal:#0D9488;--purple:#7C3AED;--pink:#EC4899;--red:#ED4956;
+  --blue:#0095F6;--green:#10B981;--gold:#D97706;--cyan:#06B6D4;
+  --g50:#FAFAFA;--g100:#EFEFEF;--g200:#DBDBDB;--g300:#C7C7C7;
+  --g400:#8E8E8E;--g500:#737373;--g700:#363636;--g800:#262626;--g900:#121212;
+}
+body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:12px;}
+.header{text-align:center;margin-bottom:10px;}
+.header h1{font-size:13px;font-weight:800;color:var(--orange);letter-spacing:4px;}
+.header p{font-size:11px;color:#6B7280;margin-top:2px;}
+.screen-nav{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;justify-content:center;}
+.screen-nav button{padding:4px 10px;border-radius:14px;font-size:10px;font-weight:600;border:none;cursor:pointer;background:rgba(255,255,255,0.06);color:#94A3B8;transition:all 0.2s;}
+.screen-nav button.active{background:var(--orange);color:#fff;}
+
+.phone{width:393px;height:852px;background:var(--bg);border-radius:44px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.35),inset 0 0 0 0.5px rgba(255,255,255,0.08);display:flex;flex-direction:column;position:relative;transform:scale(0.82);transform-origin:top center;}
+
+/* Status bar */
+.statusbar{height:54px;background:var(--card);display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;flex-shrink:0;position:relative;z-index:10;}
+.statusbar .time{font-size:15px;font-weight:600;color:var(--g800);}
+.statusbar .icons{display:flex;gap:5px;align-items:center;}
+.notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:32px;background:var(--black);border-radius:20px;}
+
+/* Scrollable content */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.content::-webkit-scrollbar{display:none;}
+
+/* Bottom tab */
+.bottom-tab{height:50px;background:var(--card);border-top:0.5px solid var(--g200);display:flex;flex-shrink:0;}
+.bottom-tab button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:20px;opacity:0.4;gap:2px;transition:opacity 0.2s;}
+.bottom-tab button.active{opacity:1;}
+.bottom-tab button span{font-size:9px;font-weight:600;color:var(--g800);}
+
+/* App header */
+.app-header{padding:2px 14px 8px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);}
+.app-header .logo{font-size:26px;font-weight:800;color:var(--g800);font-style:italic;font-family:Georgia,serif;}
+.app-header .actions{display:flex;align-items:center;gap:10px;}
+.pts-badge{background:rgba(16,185,129,0.1);border:0.5px solid rgba(16,185,129,0.2);border-radius:16px;padding:3px 10px;display:flex;align-items:center;gap:4px;cursor:pointer;}
+.pts-badge .pts{font-size:12px;font-weight:700;color:var(--green);}
+.pts-badge .streak{font-size:9px;font-weight:700;color:var(--orange);}
+
+/* Stories */
+.stories{padding:10px 0 10px 12px;display:flex;gap:14px;overflow-x:auto;background:var(--card);border-bottom:0.5px solid var(--g100);}
+.stories::-webkit-scrollbar{display:none;}
+.story{text-align:center;min-width:68px;cursor:pointer;}
+.story-ring{width:66px;height:66px;border-radius:50%;padding:2.5px;display:flex;align-items:center;justify-content:center;}
+.story-ring.unseen{background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF,#515BD4);}
+.story-ring.seen{background:var(--g300);}
+.story-ring.none{background:transparent;padding:0;}
+.story-ring.live{background:linear-gradient(135deg,var(--red),var(--orange));}
+.story-avatar{width:58px;height:58px;border-radius:50%;border:2.5px solid var(--card);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;}
+.story-avatar img{width:100%;height:100%;object-fit:cover;}
+.story-plus{position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:10px;background:var(--blue);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;}
+.story-name{font-size:10.5px;color:var(--g800);margin-top:4px;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.story-live{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,var(--pink),var(--red));color:#fff;font-size:7px;font-weight:800;padding:1px 5px;border-radius:3px;border:2px solid var(--card);letter-spacing:0.5px;}
+
+/* Post */
+.post{background:var(--card);border-bottom:0.5px solid var(--g100);}
+.post-header{padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.post-avi{width:34px;height:34px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.post-avi img{width:100%;height:100%;object-fit:cover;}
+.post-avi.ring{border:2px solid;border-image:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF) 1;border-radius:50%;padding:1px;}
+.post-info{flex:1;}
+.post-user{font-size:13px;font-weight:600;color:var(--g800);display:flex;align-items:center;gap:4px;}
+.post-user .verified{width:13px;height:13px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;}
+.post-user .verified svg{width:8px;height:8px;}
+.post-loc{font-size:11px;color:var(--g700);}
+.post-pts{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,0.1);padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;color:var(--green);}
+.post-more{font-size:16px;color:var(--g800);cursor:pointer;letter-spacing:2px;}
+.post-image{width:100%;aspect-ratio:1/1;position:relative;overflow:hidden;}
+.post-image img{width:100%;height:100%;object-fit:cover;}
+.post-image .overlay{position:absolute;inset:0;}
+.post-image .badge{position:absolute;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;}
+.post-image .type-badge{top:12px;left:12px;background:rgba(0,0,0,0.5);color:#fff;}
+.post-image .slide-badge{top:12px;right:12px;background:rgba(0,0,0,0.5);color:#fff;}
+.post-image .duration{bottom:14px;right:14px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;font-weight:600;padding:3px 8px;border-radius:4px;}
+.post-image .play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:32px;background:rgba(0,0,0,0.25);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;}
+.post-image .play-tri{width:0;height:0;border-left:22px solid #fff;border-top:14px solid transparent;border-bottom:14px solid transparent;margin-left:4px;}
+.post-image .cta-bar{position:absolute;bottom:0;left:0;right:0;padding:28px 14px 14px;background:linear-gradient(transparent,rgba(0,0,0,0.5));}
+.post-image .cta-btn{width:100%;background:var(--orange);color:#fff;border:none;border-radius:10px;padding:11px 0;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(232,121,43,0.4);}
+.carousel-dots{display:flex;justify-content:center;gap:4px;padding:8px 0 2px;}
+.carousel-dots .dot{width:6px;height:6px;border-radius:3px;background:var(--g300);}
+.carousel-dots .dot.active{background:var(--blue);}
+.post-actions{padding:6px 14px 2px;display:flex;align-items:center;}
+.post-actions .left{display:flex;gap:14px;flex:1;}
+.post-actions button{background:none;border:none;font-size:26px;cursor:pointer;padding:0;}
+.post-likes{padding:2px 14px 4px;font-size:13px;font-weight:600;color:var(--g800);}
+.post-caption{padding:0 14px 4px;font-size:13px;color:var(--g800);line-height:1.45;}
+.post-caption .user{font-weight:600;}
+.post-caption .tags{color:#00376B;}
+.post-caption .more{color:var(--g400);cursor:pointer;}
+.post-comments{padding:0 14px 8px;font-size:13px;color:var(--g400);cursor:pointer;}
+.post-comment{padding:2px 14px 6px;font-size:13px;color:var(--g800);}
+.post-comment .user{font-weight:600;}
+
+/* Poll */
+.poll-container{padding:10px 14px;}
+.poll-option{margin-bottom:6px;border-radius:10px;overflow:hidden;background:var(--g100);position:relative;cursor:pointer;border:1.5px solid var(--g100);transition:border-color 0.2s;}
+.poll-option.selected{border-color:var(--orange);}
+.poll-bar{position:absolute;left:0;top:0;bottom:0;border-radius:10px;transition:width 0.6s ease;}
+.poll-content{position:relative;padding:11px 14px;display:flex;justify-content:space-between;font-size:14px;}
+.poll-text{color:var(--g800);}
+.poll-pct{font-weight:700;}
+.poll-total{font-size:12px;color:var(--g400);margin-top:4px;}
+
+/* Sponsored label */
+.sponsored{font-size:11px;color:var(--g400);}
+.ugc-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;color:var(--teal);background:rgba(13,148,136,0.1);padding:2px 6px;border-radius:4px;letter-spacing:0.5px;}
+.moderation-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:0.5px;}
+.mod-approved{color:var(--green);background:rgba(16,185,129,0.1);}
+.mod-pending{color:var(--gold);background:rgba(217,119,6,0.1);}
+.mod-rejected{color:var(--red);background:rgba(237,73,86,0.1);}
+
+/* Create screen */
+.create-header{padding:12px 14px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);}
+.create-tabs{display:flex;background:var(--card);border-bottom:0.5px solid var(--g100);}
+.create-tabs button{flex:1;padding:10px 0;font-size:12px;font-weight:500;color:var(--g400);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;}
+.create-tabs button.active{font-weight:700;color:var(--g800);border-bottom-color:var(--g800);}
+.create-body{padding:16px;flex:1;}
+.create-body textarea{width:100%;border:none;font-size:15px;font-family:inherit;resize:none;outline:none;min-height:120px;color:var(--g800);line-height:1.5;}
+.create-body textarea::placeholder{color:var(--g400);}
+.media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:12px;border-radius:12px;overflow:hidden;}
+.media-grid .item{aspect-ratio:1;position:relative;cursor:pointer;overflow:hidden;}
+.media-grid .item img{width:100%;height:100%;object-fit:cover;}
+.media-grid .item .add{width:100%;height:100%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--g400);}
+.create-toolbar{padding:10px 14px;background:var(--card);border-top:0.5px solid var(--g100);display:flex;align-items:center;gap:16px;}
+.create-toolbar button{background:none;border:none;font-size:22px;cursor:pointer;opacity:0.5;}
+.create-toolbar .share-btn{margin-left:auto;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;opacity:1;}
+
+/* Profile */
+.profile-header{padding:12px 14px;background:var(--card);display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--g100);}
+.profile-stats{padding:12px 14px;background:var(--card);}
+.profile-top{display:flex;align-items:center;gap:20px;}
+.profile-avi{width:80px;height:80px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:40px;border:3px solid;border-image:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF) 1;}
+.profile-avi img{width:100%;height:100%;object-fit:cover;}
+.stat-row{display:flex;gap:20px;flex:1;justify-content:center;}
+.stat-item{text-align:center;}
+.stat-item .num{font-size:17px;font-weight:700;color:var(--g800);}
+.stat-item .label{font-size:13px;color:var(--g500);}
+.profile-bio{margin-top:10px;}
+.profile-bio .name{font-size:14px;font-weight:700;color:var(--g800);}
+.profile-bio .text{font-size:13px;color:var(--g600);line-height:1.4;margin-top:2px;}
+.profile-badges{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+.profile-badges .badge{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;}
+.profile-actions{display:flex;gap:6px;margin-top:12px;}
+.profile-actions button{flex:1;padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
+.profile-actions .edit{background:var(--g100);color:var(--g800);}
+.profile-actions .create{background:var(--blue);color:#fff;}
+
+/* Moderation panel */
+.mod-panel{background:var(--card);margin:8px;border-radius:12px;border:0.5px solid var(--g200);overflow:hidden;}
+.mod-header{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;background:var(--g50);border-bottom:0.5px solid var(--g100);}
+.mod-header h3{font-size:14px;font-weight:700;color:var(--g800);}
+.mod-item{display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;}
+.mod-thumb{width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.mod-thumb img{width:100%;height:100%;object-fit:cover;}
+.mod-info{flex:1;}
+.mod-title{font-size:13px;font-weight:600;color:var(--g800);}
+.mod-meta{font-size:11px;color:var(--g400);margin-top:2px;}
+
+/* Grid */
+.grid-tabs{display:flex;background:var(--card);border-bottom:0.5px solid var(--g100);}
+.grid-tabs button{flex:1;padding:12px 0;font-size:20px;background:none;border:none;border-bottom:1.5px solid transparent;cursor:pointer;opacity:0.3;}
+.grid-tabs button.active{opacity:1;border-bottom-color:var(--g800);}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;}
+.photo-grid .cell{aspect-ratio:1;position:relative;overflow:hidden;cursor:pointer;}
+.photo-grid .cell img{width:100%;height:100%;object-fit:cover;}
+.photo-grid .cell .indicator{position:absolute;top:6px;right:6px;font-size:11px;color:#fff;}
+
+/* Highlights */
+.highlights{padding:12px 14px;display:flex;gap:16px;overflow-x:auto;background:var(--card);border-bottom:0.5px solid var(--g100);}
+.highlights::-webkit-scrollbar{display:none;}
+.highlight{text-align:center;min-width:60px;}
+.highlight .circle{width:60px;height:60px;border-radius:30px;border:1px solid var(--g200);display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--g50);}
+.highlight .hl-name{font-size:11px;color:var(--g800);margin-top:4px;}
+
+/* Dummy images using gradients */
+.img-1{background:linear-gradient(135deg,#065f46 0%,#0f766e 40%,#14b8a6 100%);}
+.img-2{background:linear-gradient(135deg,#7c2d12 0%,#c2410c 40%,#f97316 100%);}
+.img-3{background:linear-gradient(135deg,#FF6B35 0%,#F7931E 50%,#FBB03B 100%);}
+.img-4{background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 50%,#60a5fa 100%);}
+.img-5{background:linear-gradient(135deg,#7c3aed 0%,#a855f7 50%,#c084fc 100%);}
+.img-6{background:linear-gradient(135deg,#059669 0%,#10b981 50%,#34d399 100%);}
+.img-7{background:linear-gradient(135deg,#be185d 0%,#ec4899 50%,#f9a8d4 100%);}
+.img-8{background:linear-gradient(135deg,#0891b2 0%,#06b6d4 50%,#67e8f9 100%);}
+.img-9{background:linear-gradient(135deg,#92400e 0%,#d97706 50%,#fbbf24 100%);}
+.img-10{background:linear-gradient(135deg,#4f46e5 0%,#6366f1 50%,#a5b4fc 100%);}
+.img-11{background:linear-gradient(135deg,#9f1239 0%,#e11d48 50%,#fda4af 100%);}
+.img-12{background:linear-gradient(135deg,#1e1b4b 0%,#3730a3 50%,#818cf8 100%);}
+
+.img-emoji{font-size:90px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.2));}
+.img-emoji-sm{font-size:36px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));}
+
+/* Screen management */
+.screen{display:none;flex-direction:column;min-height:100%;}
+.screen.active{display:flex;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ERU</h1>
+  <p>Consumer App — PWA Presentation | Tap screens below to navigate</p>
+</div>
+
+<div class="screen-nav" id="screenNav">
+  <button class="active" onclick="showScreen('home')">Home Feed</button>
+  <button onclick="showScreen('create')">Create</button>
+  <button onclick="showScreen('moderation')">My Content</button>
+  <button onclick="showScreen('profile')">Profile</button>
+  <button onclick="showScreen('explore')">Explore</button>
+  <button onclick="showScreen('reels')">Reels</button>
+  <button onclick="showScreen('wallet')">💰 Wallet</button>
+  <button onclick="showScreen('redeem')">🎁 Redeem</button>
+  <button onclick="showScreen('myrewards')">🎫 My Rewards</button>
+  <button onclick="showScreen('settings')">⚙️ Profile Details</button>
+  <button onclick="showScreen('leaderboard')">🏆 Leaderboard</button>
+  <button onclick="showScreen('creatorbiz')">💼 Creator × Biz</button>
+</div>
+
+<div class="phone">
+  <!-- Status Bar -->
+  <div class="statusbar">
+    <div class="time">9:41</div>
+    <div class="notch"></div>
+    <div class="icons">
+      <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="8" width="3" height="4" rx="0.5" fill="#262626"/><rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="#262626"/><rect x="9" y="2" width="3" height="10" rx="0.5" fill="#262626"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#DBDBDB"/></svg>
+      <div style="width:25px;height:12px;border:1.5px solid #262626;border-radius:3px;position:relative;"><div style="position:absolute;right:1.5px;top:1.5px;bottom:1.5px;left:28%;background:#10B981;border-radius:1.5px;"></div></div>
+    </div>
+  </div>
+
+  <!-- ===== HOME FEED ===== -->
+  <div class="screen active" id="screen-home">
+    <div class="content">
+      <!-- App header -->
+      <div class="app-header">
+        <div class="logo">Eru</div>
+        <div class="actions">
+          <div class="pts-badge" onclick="showScreen('wallet')">
+            <span style="font-size:11px;">🪙</span>
+            <span class="pts">4,820</span>
+            <span class="streak">🔥24</span>
+          </div>
+          <span style="font-size:22px;cursor:pointer;">🤍</span>
+          <span style="font-size:22px;cursor:pointer;">✉️</span>
+        </div>
+      </div>
+
+      <!-- Stories -->
+      <div class="stories">
+        <div class="story" onclick="showScreen('create')">
+          <div class="story-ring none">
+            <div class="story-avatar img-4" style="border:none;">
+              <span style="font-size:24px;">😊</span>
+              <div class="story-plus">+</div>
+            </div>
+          </div>
+          <div class="story-name">Your story</div>
+        </div>
+        <div class="story"><div class="story-ring unseen"><div class="story-avatar img-2"><span style="font-size:24px;">👨‍🍳</span></div></div><div class="story-name">ChefRaju ✓</div></div>
+        <div class="story"><div class="story-ring unseen"><div class="story-avatar img-3"><span style="font-size:24px;">🛒</span></div></div><div class="story-name">FreshMart</div></div>
+        <div class="story"><div class="story-ring unseen"><div class="story-avatar img-1"><span style="font-size:24px;">📸</span></div></div><div class="story-name">KeralaDiaries</div></div>
+        <div class="story"><div class="story-ring live"><div class="story-avatar img-11"><span style="font-size:24px;">🎬</span><div class="story-live">LIVE</div></div></div><div class="story-name">CineKerala</div></div>
+        <div class="story"><div class="story-ring seen"><div class="story-avatar img-6"><span style="font-size:24px;">🧘‍♀️</span></div></div><div class="story-name">FitMaya</div></div>
+        <div class="story"><div class="story-ring unseen"><div class="story-avatar img-10"><span style="font-size:24px;">💻</span></div></div><div class="story-name">TechAjna</div></div>
+        <div class="story"><div class="story-ring seen"><div class="story-avatar img-5"><span style="font-size:24px;">📚</span></div></div><div class="story-name">BookNerd</div></div>
+      </div>
+
+      <!-- POST 1: Photo (Creator UGC) -->
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avi img-1" style="border-radius:50%;"><span style="font-size:16px;">📸</span></div>
+          <div class="post-info">
+            <div class="post-user">KeralaDiaries <span class="verified"><svg viewBox="0 0 12 12"><path d="M3.5 6L5.5 8L8.5 4.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span> <span style="font-size:11px;color:var(--g400);">• 32m</span></div>
+            <div class="post-loc">Munnar, Kerala</div>
+          </div>
+          <span class="post-pts">🪙 +8</span>
+          <span class="post-more">•••</span>
+        </div>
+        <div class="post-image img-1">
+          <div class="overlay" style="background:radial-gradient(circle at 30% 70%,rgba(255,255,255,0.08),transparent 60%);"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span class="img-emoji">🌴</span>
+          </div>
+          <span class="ugc-badge" style="position:absolute;top:12px;left:12px;">✓ CREATOR</span>
+        </div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-likes">5,124 likes</div>
+        <div class="post-caption"><span class="user">KeralaDiaries</span> Monsoon mornings in Munnar hit different. This is why we live here. ☕🌧️ <span class="tags">#KeralaMonsoon #Munnar #GodOwnCountry</span></div>
+        <div class="post-comment"><span class="user">travel.kl</span> This is absolutely magical! 😍</div>
+        <div class="post-comments">View all 342 comments</div>
+      </div>
+
+      <!-- POST 2: Video -->
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avi img-2" style="border-radius:50%;"><span style="font-size:16px;">👨‍🍳</span></div>
+          <div class="post-info">
+            <div class="post-user">ChefRaju <span class="verified"><svg viewBox="0 0 12 12"><path d="M3.5 6L5.5 8L8.5 4.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span> <span style="font-size:11px;color:var(--g400);">• 1h</span></div>
+            <div class="post-loc">Kochi, Kerala</div>
+          </div>
+          <span class="post-pts">🪙 +12</span>
+          <span class="post-more">•••</span>
+        </div>
+        <div class="post-image img-2">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span class="img-emoji">🍳</span>
+          </div>
+          <div class="play-btn"><div class="play-tri"></div></div>
+          <div class="duration">4:32</div>
+          <span class="ugc-badge" style="position:absolute;top:12px;left:12px;">✓ CREATOR</span>
+        </div>
+        <div class="post-actions"><div class="left"><button>❤️</button><button>💬</button><button>📤</button></div><button>🔖</button></div>
+        <div class="post-likes">12,400 likes</div>
+        <div class="post-caption"><span class="user">ChefRaju</span> Kerala fish curry the way my grandmother made it 🐟 Secret ingredient revealed at the end! <span class="tags">#KeralaCooking #FishCurry</span></div>
+        <div class="post-comment"><span class="user">foodie.kochi</span> Made this yesterday, family loved it! 🔥</div>
+        <div class="post-comments">View all 1,870 comments</div>
+      </div>
+
+      <!-- POST 3: Sponsored -->
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avi img-3" style="border-radius:50%;"><span style="font-size:16px;">🍰</span></div>
+          <div class="post-info">
+            <div class="post-user">Kashi Bakes <span class="sponsored">• Sponsored</span></div>
+            <div class="post-loc">📍 682016 • 0.8 km</div>
+          </div>
+          <span class="post-pts">🪙 +15</span>
+          <span class="post-more">•••</span>
+        </div>
+        <div class="post-image img-3">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span class="img-emoji">🎂</span>
+          </div>
+          <div class="cta-bar"><button class="cta-btn">Claim Offer →</button></div>
+        </div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-likes">890 likes</div>
+        <div class="post-caption"><span class="user">Kashi Bakes</span> Weekend Cake Fest! 🎂 20% off ALL cakes this Fri-Sun. Tag someone who deserves a treat!</div>
+        <div class="post-comment"><span class="user">priya.m</span> Their black forest is the best in town! 🖤</div>
+        <div class="post-comments">View all 67 comments</div>
+      </div>
+
+      <!-- POST 4: User-Generated Content (regular user turned creator) -->
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avi img-8" style="border-radius:50%;"><span style="font-size:16px;">👩‍💻</span></div>
+          <div class="post-info">
+            <div class="post-user">Meera Nair <span style="font-size:11px;color:var(--g400);">• 2h</span></div>
+            <div style="display:flex;gap:4px;align-items:center;margin-top:2px;">
+              <span class="ugc-badge">✓ USER CREATED</span>
+              <span class="moderation-badge mod-approved">✓ APPROVED</span>
+            </div>
+          </div>
+          <span class="post-pts">🪙 +30</span>
+          <span class="post-more">•••</span>
+        </div>
+        <div class="post-image img-8">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span class="img-emoji">🏖️</span>
+          </div>
+        </div>
+        <div class="carousel-dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-likes">234 likes</div>
+        <div class="post-caption"><span class="user">Meera Nair</span> First time visiting Cherai Beach and I'm in love! The sunset was unreal 🌅✨ Anyone else been here? <span class="tags">#CheraiBeach #KeralaTravel #WeekendVibes</span></div>
+        <div class="post-comment"><span class="user">arjun.s</span> Cherai is underrated! Try the seafood shack near the lighthouse 🦐</div>
+        <div class="post-comments">View all 45 comments</div>
+      </div>
+
+      <!-- POST 5: Poll -->
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avi img-5" style="border-radius:50%;"><span style="font-size:16px;">🗳️</span></div>
+          <div class="post-info">
+            <div class="post-user">Eru Community <span class="verified"><svg viewBox="0 0 12 12"><path d="M3.5 6L5.5 8L8.5 4.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span> <span style="font-size:11px;color:var(--g400);">• 5h</span></div>
+          </div>
+          <span class="post-pts">🪙 +25</span>
+          <span class="post-more">•••</span>
+        </div>
+        <div class="poll-container">
+          <div style="font-size:16px;font-weight:700;color:var(--g800);margin-bottom:10px;">🍜 Best street food in Kochi?</div>
+          <div class="poll-option selected" onclick="this.classList.toggle('selected')">
+            <div class="poll-bar" style="width:42%;background:rgba(232,121,43,0.12);"></div>
+            <div class="poll-content"><span class="poll-text">✓ Sharjah Shake at Beach</span><span class="poll-pct" style="color:var(--orange);">42%</span></div>
+          </div>
+          <div class="poll-option">
+            <div class="poll-bar" style="width:31%;background:rgba(37,99,235,0.06);"></div>
+            <div class="poll-content"><span class="poll-text">Pazhampori from bakery</span><span class="poll-pct" style="color:var(--g500);">31%</span></div>
+          </div>
+          <div class="poll-option">
+            <div class="poll-bar" style="width:18%;background:rgba(37,99,235,0.06);"></div>
+            <div class="poll-content"><span class="poll-text">Fish fry Fort Kochi</span><span class="poll-pct" style="color:var(--g500);">18%</span></div>
+          </div>
+          <div class="poll-option">
+            <div class="poll-bar" style="width:9%;background:rgba(37,99,235,0.06);"></div>
+            <div class="poll-content"><span class="poll-text">Egg puffs anywhere 🥚</span><span class="poll-pct" style="color:var(--g500);">9%</span></div>
+          </div>
+          <div class="poll-total">4,200 votes • <span class="post-pts" style="display:inline;">🪙 +25 earned</span></div>
+        </div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-likes">4,200 likes</div>
+        <div class="post-comments">View all 890 comments</div>
+      </div>
+
+      <!-- POST 6: Another UGC — Reel -->
+      <div class="post">
+        <div class="post-header">
+          <div class="post-avi img-9" style="border-radius:50%;"><span style="font-size:16px;">👨</span></div>
+          <div class="post-info">
+            <div class="post-user">Rohit Menon <span style="font-size:11px;color:var(--g400);">• 4h</span></div>
+            <div style="display:flex;gap:4px;align-items:center;margin-top:2px;">
+              <span class="ugc-badge">✓ USER CREATED</span>
+              <span class="moderation-badge mod-approved">✓ APPROVED</span>
+            </div>
+          </div>
+          <span class="post-pts">🪙 +30</span>
+          <span class="post-more">•••</span>
+        </div>
+        <div class="post-image img-9" style="aspect-ratio:4/5;">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span class="img-emoji">☕</span>
+          </div>
+          <div class="play-btn"><div class="play-tri"></div></div>
+          <div class="badge type-badge" style="top:12px;left:12px;">▶ Reel • 0:45</div>
+        </div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-likes">1,890 likes</div>
+        <div class="post-caption"><span class="user">Rohit Menon</span> Hidden coffee spots in Fort Kochi that tourists don't know about ☕🤫 <span class="more">...more</span></div>
+        <div class="post-comments">View all 234 comments</div>
+      </div>
+
+    </div>
+    <div class="bottom-tab">
+      <button class="active"><span style="font-size:22px;">🏠</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;background:linear-gradient(135deg,var(--orange),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== CREATE SCREEN ===== -->
+  <div class="screen" id="screen-create">
+    <div class="content" style="display:flex;flex-direction:column;">
+      <div class="create-header">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">✕</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Create Post</span>
+        <span style="font-size:14px;font-weight:700;color:var(--blue);cursor:pointer;">Next →</span>
+      </div>
+      <div class="create-tabs">
+        <button class="active">📝 Post</button>
+        <button>📸 Photo</button>
+        <button>🎬 Reel</button>
+        <button>📊 Poll</button>
+        <button>📖 Thread</button>
+      </div>
+      <div class="create-body" style="flex:1;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:18px;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">😊</div>
+          <textarea placeholder="What's on your mind? Share a photo, write a review, tell a story...">Just discovered the most amazing little bookshop in Fort Kochi — they have a rooftop reading area with a view of the harbour! 📚🌅 
+
+Anyone else been to @PageTurnerKochi? Their chai is almost as good as their collection.</textarea>
+        </div>
+        <!-- Media preview -->
+        <div class="media-grid" style="margin-top:16px;">
+          <div class="item"><div class="img-12" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">📚</span></div></div>
+          <div class="item"><div class="img-8" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🌅</span></div></div>
+          <div class="item"><div class="add">＋</div></div>
+        </div>
+        <!-- Tags -->
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;font-weight:600;color:var(--g500);margin-bottom:6px;">Add tags</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(37,99,235,0.08);color:#00376B;border:0.5px solid rgba(37,99,235,0.15);">#FortKochi</span>
+            <span style="padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(37,99,235,0.08);color:#00376B;border:0.5px solid rgba(37,99,235,0.15);">#BookLovers</span>
+            <span style="padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;background:rgba(37,99,235,0.08);color:#00376B;border:0.5px solid rgba(37,99,235,0.15);">#HiddenGems</span>
+            <span style="padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;background:var(--g100);color:var(--g500);">+ Add</span>
+          </div>
+        </div>
+        <!-- Location -->
+        <div style="margin-top:14px;display:flex;align-items:center;gap:8px;padding:10px 0;border-top:0.5px solid var(--g100);">
+          <span style="font-size:16px;">📍</span>
+          <span style="font-size:14px;color:var(--g800);">Fort Kochi, 682001</span>
+          <span style="font-size:11px;color:var(--g400);margin-left:auto;">Change</span>
+        </div>
+        <!-- Moderation notice -->
+        <div style="margin-top:8px;background:rgba(217,119,6,0.06);border:0.5px solid rgba(217,119,6,0.15);border-radius:10px;padding:12px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;">🛡️</span>
+            <span style="font-size:12px;font-weight:700;color:var(--gold);">Content Review</span>
+          </div>
+          <div style="font-size:11px;color:var(--g500);margin-top:4px;line-height:1.5;">Your post will be reviewed by Eru's moderation team before it appears in the public feed. Most posts are approved within 15 minutes. You'll earn <strong style="color:var(--green);">+30 pts</strong> once approved.</div>
+        </div>
+        <!-- Points preview -->
+        <div style="margin-top:12px;background:rgba(16,185,129,0.06);border:0.5px solid rgba(16,185,129,0.15);border-radius:10px;padding:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px;">🪙 Points You'll Earn</div>
+          <div style="display:flex;gap:16px;">
+            <div><div style="font-size:11px;color:var(--g400);">Post approved</div><div style="font-size:16px;font-weight:700;color:var(--green);">+30</div></div>
+            <div><div style="font-size:11px;color:var(--g400);">Each like received</div><div style="font-size:16px;font-weight:700;color:var(--green);">+1</div></div>
+            <div><div style="font-size:11px;color:var(--g400);">If it trends</div><div style="font-size:16px;font-weight:700;color:var(--orange);">+200</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="create-toolbar">
+        <button>📷</button><button>🎬</button><button>📊</button><button>📍</button><button>👤</button><button>🎵</button>
+        <button class="share-btn" onclick="showScreen('moderation')">Share →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MY CONTENT / MODERATION ===== -->
+  <div class="screen" id="screen-moderation">
+    <div class="content">
+      <div class="create-header">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">My Content</span>
+        <span style="font-size:14px;font-weight:700;color:var(--blue);cursor:pointer;" onclick="showScreen('create')">+ New</span>
+      </div>
+      <!-- Stats bar -->
+      <div style="display:flex;gap:8px;padding:12px 14px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <div style="flex:1;text-align:center;background:rgba(16,185,129,0.06);border-radius:10px;padding:8px;">
+          <div style="font-size:20px;font-weight:800;color:var(--green);">23</div>
+          <div style="font-size:10px;color:var(--g400);">Published</div>
+        </div>
+        <div style="flex:1;text-align:center;background:rgba(217,119,6,0.06);border-radius:10px;padding:8px;">
+          <div style="font-size:20px;font-weight:800;color:var(--gold);">2</div>
+          <div style="font-size:10px;color:var(--g400);">In Review</div>
+        </div>
+        <div style="flex:1;text-align:center;background:rgba(237,73,86,0.06);border-radius:10px;padding:8px;">
+          <div style="font-size:20px;font-weight:800;color:var(--red);">1</div>
+          <div style="font-size:10px;color:var(--g400);">Declined</div>
+        </div>
+        <div style="flex:1;text-align:center;background:rgba(124,58,237,0.06);border-radius:10px;padding:8px;">
+          <div style="font-size:20px;font-weight:800;color:var(--purple);">8,420</div>
+          <div style="font-size:10px;color:var(--g400);">Total Likes</div>
+        </div>
+      </div>
+      <!-- Creator earnings -->
+      <div style="margin:8px;background:linear-gradient(135deg,var(--navy),#0F2544);border-radius:14px;padding:16px;">
+        <div style="font-size:10px;color:var(--g400);letter-spacing:1px;font-weight:600;">CREATOR EARNINGS THIS MONTH</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;">
+          <span style="font-size:32px;font-weight:800;color:#fff;">1,240</span>
+          <span style="font-size:14px;color:var(--orange);font-weight:600;">pts</span>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;">
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:var(--green);">690</div>
+            <div style="font-size:9px;color:var(--g400);">Post Approvals</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:var(--orange);">350</div>
+            <div style="font-size:9px;color:var(--g400);">Engagement Bonus</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:var(--gold);">200</div>
+            <div style="font-size:9px;color:var(--g400);">1 Trending Post!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending review -->
+      <div class="mod-panel">
+        <div class="mod-header"><h3>⏳ Pending Review</h3><span style="font-size:11px;color:var(--gold);font-weight:600;">2 posts</span></div>
+        <div class="mod-item">
+          <div class="mod-thumb img-12" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">📚</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Hidden bookshop in Fort Kochi</div>
+            <div class="mod-meta">Submitted 8 min ago • Photo + Text</div>
+          </div>
+          <span class="moderation-badge mod-pending">⏳ REVIEW</span>
+        </div>
+        <div class="mod-item">
+          <div class="mod-thumb img-6" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🏋️‍♀️</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Morning workout routine at Lulu Mall</div>
+            <div class="mod-meta">Submitted 25 min ago • Reel 0:38</div>
+          </div>
+          <span class="moderation-badge mod-pending">⏳ REVIEW</span>
+        </div>
+      </div>
+
+      <!-- Recently published -->
+      <div class="mod-panel">
+        <div class="mod-header"><h3>✓ Published</h3><span style="font-size:11px;color:var(--green);font-weight:600;">23 posts</span></div>
+        <div class="mod-item">
+          <div class="mod-thumb img-8" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🏖️</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Cherai Beach sunset 🌅</div>
+            <div class="mod-meta">2h ago • 234 likes • 45 comments • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
+          </div>
+          <span class="moderation-badge mod-approved">✓ LIVE</span>
+        </div>
+        <div class="mod-item">
+          <div class="mod-thumb img-9" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">☕</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Hidden coffee spots Fort Kochi</div>
+            <div class="mod-meta">4h ago • 1,890 likes • 234 comments • <span style="color:var(--orange);font-weight:600;">🔥 TRENDING +200</span></div>
+          </div>
+          <span class="moderation-badge mod-approved">✓ LIVE</span>
+        </div>
+        <div class="mod-item">
+          <div class="mod-thumb img-1" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🌴</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Backwaters photography guide</div>
+            <div class="mod-meta">1d ago • 567 likes • 89 comments • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
+          </div>
+          <span class="moderation-badge mod-approved">✓ LIVE</span>
+        </div>
+        <div class="mod-item">
+          <div class="mod-thumb img-2" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🍳</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Mom's special avial recipe</div>
+            <div class="mod-meta">3d ago • 2,100 likes • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
+          </div>
+          <span class="moderation-badge mod-approved">✓ LIVE</span>
+        </div>
+      </div>
+
+      <!-- Declined -->
+      <div class="mod-panel" style="margin-bottom:16px;">
+        <div class="mod-header"><h3>✕ Declined</h3><span style="font-size:11px;color:var(--red);font-weight:600;">1 post</span></div>
+        <div class="mod-item">
+          <div class="mod-thumb img-11" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🎵</span></div>
+          <div class="mod-info">
+            <div class="mod-title">Concert video clip</div>
+            <div class="mod-meta">5d ago • Reason: <span style="color:var(--red);">Copyright music detected</span></div>
+            <div style="margin-top:4px;display:flex;gap:6px;">
+              <span style="font-size:11px;font-weight:600;color:var(--blue);cursor:pointer;">Edit & Resubmit</span>
+              <span style="font-size:11px;color:var(--g400);">|</span>
+              <span style="font-size:11px;font-weight:600;color:var(--g400);cursor:pointer;">Appeal</span>
+            </div>
+          </div>
+          <span class="moderation-badge mod-rejected">✕ DECLINED</span>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button class="active" onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE ===== -->
+  <div class="screen" id="screen-profile">
+    <div class="content">
+      <div class="profile-header">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:18px;font-weight:700;color:var(--g800);">arjun.s</span>
+          <span class="verified" style="width:14px;height:14px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;"><svg viewBox="0 0 12 12" width="9" height="9"><path d="M3.5 6L5.5 8L8.5 4.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span>
+          <span style="font-size:12px;color:var(--g400);">▾</span>
+        </div>
+        <div style="display:flex;gap:16px;"><span style="font-size:20px;cursor:pointer;" onclick="showScreen('create')">➕</span><span style="font-size:20px;cursor:pointer;" onclick="showScreen('settings')">☰</span></div>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-top">
+          <div class="profile-avi img-4" style="display:flex;align-items:center;justify-content:center;border-radius:50%;border:3px solid var(--orange);"><span style="font-size:40px;">😊</span></div>
+          <div class="stat-row">
+            <div class="stat-item"><div class="num">47</div><div class="label">Posts</div></div>
+            <div class="stat-item"><div class="num">234</div><div class="label">Followers</div></div>
+            <div class="stat-item"><div class="num">412</div><div class="label">Following</div></div>
+          </div>
+        </div>
+        <div class="profile-bio">
+          <div class="name">Arjun S.</div>
+          <div class="text">Tech enthusiast, foodie, startup junkie 🚀<br>Building in public from Kochi 📍<br>Creator on Eru since March 2026 ✨</div>
+        </div>
+        <div class="profile-badges">
+          <div class="badge" style="background:rgba(232,121,43,0.1);color:var(--orange);">🔥 Influencer</div>
+          <div class="badge" style="background:rgba(16,185,129,0.08);color:var(--green);cursor:pointer;">🪙 4,820 pts</div>
+          <div class="badge" style="background:rgba(232,121,43,0.06);color:var(--orange);">🔥 24d streak</div>
+          <div class="badge" style="background:rgba(124,58,237,0.08);color:var(--purple);">✍️ Creator</div>
+        </div>
+        <div class="profile-actions">
+          <button class="edit" onclick="showScreen('settings')">Edit Profile</button>
+          <button class="create" onclick="showScreen('create')">✨ Create</button>
+          <button class="edit" style="flex:0;width:36px;font-size:14px;">👤</button>
+        </div>
+      </div>
+      <!-- Highlights -->
+      <div class="highlights">
+        <div class="highlight"><div class="circle">🍜</div><div class="hl-name">Food</div></div>
+        <div class="highlight"><div class="circle">✈️</div><div class="hl-name">Travel</div></div>
+        <div class="highlight"><div class="circle">💻</div><div class="hl-name">Tech</div></div>
+        <div class="highlight"><div class="circle">⭐</div><div class="hl-name">Reviews</div></div>
+        <div class="highlight"><div class="circle">📸</div><div class="hl-name">My Shots</div></div>
+        <div class="highlight"><div class="circle">➕</div><div class="hl-name">New</div></div>
+      </div>
+      <!-- Grid tabs -->
+      <div class="grid-tabs">
+        <button class="active">⊞</button>
+        <button>▶</button>
+        <button>✍️</button>
+        <button>🔖</button>
+        <button>👤</button>
+      </div>
+      <!-- Photo grid -->
+      <div class="photo-grid">
+        <div class="cell img-1" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🌴</span></div>
+        <div class="cell img-2" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🍳</span><div class="indicator">▶</div></div>
+        <div class="cell img-4" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🚀</span><div class="indicator">◫</div></div>
+        <div class="cell img-8" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🏖️</span></div>
+        <div class="cell img-9" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">☕</span><div class="indicator">▶</div></div>
+        <div class="cell img-6" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🏋️‍♀️</span></div>
+        <div class="cell img-12" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">📚</span></div>
+        <div class="cell img-3" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🎂</span></div>
+        <div class="cell img-7" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🎭</span><div class="indicator">▶</div></div>
+        <div class="cell img-10" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">💻</span></div>
+        <div class="cell img-5" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🎵</span></div>
+        <div class="cell img-11" style="display:flex;align-items:center;justify-content:center;"><span class="img-emoji-sm">🎬</span><div class="indicator">◫</div></div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button class="active"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== EXPLORE ===== -->
+  <div class="screen" id="screen-explore">
+    <div class="content">
+      <div style="padding:6px 12px 8px;background:var(--card);">
+        <div style="background:var(--g100);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;color:var(--g400);">🔍</span><span style="font-size:15px;color:var(--g400);">Search</span></div>
+      </div>
+      <div style="padding:4px 12px 8px;display:flex;gap:6px;overflow-x:auto;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <span style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;background:var(--g800);color:#fff;">For You</span>
+        <span style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);">Food</span>
+        <span style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);">Travel</span>
+        <span style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);">Tech</span>
+        <span style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);">Fitness</span>
+        <span style="padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);">Local</span>
+      </div>
+      <div style="padding:1.5px;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:130px;gap:1.5px;">
+        <div class="img-1" style="grid-row:span 2;display:flex;align-items:center;justify-content:center;position:relative;"><span style="font-size:44px;">🌴</span><span class="post-pts" style="position:absolute;bottom:6px;right:6px;background:rgba(16,185,129,0.3);">🪙+8</span></div>
+        <div class="img-2" style="display:flex;align-items:center;justify-content:center;position:relative;"><span style="font-size:30px;">🍳</span><div style="position:absolute;bottom:6px;left:6px;font-size:10px;color:#fff;">▶ Reel</div><span class="post-pts" style="position:absolute;bottom:6px;right:6px;background:rgba(16,185,129,0.3);">🪙+5</span></div>
+        <div class="img-4" style="display:flex;align-items:center;justify-content:center;position:relative;"><span style="font-size:30px;">🏏</span><div style="position:absolute;top:6px;left:6px;background:var(--red);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:3px;">LIVE</div></div>
+        <div class="img-5" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:30px;">📸</span></div>
+        <div class="img-3" style="grid-column:span 2;display:flex;align-items:center;justify-content:center;position:relative;"><span style="font-size:44px;">🎂</span><div style="position:absolute;bottom:6px;left:6px;font-size:9px;color:#fff;background:rgba(0,0,0,0.4);padding:2px 6px;border-radius:3px;">Ad</div><span class="post-pts" style="position:absolute;bottom:6px;right:6px;background:rgba(16,185,129,0.3);">🪙+15</span></div>
+        <div class="img-6" style="display:flex;align-items:center;justify-content:center;position:relative;"><span style="font-size:30px;">🧘‍♀️</span><div style="position:absolute;bottom:6px;left:6px;font-size:10px;color:#fff;">▶</div></div>
+        <div class="img-7" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:30px;">🎭</span></div>
+        <div class="img-8" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:30px;">🏖️</span></div>
+        <div class="img-9" style="grid-row:span 2;display:flex;align-items:center;justify-content:center;"><span style="font-size:44px;">☕</span></div>
+        <div class="img-10" style="display:flex;align-items:center;justify-content:center;position:relative;"><span style="font-size:30px;">💻</span><div style="position:absolute;bottom:6px;left:6px;font-size:10px;color:#fff;">▶ Reel</div></div>
+        <div class="img-11" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:30px;">🎬</span></div>
+        <div class="img-12" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:30px;">📚</span></div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button class="active"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== REELS ===== -->
+  <div class="screen" id="screen-reels">
+    <div class="content" style="display:flex;flex-direction:column;">
+      <div style="flex:1;background:linear-gradient(180deg,#7c2d12,#451a03);position:relative;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;padding:8px 14px;z-index:2;">
+          <span style="font-size:18px;font-weight:800;color:#fff;">Reels</span>
+          <span style="font-size:20px;cursor:pointer;" onclick="showScreen('create')">📷</span>
+        </div>
+        <div style="display:flex;justify-content:center;gap:20px;padding-bottom:8px;z-index:2;">
+          <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.5);padding-bottom:4px;">Following</span>
+          <span style="font-size:14px;font-weight:700;color:#fff;border-bottom:2px solid #fff;padding-bottom:4px;">For You</span>
+          <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.5);padding-bottom:4px;">Local</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;">
+          <span style="font-size:100px;filter:drop-shadow(0 8px 32px rgba(0,0,0,0.3));">🍳</span>
+          <div style="position:absolute;top:12px;right:12px;background:rgba(16,185,129,0.25);border-radius:10px;padding:5px 10px;">
+            <div style="font-size:14px;font-weight:800;color:var(--green);">+5 pts</div>
+            <div style="font-size:8px;color:rgba(255,255,255,0.5);text-align:center;">per min</div>
+          </div>
+          <div style="position:absolute;right:14px;bottom:24px;display:flex;flex-direction:column;gap:18px;align-items:center;">
+            <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">❤️</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">24.5K</div></div>
+            <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">💬</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">1.2K</div></div>
+            <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">📤</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">Share</div></div>
+            <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">🔖</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">Save</div></div>
+            <div style="width:28px;height:28px;border-radius:6px;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,0.1);">🎵</div>
+          </div>
+          <div style="position:absolute;bottom:20px;left:14px;right:60px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="width:34px;height:34px;border-radius:17px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;" class="img-2">👨‍🍳</div>
+              <span style="font-size:14px;font-weight:700;color:#fff;">ChefRaju</span>
+              <span class="verified" style="width:14px;height:14px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;"><svg viewBox="0 0 12 12" width="9" height="9"><path d="M3.5 6L5.5 8L8.5 4.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span>
+              <button style="font-size:12px;font-weight:700;color:#fff;background:transparent;border:1px solid rgba(255,255,255,0.5);border-radius:6px;padding:3px 12px;cursor:pointer;">Follow</button>
+              <span class="ugc-badge" style="background:rgba(13,148,136,0.3);">CREATOR</span>
+            </div>
+            <div style="font-size:13px;color:#fff;line-height:1.4;margin-bottom:8px;">Kerala fish curry in 60 seconds 🐟🔥 #KeralaCooking</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:12px;">🎵</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.7);">Original Audio — ChefRaju</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button class="active"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== WALLET SCREEN ===== -->
+  <div class="screen" id="screen-wallet">
+    <div class="content">
+      <!-- Header -->
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Eru Wallet</span>
+        <span style="font-size:14px;color:var(--g400);">History</span>
+      </div>
+
+      <!-- Balance card -->
+      <div style="margin:12px;background:linear-gradient(135deg,var(--navy),#0F2544);border-radius:20px;padding:24px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:60px;background:rgba(232,121,43,0.08);"></div>
+        <div style="position:absolute;bottom:-30px;left:-30px;width:100px;height:100px;border-radius:50px;background:rgba(13,148,136,0.06);"></div>
+        <div style="font-size:10px;color:var(--g400);letter-spacing:2px;font-weight:600;">TOTAL BALANCE</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px;">
+          <span style="font-size:44px;font-weight:900;color:#fff;">4,820</span>
+          <span style="font-size:16px;color:var(--orange);font-weight:700;">pts</span>
+        </div>
+        <div style="font-size:13px;color:var(--g400);margin-top:2px;">Equivalent value: <strong style="color:#fff;">≈ ₹48.20</strong> in rewards</div>
+        <!-- Quick actions -->
+        <div style="display:flex;gap:8px;margin-top:18px;">
+          <div onclick="showScreen('redeem')" style="flex:1;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 0;text-align:center;cursor:pointer;">
+            <div style="font-size:22px;">🛒</div>
+            <div style="font-size:10px;color:#fff;font-weight:600;margin-top:2px;">Shop</div>
+          </div>
+          <div onclick="showScreen('redeem')" style="flex:1;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 0;text-align:center;cursor:pointer;">
+            <div style="font-size:22px;">🏪</div>
+            <div style="font-size:10px;color:#fff;font-weight:600;margin-top:2px;">Local Offers</div>
+          </div>
+          <div onclick="showScreen('redeem')" style="flex:1;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 0;text-align:center;cursor:pointer;">
+            <div style="font-size:22px;">🎁</div>
+            <div style="font-size:10px;color:#fff;font-weight:600;margin-top:2px;">Gift Cards</div>
+          </div>
+          <div onclick="showScreen('redeem')" style="flex:1;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 0;text-align:center;cursor:pointer;">
+            <div style="font-size:22px;">📱</div>
+            <div style="font-size:10px;color:#fff;font-weight:600;margin-top:2px;">Recharge</div>
+          </div>
+          <div onclick="showScreen('redeem')" style="flex:1;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 0;text-align:center;cursor:pointer;">
+            <div style="font-size:22px;">💝</div>
+            <div style="font-size:10px;color:#fff;font-weight:600;margin-top:2px;">Donate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily progress -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;padding:16px;border:0.5px solid var(--g200);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Today's Earnings</span>
+          <span style="font-size:13px;font-weight:700;color:var(--orange);">145 / 250 pts</span>
+        </div>
+        <div style="height:8px;background:var(--g100);border-radius:4px;overflow:hidden;">
+          <div style="width:58%;height:100%;background:linear-gradient(90deg,var(--orange),var(--gold));border-radius:4px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span style="font-size:10px;color:var(--g400);">🔥 24-day streak</span>
+          <span style="font-size:10px;color:var(--teal);">105 pts to daily goal!</span>
+        </div>
+      </div>
+
+      <!-- Tier progress -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;padding:16px;border:0.5px solid var(--g200);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:20px;">🔥</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--orange);">Influencer Tier</div>
+            <div style="font-size:11px;color:var(--g400);">1.5x earning multiplier active</div>
+          </div>
+          <div style="margin-left:auto;text-align:right;">
+            <div style="font-size:11px;color:var(--g400);">Next: 👑 Champion</div>
+            <div style="font-size:12px;font-weight:700;color:var(--purple);">45,180 / 50,000 pts</div>
+          </div>
+        </div>
+        <div style="height:6px;background:var(--g100);border-radius:3px;overflow:hidden;">
+          <div style="width:90%;height:100%;background:linear-gradient(90deg,var(--orange),var(--purple));border-radius:3px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--purple);margin-top:4px;text-align:right;">4,820 pts away from 2.0x multiplier! 🚀</div>
+      </div>
+
+      <!-- Earning history -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;background:var(--g50);border-bottom:0.5px solid var(--g100);">
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Recent Activity</span>
+          <span style="font-size:12px;color:var(--blue);font-weight:600;">See All</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;" class="img-1">📖</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Read 3 articles</div><div style="font-size:11px;color:var(--g400);">12 min ago</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">+18</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;" class="img-2">🍳</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Watched ChefRaju video</div><div style="font-size:11px;color:var(--g400);">25 min ago</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">+9</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;" class="img-5">🗳️</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Voted: Best street food poll</div><div style="font-size:11px;color:var(--g400);">1h ago</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">+25</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(232,121,43,0.1);">🔥</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Daily check-in bonus</div><div style="font-size:11px;color:var(--g400);">2h ago</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">+25</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;" class="img-3">🍰</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Viewed Kashi Bakes ad</div><div style="font-size:11px;color:var(--g400);">2h ago</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">+2</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(16,185,129,0.1);">✍️</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Post approved: Beach sunset</div><div style="font-size:11px;color:var(--g400);">3h ago</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">+30</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;" class="img-3">🎫</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--red);">Redeemed: Kashi Bakes 20% off</div><div style="font-size:11px;color:var(--g400);">Yesterday</div></div>
+          <span style="font-size:13px;font-weight:700;color:var(--red);">-200</span>
+        </div>
+      </div>
+
+      <!-- Expiry warning -->
+      <div style="margin:0 12px 16px;background:rgba(217,119,6,0.06);border:0.5px solid rgba(217,119,6,0.15);border-radius:12px;padding:12px 14px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:14px;">⚠️</span>
+          <span style="font-size:12px;font-weight:700;color:var(--gold);">320 pts expiring in 12 days</span>
+        </div>
+        <div style="font-size:11px;color:var(--g500);margin-top:4px;">Points earned before Oct 15 will expire. <span style="color:var(--blue);font-weight:600;cursor:pointer;" onclick="showScreen('redeem')">Redeem now →</span></div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== REDEEM / REWARDS STORE ===== -->
+  <div class="screen" id="screen-redeem">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('wallet')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Rewards Store</span>
+        <div style="display:flex;align-items:center;gap:4px;background:rgba(16,185,129,0.1);padding:3px 10px;border-radius:12px;"><span style="font-size:10px;">🪙</span><span style="font-size:12px;font-weight:700;color:var(--green);">4,820</span></div>
+      </div>
+
+      <!-- Category tabs -->
+      <div style="display:flex;gap:6px;padding:10px 12px;overflow-x:auto;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--g800);color:#fff;white-space:nowrap;">🔥 All</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);white-space:nowrap;">🏪 Local</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);white-space:nowrap;">🎁 Gift Cards</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);white-space:nowrap;">📱 Recharge</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);white-space:nowrap;">💝 Donate</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g700);border:0.5px solid var(--g200);white-space:nowrap;">⭐ Premium</span>
+      </div>
+
+      <!-- Featured offers -->
+      <div style="padding:12px;">
+        <div style="font-size:15px;font-weight:700;color:var(--g800);margin-bottom:10px;">🔥 Hot Deals Near You</div>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;">
+          <!-- Offer 1 -->
+          <div style="min-width:240px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;cursor:pointer;" onclick="showScreen('myrewards')">
+            <div class="img-3" style="height:100px;display:flex;align-items:center;justify-content:center;position:relative;">
+              <span style="font-size:48px;">🎂</span>
+              <div style="position:absolute;top:8px;right:8px;background:rgba(237,73,86,0.9);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;">20% OFF</div>
+            </div>
+            <div style="padding:10px 12px;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">Kashi Bakes</div>
+              <div style="font-size:11px;color:var(--g400);">📍 682016 • 0.8 km</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="display:flex;align-items:center;gap:3px;"><span style="font-size:10px;">🪙</span><span style="font-size:14px;font-weight:700;color:var(--orange);">200 pts</span></div>
+                <div style="background:var(--orange);color:#fff;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;">Claim</div>
+              </div>
+            </div>
+          </div>
+          <!-- Offer 2 -->
+          <div style="min-width:240px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;cursor:pointer;">
+            <div class="img-7" style="height:100px;display:flex;align-items:center;justify-content:center;position:relative;">
+              <span style="font-size:48px;">💇‍♀️</span>
+              <div style="position:absolute;top:8px;right:8px;background:rgba(237,73,86,0.9);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;">₹100 OFF</div>
+            </div>
+            <div style="padding:10px 12px;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">Glow Salon</div>
+              <div style="font-size:11px;color:var(--g400);">📍 682017 • 1.2 km</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="display:flex;align-items:center;gap:3px;"><span style="font-size:10px;">🪙</span><span style="font-size:14px;font-weight:700;color:var(--orange);">300 pts</span></div>
+                <div style="background:var(--orange);color:#fff;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;">Claim</div>
+              </div>
+            </div>
+          </div>
+          <!-- Offer 3 -->
+          <div style="min-width:240px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;cursor:pointer;">
+            <div class="img-9" style="height:100px;display:flex;align-items:center;justify-content:center;position:relative;">
+              <span style="font-size:48px;">☕</span>
+              <div style="position:absolute;top:8px;right:8px;background:rgba(237,73,86,0.9);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;">FREE</div>
+            </div>
+            <div style="padding:10px 12px;">
+              <div style="font-size:14px;font-weight:700;color:var(--g800);">Brew District</div>
+              <div style="font-size:11px;color:var(--g400);">📍 682001 • 2.1 km</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="display:flex;align-items:center;gap:3px;"><span style="font-size:10px;">🪙</span><span style="font-size:14px;font-weight:700;color:var(--orange);">150 pts</span></div>
+                <div style="background:var(--orange);color:#fff;padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;">Claim</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gift Cards -->
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:15px;font-weight:700;color:var(--g800);margin-bottom:10px;">🎁 Gift Cards</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:12px;text-align:center;cursor:pointer;">
+            <div class="img-3" style="width:48px;height:48px;border-radius:10px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;">🛒</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:6px;">Amazon</div>
+            <div style="font-size:10px;color:var(--g400);">From 100 pts</div>
+          </div>
+          <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:12px;text-align:center;cursor:pointer;">
+            <div class="img-4" style="width:48px;height:48px;border-radius:10px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;">🛍️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:6px;">Flipkart</div>
+            <div style="font-size:10px;color:var(--g400);">From 100 pts</div>
+          </div>
+          <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:12px;text-align:center;cursor:pointer;">
+            <div class="img-2" style="width:48px;height:48px;border-radius:10px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;">🍕</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:6px;">Swiggy</div>
+            <div style="font-size:10px;color:var(--g400);">From 200 pts</div>
+          </div>
+          <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:12px;text-align:center;cursor:pointer;">
+            <div class="img-10" style="width:48px;height:48px;border-radius:10px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;">🎬</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:6px;">BookMyShow</div>
+            <div style="font-size:10px;color:var(--g400);">From 300 pts</div>
+          </div>
+          <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:12px;text-align:center;cursor:pointer;">
+            <div class="img-6" style="width:48px;height:48px;border-radius:10px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;">🥦</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:6px;">BigBasket</div>
+            <div style="font-size:10px;color:var(--g400);">From 200 pts</div>
+          </div>
+          <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:12px;text-align:center;cursor:pointer;">
+            <div class="img-8" style="width:48px;height:48px;border-radius:10px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;">👕</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:6px;">Myntra</div>
+            <div style="font-size:10px;color:var(--g400);">From 500 pts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Recharge -->
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:15px;font-weight:700;color:var(--g800);margin-bottom:10px;">📱 Mobile Recharge</div>
+        <div style="background:var(--card);border-radius:14px;border:0.5px solid var(--g200);padding:16px;">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+            <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;" class="img-4">📱</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;color:var(--g800);">+91 98765 43210</div>
+              <div style="font-size:11px;color:var(--g400);">Jio • Last recharge: ₹239</div>
+            </div>
+            <span style="font-size:12px;color:var(--blue);font-weight:600;">Change</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;background:var(--g50);border-radius:10px;padding:10px;text-align:center;border:0.5px solid var(--g200);cursor:pointer;">
+              <div style="font-size:12px;font-weight:700;color:var(--g800);">₹149</div>
+              <div style="font-size:10px;color:var(--orange);font-weight:600;">1,490 pts</div>
+            </div>
+            <div style="flex:1;background:rgba(232,121,43,0.06);border-radius:10px;padding:10px;text-align:center;border:1.5px solid var(--orange);cursor:pointer;">
+              <div style="font-size:12px;font-weight:700;color:var(--g800);">₹239</div>
+              <div style="font-size:10px;color:var(--orange);font-weight:600;">2,390 pts</div>
+            </div>
+            <div style="flex:1;background:var(--g50);border-radius:10px;padding:10px;text-align:center;border:0.5px solid var(--g200);cursor:pointer;">
+              <div style="font-size:12px;font-weight:700;color:var(--g800);">₹479</div>
+              <div style="font-size:10px;color:var(--orange);font-weight:600;">4,790 pts</div>
+            </div>
+          </div>
+          <button style="width:100%;margin-top:12px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px 0;font-size:14px;font-weight:700;cursor:pointer;">Recharge with 2,390 pts →</button>
+        </div>
+      </div>
+
+      <!-- Donate -->
+      <div style="padding:0 12px 16px;">
+        <div style="font-size:15px;font-weight:700;color:var(--g800);margin-bottom:10px;">💝 Donate (Eru Matches +20%)</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:14px;text-align:center;cursor:pointer;">
+            <div style="font-size:28px;margin-bottom:4px;">🌳</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);">Plant a Tree</div>
+            <div style="font-size:10px;color:var(--g400);">500 pts = 1 tree</div>
+            <div style="font-size:9px;color:var(--green);font-weight:600;margin-top:4px;">Eru adds +100 pts match</div>
+          </div>
+          <div style="flex:1;background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:14px;text-align:center;cursor:pointer;">
+            <div style="font-size:28px;margin-bottom:4px;">📚</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);">Books for Kids</div>
+            <div style="font-size:10px;color:var(--g400);">200 pts = 1 book</div>
+            <div style="font-size:9px;color:var(--green);font-weight:600;margin-top:4px;">Eru adds +40 pts match</div>
+          </div>
+          <div style="flex:1;background:var(--card);border-radius:12px;border:0.5px solid var(--g200);padding:14px;text-align:center;cursor:pointer;">
+            <div style="font-size:28px;margin-bottom:4px;">🏘️</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g800);">Local Cause</div>
+            <div style="font-size:10px;color:var(--g400);">Any amount</div>
+            <div style="font-size:9px;color:var(--green);font-weight:600;margin-top:4px;">Eru adds +20% match</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== MY REWARDS (Claimed) ===== -->
+  <div class="screen" id="screen-myrewards">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('wallet')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">My Rewards</span>
+        <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;" onclick="showScreen('redeem')">+ Get More</span>
+      </div>
+
+      <!-- Active filter -->
+      <div style="display:flex;gap:6px;padding:10px 12px;background:var(--card);border-bottom:0.5px solid var(--g100);overflow-x:auto;">
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--green);color:#fff;white-space:nowrap;">Active (3)</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--purple);color:#fff;white-space:nowrap;">⭐ Watchlist (8)</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">Used (12)</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">Expired (2)</span>
+      </div>
+
+      <!-- Active reward 1 -->
+      <div style="margin:12px;background:var(--card);border-radius:16px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div class="img-3" style="height:80px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:#fff;">20% OFF</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.8);">All cakes & pastries</div>
+          </div>
+          <span style="font-size:48px;">🎂</span>
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:16px;font-weight:700;color:var(--g800);">Kashi Bakes</div>
+              <div style="font-size:12px;color:var(--g400);">📍 682016 • Valid till Apr 20</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.1);color:var(--green);font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;">ACTIVE</div>
+          </div>
+          <!-- QR code placeholder -->
+          <div style="margin-top:14px;background:var(--g50);border-radius:12px;padding:16px;text-align:center;border:1px dashed var(--g300);">
+            <div style="width:120px;height:120px;background:var(--card);border-radius:8px;margin:0 auto;display:flex;align-items:center;justify-content:center;border:1px solid var(--g200);">
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:80px;">
+                <div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div>
+                <div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div>
+                <div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div>
+                <div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div>
+                <div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:transparent;height:14px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div><div style="background:var(--g800);height:14px;border-radius:1px;"></div>
+              </div>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--g800);margin-top:8px;">Show this QR at the store</div>
+            <div style="font-size:11px;color:var(--g400);margin-top:2px;">Code: ERU-KB-7842</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button style="flex:1;background:var(--g100);border:none;border-radius:8px;padding:10px 0;font-size:13px;font-weight:600;color:var(--g800);cursor:pointer;">📍 Get Directions</button>
+            <button style="flex:1;background:var(--blue);border:none;border-radius:8px;padding:10px 0;font-size:13px;font-weight:600;color:#fff;cursor:pointer;">📤 Share</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active reward 2 -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);padding:14px;display:flex;gap:12px;align-items:center;">
+        <div class="img-7" style="width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:28px;">💇‍♀️</span></div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--g800);">₹100 Off — Glow Salon</div>
+          <div style="font-size:11px;color:var(--g400);">📍 682017 • Valid till Apr 25</div>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <span style="background:rgba(16,185,129,0.1);color:var(--green);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">ACTIVE</span>
+            <span style="font-size:10px;color:var(--g400);">Code: ERU-GS-3291</span>
+          </div>
+        </div>
+        <span style="font-size:14px;color:var(--blue);font-weight:600;">Use →</span>
+      </div>
+
+      <!-- Active reward 3 -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);padding:14px;display:flex;gap:12px;align-items:center;">
+        <div class="img-9" style="width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:28px;">☕</span></div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--g800);">Free Coffee — Brew District</div>
+          <div style="font-size:11px;color:var(--g400);">📍 682001 • Valid till Apr 18</div>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <span style="background:rgba(16,185,129,0.1);color:var(--green);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">ACTIVE</span>
+            <span style="font-size:10px;color:var(--orange);font-weight:600;">⚡ Expires in 3 days</span>
+          </div>
+        </div>
+        <span style="font-size:14px;color:var(--blue);font-weight:600;">Use →</span>
+      </div>
+
+      <!-- Previously used -->
+
+      <!-- ===== INTERESTED OFFERS / WATCHLIST ===== -->
+      <div style="margin:0 12px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--g800);">⭐ My Watchlist</div>
+            <div style="font-size:11px;color:var(--g400);">Stores, brands & products you follow — offers highlighted first</div>
+          </div>
+          <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;">Manage</span>
+        </div>
+
+        <!-- Followed stores/brands as scrollable badges -->
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;">
+          <div style="min-width:72px;text-align:center;cursor:pointer;position:relative;">
+            <div class="img-3" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--orange);">🍰</div>
+            <div style="position:absolute;top:-2px;right:4px;width:20px;height:20px;border-radius:10px;background:var(--red);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:800;">2</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">Kashi Bakes</div>
+            <div style="font-size:8px;font-weight:700;color:var(--orange);">2 OFFERS</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;position:relative;">
+            <div class="img-4" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--blue);">📱</div>
+            <div style="position:absolute;top:-2px;right:4px;width:20px;height:20px;border-radius:10px;background:var(--red);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:800;">1</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">Apple</div>
+            <div style="font-size:8px;font-weight:700;color:var(--blue);">NEW DEAL</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;position:relative;">
+            <div class="img-9" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--gold);">☕</div>
+            <div style="position:absolute;top:-2px;right:4px;width:20px;height:20px;border-radius:10px;background:var(--red);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:800;">1</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">Brew District</div>
+            <div style="font-size:8px;font-weight:700;color:var(--green);">1 OFFER</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;">
+            <div class="img-7" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--pink);">💇‍♀️</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">Glow Salon</div>
+            <div style="font-size:8px;color:var(--g400);">No offers</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;position:relative;">
+            <div class="img-6" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--teal);">🏋️</div>
+            <div style="position:absolute;top:-2px;right:4px;width:20px;height:20px;border-radius:10px;background:var(--red);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:800;">1</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">FitZone Gym</div>
+            <div style="font-size:8px;font-weight:700;color:var(--teal);">TRIAL</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;">
+            <div class="img-2" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--orange);">🍕</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">Pizza Corner</div>
+            <div style="font-size:8px;color:var(--g400);">No offers</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;">
+            <div class="img-12" style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid var(--purple);">📚</div>
+            <div style="font-size:10px;font-weight:600;color:var(--g800);margin-top:4px;">PageTurner</div>
+            <div style="font-size:8px;color:var(--g400);">No offers</div>
+          </div>
+          <div style="min-width:72px;text-align:center;cursor:pointer;">
+            <div style="width:56px;height:56px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--g100);border:2px dashed var(--g300);">➕</div>
+            <div style="font-size:10px;font-weight:600;color:var(--blue);margin-top:4px;">Add More</div>
+          </div>
+        </div>
+
+        <!-- Live deals from watchlist -->
+        <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:8px;">🔔 Live Deals from Your Watchlist</div>
+
+        <!-- Deal 1: Kashi Bakes -->
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--orange);margin-bottom:8px;overflow:hidden;">
+          <div style="display:flex;gap:12px;padding:12px 14px;align-items:center;">
+            <div class="img-3" style="width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:26px;">🎂</span></div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:14px;font-weight:700;color:var(--g800);">Kashi Bakes</span>
+                <span style="background:var(--orange);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">⭐ FOLLOWED</span>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--orange);margin-top:2px;">Mother's Day Special — 30% off custom cakes 🎂</div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">📍 682016 • Ends May 12 • <span style="color:var(--green);font-weight:600;">350 pts</span></div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;gap:8px;">
+            <button style="flex:1;background:var(--orange);color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;">Claim Offer</button>
+            <button style="padding:9px 14px;background:var(--g100);border:none;border-radius:8px;font-size:13px;cursor:pointer;">📤</button>
+          </div>
+        </div>
+
+        <!-- Deal 2: Apple iPhone -->
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--blue);margin-bottom:8px;overflow:hidden;">
+          <div style="display:flex;gap:12px;padding:12px 14px;align-items:center;">
+            <div class="img-4" style="width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:26px;">📱</span></div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:14px;font-weight:700;color:var(--g800);">Apple</span>
+                <span style="background:var(--blue);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">⭐ FOLLOWED</span>
+                <span style="background:rgba(237,73,86,0.1);color:var(--red);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">🔥 HOT</span>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--blue);margin-top:2px;">iPhone 16 — ₹5,000 off via Eru Points + Flipkart</div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">🛒 Flipkart partner deal • <span style="color:var(--green);font-weight:600;">5,000 pts = ₹5,000 discount</span></div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;gap:8px;">
+            <button style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;">View Deal →</button>
+            <button style="padding:9px 14px;background:var(--g100);border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔔</button>
+          </div>
+        </div>
+
+        <!-- Deal 3: Brew District -->
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--gold);margin-bottom:8px;overflow:hidden;">
+          <div style="display:flex;gap:12px;padding:12px 14px;align-items:center;">
+            <div class="img-9" style="width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:26px;">☕</span></div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:14px;font-weight:700;color:var(--g800);">Brew District</span>
+                <span style="background:var(--gold);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">⭐ FOLLOWED</span>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--gold);margin-top:2px;">Free cold brew + pastry combo every Thursday ☕🥐</div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">📍 682001 • Every Thu • <span style="color:var(--green);font-weight:600;">250 pts</span></div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;gap:8px;">
+            <button style="flex:1;background:var(--gold);color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;">Claim for Thursday</button>
+            <button style="padding:9px 14px;background:var(--g100);border:none;border-radius:8px;font-size:13px;cursor:pointer;">📤</button>
+          </div>
+        </div>
+
+        <!-- Deal 4: FitZone Gym -->
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--teal);margin-bottom:8px;overflow:hidden;">
+          <div style="display:flex;gap:12px;padding:12px 14px;align-items:center;">
+            <div class="img-6" style="width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:26px;">🏋️</span></div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:14px;font-weight:700;color:var(--g800);">FitZone Gym</span>
+                <span style="background:var(--teal);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">⭐ FOLLOWED</span>
+                <span style="background:rgba(16,185,129,0.1);color:var(--green);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">NEW</span>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--teal);margin-top:2px;">Free 3-day trial pass — no commitment 💪</div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">📍 682017 • Limited slots • <span style="color:var(--green);font-weight:600;">100 pts</span></div>
+            </div>
+          </div>
+          <div style="padding:0 14px 12px;display:flex;gap:8px;">
+            <button style="flex:1;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;">Claim Trial Pass</button>
+            <button style="padding:9px 14px;background:var(--g100);border:none;border-radius:8px;font-size:13px;cursor:pointer;">📤</button>
+          </div>
+        </div>
+
+        <!-- Notification preference -->
+        <div style="background:rgba(124,58,237,0.04);border:0.5px solid rgba(124,58,237,0.12);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🔔</span>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;color:var(--purple);">Get notified when followed stores drop offers</div>
+            <div style="font-size:10px;color:var(--g400);">You'll be the first to know about new deals from your watchlist</div>
+          </div>
+          <div style="width:40px;height:24px;border-radius:12px;background:var(--purple);position:relative;cursor:pointer;flex-shrink:0;">
+            <div style="width:20px;height:20px;border-radius:10px;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Previously used -->
+      <div style="padding:0 12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--g400);margin-bottom:8px;">Previously Used</div>
+        <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--g200);overflow:hidden;">
+          <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;opacity:0.6;">
+            <div class="img-2" style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🍕</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Swiggy ₹100 Gift Card</div><div style="font-size:11px;color:var(--g400);">Used Apr 10</div></div>
+            <span style="font-size:10px;color:var(--g400);font-weight:600;">USED ✓</span>
+          </div>
+          <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;opacity:0.6;">
+            <div class="img-4" style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">📱</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Jio Recharge ₹239</div><div style="font-size:11px;color:var(--g400);">Used Apr 5</div></div>
+            <span style="font-size:10px;color:var(--g400);font-weight:600;">USED ✓</span>
+          </div>
+          <div style="display:flex;gap:10px;padding:12px 14px;align-items:center;opacity:0.6;">
+            <div class="img-6" style="width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🌳</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--g800);">Planted 2 trees 🌳🌳</div><div style="font-size:11px;color:var(--g400);">Mar 28 • Eru matched +200 pts</div></div>
+            <span style="font-size:10px;color:var(--green);font-weight:600;">DONATED 💚</span>
+          </div>
+        </div>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE DETAILS / SETTINGS ===== -->
+  <div class="screen" id="screen-settings">
+    <div class="content">
+      <!-- Header -->
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('profile')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Profile & Preferences</span>
+        <span style="font-size:14px;font-weight:700;color:var(--blue);cursor:pointer;">Save</span>
+      </div>
+
+      <!-- Avatar + Name -->
+      <div style="padding:20px;background:var(--card);text-align:center;border-bottom:0.5px solid var(--g100);">
+        <div style="width:88px;height:88px;border-radius:44px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:44px;border:3px solid var(--orange);position:relative;" class="img-4">
+          😊
+          <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:14px;background:var(--blue);border:3px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            <span style="font-size:12px;color:#fff;">📷</span>
+          </div>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--g800);margin-top:10px;">Arjun S.</div>
+        <div style="font-size:13px;color:var(--g400);">@arjun.s</div>
+        <div style="display:flex;justify-content:center;gap:6px;margin-top:8px;">
+          <span style="background:rgba(232,121,43,0.1);color:var(--orange);font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">🔥 Influencer</span>
+          <span style="background:rgba(124,58,237,0.08);color:var(--purple);font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">✍️ Creator</span>
+          <span style="background:rgba(16,185,129,0.08);color:var(--green);font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">Joined Mar '26</span>
+        </div>
+      </div>
+
+      <!-- Personal Details -->
+      <div style="margin:12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">👤</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Personal Details</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Full Name</div>
+          <div style="font-size:15px;color:var(--g800);margin-top:4px;padding:8px 12px;background:var(--g50);border-radius:8px;border:0.5px solid var(--g200);">Arjun Suresh</div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Email</div>
+          <div style="font-size:15px;color:var(--g800);margin-top:4px;padding:8px 12px;background:var(--g50);border-radius:8px;border:0.5px solid var(--g200);">arjun.s@gmail.com</div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Phone</div>
+          <div style="font-size:15px;color:var(--g800);margin-top:4px;padding:8px 12px;background:var(--g50);border-radius:8px;border:0.5px solid var(--g200);">+91 98765 43210</div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Date of Birth</div>
+          <div style="font-size:15px;color:var(--g800);margin-top:4px;padding:8px 12px;background:var(--g50);border-radius:8px;border:0.5px solid var(--g200);">15 August 1996</div>
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Gender</div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <span style="padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--g800);color:#fff;">Male</span>
+            <span style="padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">Female</span>
+            <span style="padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">Other</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location & Pincode -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">📍</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Location & Pincode</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Primary Pincode</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+            <div style="padding:8px 14px;background:rgba(232,121,43,0.08);border:1.5px solid var(--orange);border-radius:10px;font-size:16px;font-weight:700;color:var(--orange);">682016</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--g800);">Ernakulam, Kochi</div>
+              <div style="font-size:11px;color:var(--g400);">Kerala, India</div>
+            </div>
+            <span style="margin-left:auto;font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;">Change</span>
+          </div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;">Secondary Pincodes (for offers)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+            <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(13,148,136,0.08);color:var(--teal);border:0.5px solid rgba(13,148,136,0.2);">682017 ✕</span>
+            <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(13,148,136,0.08);color:var(--teal);border:0.5px solid rgba(13,148,136,0.2);">682018 ✕</span>
+            <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(13,148,136,0.08);color:var(--teal);border:0.5px solid rgba(13,148,136,0.2);">682001 ✕</span>
+            <span style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--blue);border:0.5px solid var(--g200);cursor:pointer;">+ Add Pincode</span>
+          </div>
+          <div style="font-size:10px;color:var(--g400);margin-top:6px;">You'll see local offers and content from these pincodes</div>
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--g800);">Auto-detect location</div>
+              <div style="font-size:11px;color:var(--g400);">Use GPS for nearby offers and content</div>
+            </div>
+            <div style="width:44px;height:26px;border-radius:13px;background:var(--green);position:relative;cursor:pointer;">
+              <div style="width:22px;height:22px;border-radius:11px;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Interests -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🎯</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Content Interests</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--g400);">Personalises your feed</span>
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Selected Interests (tap to remove)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(232,121,43,0.08);color:var(--orange);border:1px solid rgba(232,121,43,0.2);cursor:pointer;">🍜 Food & Dining ✕</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(37,99,235,0.06);color:var(--blue);border:1px solid rgba(37,99,235,0.15);cursor:pointer;">💻 Technology ✕</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(13,148,136,0.06);color:var(--teal);border:1px solid rgba(13,148,136,0.15);cursor:pointer;">✈️ Travel ✕</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(124,58,237,0.06);color:var(--purple);border:1px solid rgba(124,58,237,0.15);cursor:pointer;">📚 Books ✕</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(16,185,129,0.06);color:var(--green);border:1px solid rgba(16,185,129,0.15);cursor:pointer;">🏋️ Fitness ✕</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(236,72,153,0.06);color:var(--pink);border:1px solid rgba(236,72,153,0.15);cursor:pointer;">🎬 Cinema ✕</span>
+          </div>
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 8px;">Suggested (tap to add)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🏏 Cricket</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🎵 Music</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🛍️ Shopping</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">👶 Parenting</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🏠 Home & Garden</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">💼 Business</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🎨 Art & Design</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🐾 Pets</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);cursor:pointer;">🧪 Science</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Language Preferences -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🌐</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Language & Content</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Content Languages</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:var(--g800);color:#fff;">English</span>
+            <span style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;background:rgba(232,121,43,0.08);color:var(--orange);border:1px solid rgba(232,121,43,0.2);">മലയാളം</span>
+            <span style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">हिन्दी</span>
+            <span style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">தமிழ்</span>
+            <span style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">ಕನ್ನಡ</span>
+          </div>
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:10px;font-weight:600;color:var(--g400);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">App Language</div>
+          <div style="padding:8px 14px;background:var(--g50);border-radius:8px;border:0.5px solid var(--g200);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:14px;color:var(--g800);">English</span>
+            <span style="font-size:12px;color:var(--g400);">▾</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications & Privacy -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🔔</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Notifications & Privacy</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:13px;font-weight:600;color:var(--g800);">Push Notifications</div><div style="font-size:11px;color:var(--g400);">Points earned, offers, streaks</div></div>
+          <div style="width:44px;height:26px;border-radius:13px;background:var(--green);position:relative;cursor:pointer;"><div style="width:22px;height:22px;border-radius:11px;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:13px;font-weight:600;color:var(--g800);">Email Digests</div><div style="font-size:11px;color:var(--g400);">Weekly summary of earnings</div></div>
+          <div style="width:44px;height:26px;border-radius:13px;background:var(--green);position:relative;cursor:pointer;"><div style="width:22px;height:22px;border-radius:11px;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:13px;font-weight:600;color:var(--g800);">Private Account</div><div style="font-size:11px;color:var(--g400);">Only followers see your content</div></div>
+          <div style="width:44px;height:26px;border-radius:13px;background:var(--g300);position:relative;cursor:pointer;"><div style="width:22px;height:22px;border-radius:11px;background:#fff;position:absolute;top:2px;left:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div>
+        </div>
+        <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:13px;font-weight:600;color:var(--g800);">Share data with brands</div><div style="font-size:11px;color:var(--g400);">For personalised offers (anonymous)</div></div>
+          <div style="width:44px;height:26px;border-radius:13px;background:var(--green);position:relative;cursor:pointer;"><div style="width:22px;height:22px;border-radius:11px;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div>
+        </div>
+      </div>
+
+      <!-- Eru account info -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🪙</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Eru Account</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:var(--g800);">Tier</div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:14px;">🔥</span><span style="font-size:13px;font-weight:700;color:var(--orange);">Influencer (1.5x)</span></div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:var(--g800);">Lifetime Points Earned</div>
+          <span style="font-size:13px;font-weight:700;color:var(--green);">45,180 pts</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:var(--g800);">Points Redeemed</div>
+          <span style="font-size:13px;font-weight:700;color:var(--g800);">40,360 pts</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:var(--g800);">Content Created</div>
+          <span style="font-size:13px;font-weight:700;color:var(--purple);">23 posts (all approved)</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:var(--g800);">Current Streak</div>
+          <span style="font-size:13px;font-weight:700;color:var(--orange);">🔥 24 days</span>
+        </div>
+        <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:var(--g800);">Member Since</div>
+          <span style="font-size:13px;color:var(--g400);">March 2, 2026</span>
+        </div>
+      </div>
+
+      <!-- Linked accounts -->
+      <div style="margin:0 12px 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 16px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🔗</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Linked Accounts</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">📧</span><span style="font-size:13px;color:var(--g800);">Google</span></div>
+          <span style="font-size:11px;font-weight:600;color:var(--green);">Connected ✓</span>
+        </div>
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--g50);display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">📱</span><span style="font-size:13px;color:var(--g800);">Phone (+91 987...)</span></div>
+          <span style="font-size:11px;font-weight:600;color:var(--green);">Verified ✓</span>
+        </div>
+        <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">📸</span><span style="font-size:13px;color:var(--g800);">Instagram</span></div>
+          <span style="font-size:11px;font-weight:600;color:var(--blue);cursor:pointer;">Link →</span>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div style="margin:0 12px 20px;padding:14px 16px;text-align:center;">
+        <span style="font-size:13px;color:var(--red);font-weight:600;cursor:pointer;">Log Out</span>
+        <span style="color:var(--g300);margin:0 12px;">|</span>
+        <span style="font-size:13px;color:var(--g400);cursor:pointer;">Delete Account</span>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button class="active" onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== LEADERBOARD / GAMIFICATION ===== -->
+  <div class="screen" id="screen-leaderboard">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Leaderboard</span>
+        <span style="font-size:12px;color:var(--blue);font-weight:600;">Rules</span>
+      </div>
+
+      <!-- Season Banner -->
+      <div style="margin:10px 12px;background:linear-gradient(135deg,#1E1145,#3B2A8A);border-radius:16px;padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-10px;right:-10px;width:100px;height:100px;border-radius:50%;background:rgba(124,58,237,0.12);"></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:20px;">🏆</span>
+          <div>
+            <div style="font-size:10px;color:rgba(196,181,253,0.7);letter-spacing:1px;font-weight:600;">SEASON 2 • APRIL 2026</div>
+            <div style="font-size:18px;font-weight:800;color:#fff;">Monsoon Champions</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:18px;">📱</div>
+            <div style="font-size:9px;color:rgba(196,181,253,0.8);margin-top:2px;">Grand Prize</div>
+            <div style="font-size:11px;font-weight:700;color:#fff;">iPhone 16</div>
+            <div style="font-size:8px;color:rgba(196,181,253,0.5);">Draw entry for Top 100</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:18px;">💻</div>
+            <div style="font-size:9px;color:rgba(196,181,253,0.8);margin-top:2px;">Runner-Up</div>
+            <div style="font-size:11px;font-weight:700;color:#fff;">MacBook Air</div>
+            <div style="font-size:8px;color:rgba(196,181,253,0.5);">#1 State monthly</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:18px;">🎁</div>
+            <div style="font-size:9px;color:rgba(196,181,253,0.8);margin-top:2px;">Weekly</div>
+            <div style="font-size:11px;font-weight:700;color:#fff;">₹200 Card</div>
+            <div style="font-size:8px;color:rgba(196,181,253,0.5);">#1 in each Pincode</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:rgba(196,181,253,0.6);margin-top:10px;text-align:center;">Season ends May 31 • 18 days left</div>
+      </div>
+
+      <!-- Scope tabs -->
+      <div style="display:flex;gap:6px;padding:6px 12px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--purple);color:#fff;">📍 My Pincode</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">🗺️ Kerala State</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">🇮🇳 All India</span>
+        <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">👥 Friends</span>
+      </div>
+
+      <!-- Your position -->
+      <div style="margin:10px 12px;background:linear-gradient(135deg,rgba(232,121,43,0.08),rgba(232,121,43,0.02));border:1.5px solid var(--orange);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:16px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;">#4</div>
+        <div class="img-4" style="width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid var(--orange);">😊</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--g800);">You (arjun.s)</div>
+          <div style="font-size:11px;color:var(--g400);">📍 682016 Ernakulam</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:16px;font-weight:800;color:var(--orange);">4,820</div>
+          <div style="font-size:9px;color:var(--g400);">pts this week</div>
+        </div>
+      </div>
+
+      <!-- Top 3 podium -->
+      <div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;padding:0 20px 10px;">
+        <!-- 2nd -->
+        <div style="text-align:center;flex:1;">
+          <div class="img-6" style="width:46px;height:46px;border-radius:23px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;border:2.5px solid #C0C0C0;">👩</div>
+          <div style="font-size:11px;font-weight:700;color:var(--g800);margin-top:4px;">Divya.R</div>
+          <div style="font-size:10px;font-weight:700;color:var(--teal);">6,240 pts</div>
+          <div style="height:50px;background:linear-gradient(180deg,#E5E7EB,#D1D5DB);border-radius:8px 8px 0 0;margin-top:6px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--g500);">🥈</div>
+        </div>
+        <!-- 1st -->
+        <div style="text-align:center;flex:1;">
+          <div style="font-size:14px;margin-bottom:4px;">👑</div>
+          <div class="img-3" style="width:54px;height:54px;border-radius:27px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;border:3px solid #FFD700;">👨‍🍳</div>
+          <div style="font-size:12px;font-weight:700;color:var(--g800);margin-top:4px;">ChefRaju</div>
+          <div style="font-size:10px;font-weight:700;color:var(--orange);">8,120 pts</div>
+          <div style="height:70px;background:linear-gradient(180deg,#FEF3C7,#FDE68A);border-radius:8px 8px 0 0;margin-top:6px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--gold);">🥇</div>
+        </div>
+        <!-- 3rd -->
+        <div style="text-align:center;flex:1;">
+          <div class="img-8" style="width:46px;height:46px;border-radius:23px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:22px;border:2.5px solid #CD7F32;">👩‍💻</div>
+          <div style="font-size:11px;font-weight:700;color:var(--g800);margin-top:4px;">Meera.N</div>
+          <div style="font-size:10px;font-weight:700;color:var(--blue);">5,890 pts</div>
+          <div style="height:38px;background:linear-gradient(180deg,#FED7AA,#FDBA74);border-radius:8px 8px 0 0;margin-top:6px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--orange);">🥉</div>
+        </div>
+      </div>
+
+      <!-- Remaining rankings -->
+      <div style="margin:0 12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;background:rgba(232,121,43,0.04);">
+          <span style="width:26px;font-size:13px;font-weight:800;color:var(--orange);text-align:center;">4</span>
+          <div class="img-4" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid var(--orange);">😊</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--g800);">arjun.s <span style="font-size:10px;color:var(--orange);font-weight:600;">← You</span></div><div style="font-size:11px;color:var(--g400);">🔥 Influencer • 24d streak</div></div>
+          <span style="font-size:14px;font-weight:700;color:var(--orange);">4,820</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <span style="width:26px;font-size:13px;font-weight:700;color:var(--g500);text-align:center;">5</span>
+          <div class="img-9" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;">👨</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">Rohit.M</div><div style="font-size:11px;color:var(--g400);">⚡ Engager • 12d streak</div></div>
+          <span style="font-size:14px;font-weight:600;color:var(--g700);">4,210</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <span style="width:26px;font-size:13px;font-weight:700;color:var(--g500);text-align:center;">6</span>
+          <div class="img-7" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;">👩‍🎨</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">ArtbyLakshmi</div><div style="font-size:11px;color:var(--g400);">🔥 Influencer</div></div>
+          <span style="font-size:14px;font-weight:600;color:var(--g700);">3,980</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--g50);align-items:center;">
+          <span style="width:26px;font-size:13px;font-weight:700;color:var(--g500);text-align:center;">7</span>
+          <div class="img-10" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;">👨‍💻</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">TechAjna</div><div style="font-size:11px;color:var(--g400);">⚡ Engager</div></div>
+          <span style="font-size:14px;font-weight:600;color:var(--g700);">3,650</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:12px 14px;align-items:center;">
+          <span style="width:26px;font-size:13px;font-weight:700;color:var(--g500);text-align:center;">8</span>
+          <div class="img-11" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;">👩</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--g800);">Preethi.K</div><div style="font-size:11px;color:var(--g400);">🌱 Explorer • 5d streak</div></div>
+          <span style="font-size:14px;font-weight:600;color:var(--g700);">3,340</span>
+        </div>
+      </div>
+
+      <!-- Active quests -->
+      <div style="margin:12px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:12px 14px;background:var(--g50);border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🎯</span>
+          <span style="font-size:14px;font-weight:700;color:var(--g800);">Weekly Quests</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--orange);font-weight:600;">3/5 Complete</span>
+        </div>
+        <div style="padding:10px 14px;border-bottom:0.5px solid var(--g50);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;color:var(--g800);">📖 Read 5 articles</div>
+            <span style="font-size:11px;font-weight:700;color:var(--green);">✓ Done +25</span>
+          </div>
+          <div style="height:4px;background:var(--green);border-radius:2px;margin-top:4px;"></div>
+        </div>
+        <div style="padding:10px 14px;border-bottom:0.5px solid var(--g50);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;color:var(--g800);">⭐ Review 3 businesses</div>
+            <span style="font-size:11px;font-weight:700;color:var(--green);">✓ Done +40</span>
+          </div>
+          <div style="height:4px;background:var(--green);border-radius:2px;margin-top:4px;"></div>
+        </div>
+        <div style="padding:10px 14px;border-bottom:0.5px solid var(--g50);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;color:var(--g800);">📤 Share 3 posts</div>
+            <span style="font-size:11px;font-weight:700;color:var(--green);">✓ Done +30</span>
+          </div>
+          <div style="height:4px;background:var(--green);border-radius:2px;margin-top:4px;"></div>
+        </div>
+        <div style="padding:10px 14px;border-bottom:0.5px solid var(--g50);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;color:var(--g800);">🎬 Watch 10 reels</div>
+            <span style="font-size:11px;font-weight:600;color:var(--orange);">7/10</span>
+          </div>
+          <div style="height:4px;background:var(--g200);border-radius:2px;margin-top:4px;"><div style="height:100%;width:70%;background:var(--orange);border-radius:2px;"></div></div>
+        </div>
+        <div style="padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;color:var(--g800);">✍️ Create 1 post</div>
+            <span style="font-size:11px;font-weight:600;color:var(--g400);">0/1</span>
+          </div>
+          <div style="height:4px;background:var(--g200);border-radius:2px;margin-top:4px;"></div>
+        </div>
+        <div style="padding:10px 14px;background:rgba(16,185,129,0.04);border-top:0.5px solid var(--g100);">
+          <div style="font-size:12px;font-weight:700;color:var(--green);">🎁 Complete all 5 → +100 bonus pts + Leaderboard boost!</div>
+        </div>
+      </div>
+
+      <!-- Spin wheel + badges -->
+      <div style="display:flex;gap:8px;margin:0 12px 12px;">
+        <div style="flex:1;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);padding:14px;text-align:center;cursor:pointer;">
+          <div style="font-size:36px;">🎰</div>
+          <div style="font-size:13px;font-weight:700;color:var(--g800);margin-top:4px;">Daily Spin</div>
+          <div style="font-size:11px;color:var(--g400);">Win 1–50 pts</div>
+          <div style="margin-top:8px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border-radius:10px;padding:8px;font-size:12px;font-weight:700;">SPIN NOW! 🎉</div>
+        </div>
+        <div style="flex:1;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--g800);margin-bottom:8px;">🏅 Recent Badges</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span style="font-size:22px;" title="First Purchase">🛍️</span>
+            <span style="font-size:22px;" title="10 Reviews">⭐</span>
+            <span style="font-size:22px;" title="7-Day Streak">🔥</span>
+            <span style="font-size:22px;" title="Creator">✍️</span>
+            <span style="font-size:22px;" title="30-Day Streak">💎</span>
+            <span style="font-size:22px;opacity:0.25;" title="Locked: 50 Referrals">🚀</span>
+            <span style="font-size:22px;opacity:0.25;" title="Locked: Champion">👑</span>
+          </div>
+          <div style="font-size:10px;color:var(--g400);margin-top:6px;">5/12 unlocked</div>
+        </div>
+      </div>
+
+      <div style="height:12px;"></div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== CREATOR × BUSINESS (SPONSORED UGC) ===== -->
+  <div class="screen" id="screen-creatorbiz">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Creator × Business</span>
+        <span style="font-size:12px;color:var(--blue);font-weight:600;">How It Works</span>
+      </div>
+
+      <!-- Earnings banner -->
+      <div style="margin:10px 12px;background:linear-gradient(135deg,#0C2E1F,#164E3A);border-radius:16px;padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:40px;background:rgba(16,185,129,0.08);"></div>
+        <div style="font-size:10px;color:rgba(110,231,183,0.7);letter-spacing:1px;font-weight:600;">SPONSORED CONTENT EARNINGS</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;">
+          <span style="font-size:32px;font-weight:800;color:#fff;">₹2,850</span>
+          <span style="font-size:14px;color:var(--green);font-weight:600;">this month</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:16px;font-weight:700;color:var(--green);">₹1,800</div>
+            <div style="font-size:9px;color:rgba(110,231,183,0.6);">Commission (20%)</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:16px;font-weight:700;color:var(--orange);">750</div>
+            <div style="font-size:9px;color:rgba(110,231,183,0.6);">Points Earned</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:16px;font-weight:700;color:#fff;">4</div>
+            <div style="font-size:9px;color:rgba(110,231,183,0.6);">Sponsored Posts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- How to tag -->
+      <div style="margin:0 12px 10px;background:rgba(16,185,129,0.04);border:0.5px solid rgba(16,185,129,0.15);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:6px;">💡 How to earn from businesses</div>
+        <div style="font-size:11px;color:var(--g500);line-height:1.5;">Create a review, vlog, or post about a business → Tag them with <strong style="color:var(--teal);">@BusinessName</strong> → If the business likes your content, they can pay to boost it as a sponsored post → <strong style="color:var(--green);">You earn 20% commission on their spend!</strong></div>
+      </div>
+
+      <!-- Active sponsored posts -->
+      <div style="margin:0 12px;">
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin-bottom:8px;">💰 Active Sponsored Content</div>
+
+        <!-- Post 1 -->
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--green);margin-bottom:10px;overflow:hidden;">
+          <div style="display:flex;gap:10px;padding:12px;">
+            <div class="img-3" style="width:70px;height:70px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0;">🎂</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:700;color:var(--g800);">Best plum cake in Kochi!</span>
+                <span style="background:var(--green);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">SPONSORED</span>
+                <span style="background:rgba(232,121,43,0.1);color:var(--orange);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">🔥 LIVE</span>
+              </div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">Tagged: <strong style="color:var(--teal);">@KashiBakes</strong> • Reel 0:32</div>
+              <div style="display:flex;gap:12px;margin-top:6px;">
+                <div><div style="font-size:10px;color:var(--g400);">Reach</div><div style="font-size:13px;font-weight:700;color:var(--g800);">25.4K</div></div>
+                <div><div style="font-size:10px;color:var(--g400);">Clicks</div><div style="font-size:13px;font-weight:700;color:var(--g800);">2,100</div></div>
+                <div><div style="font-size:10px;color:var(--g400);">Boost Spend</div><div style="font-size:13px;font-weight:700;color:var(--blue);">₹3,000</div></div>
+                <div><div style="font-size:10px;color:var(--g400);">Your Earning</div><div style="font-size:13px;font-weight:700;color:var(--green);">₹600</div></div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 12px 10px;">
+            <div style="height:4px;background:var(--g200);border-radius:2px;overflow:hidden;"><div style="width:85%;height:100%;background:var(--green);border-radius:2px;"></div></div>
+            <div style="font-size:10px;color:var(--g400);margin-top:3px;">Campaign: 85% budget spent • 3 days left</div>
+          </div>
+        </div>
+
+        <!-- Post 2 -->
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--green);margin-bottom:10px;overflow:hidden;">
+          <div style="display:flex;gap:10px;padding:12px;">
+            <div class="img-9" style="width:70px;height:70px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0;">☕</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:700;color:var(--g800);">Hidden coffee spots Fort Kochi</span>
+                <span style="background:var(--green);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">SPONSORED</span>
+                <span style="background:rgba(232,121,43,0.1);color:var(--orange);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">🔥 LIVE</span>
+              </div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">Tagged: <strong style="color:var(--teal);">@BrewDistrict</strong> • Reel 0:45</div>
+              <div style="display:flex;gap:12px;margin-top:6px;">
+                <div><div style="font-size:10px;color:var(--g400);">Reach</div><div style="font-size:13px;font-weight:700;color:var(--g800);">18.7K</div></div>
+                <div><div style="font-size:10px;color:var(--g400);">Clicks</div><div style="font-size:13px;font-weight:700;color:var(--g800);">1,560</div></div>
+                <div><div style="font-size:10px;color:var(--g400);">Boost Spend</div><div style="font-size:13px;font-weight:700;color:var(--blue);">₹5,000</div></div>
+                <div><div style="font-size:10px;color:var(--g400);">Your Earning</div><div style="font-size:13px;font-weight:700;color:var(--green);">₹1,000</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending business interest -->
+        <div style="font-size:14px;font-weight:700;color:var(--g800);margin:14px 0 8px;">📩 Business Interest (Pending)</div>
+
+        <div style="background:var(--card);border-radius:14px;border:1.5px solid var(--gold);margin-bottom:10px;overflow:hidden;">
+          <div style="display:flex;gap:10px;padding:12px;">
+            <div class="img-7" style="width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">💇‍♀️</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:13px;font-weight:700;color:var(--g800);">Glow Salon makeover vlog</span>
+                <span style="background:rgba(217,119,6,0.1);color:var(--gold);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;">⏳ PENDING</span>
+              </div>
+              <div style="font-size:11px;color:var(--g400);margin-top:2px;">Tagged: <strong style="color:var(--teal);">@GlowSalon</strong> wants to sponsor this!</div>
+              <div style="font-size:12px;font-weight:600;color:var(--gold);margin-top:4px;">Proposed boost: ₹2,000 → Your earning: ₹400</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;padding:0 12px 10px;">
+            <button style="flex:1;background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 0;font-size:13px;font-weight:700;cursor:pointer;">✓ Accept</button>
+            <button style="flex:1;background:var(--g100);color:var(--g700);border:none;border-radius:8px;padding:9px 0;font-size:13px;font-weight:600;cursor:pointer;">Negotiate</button>
+            <button style="padding:9px 14px;background:var(--g100);border:none;border-radius:8px;font-size:13px;color:var(--g400);cursor:pointer;">✕</button>
+          </div>
+        </div>
+
+        <!-- Create tagged content CTA -->
+        <div style="margin:14px 0;background:linear-gradient(135deg,var(--teal),#065f46);border-radius:14px;padding:18px;text-align:center;cursor:pointer;" onclick="showScreen('create')">
+          <div style="font-size:28px;">📸</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-top:6px;">Review a Business & Earn</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px;">Visit a local spot, create a reel or post, tag the business.<br>If they boost it, you earn 20% commission!</div>
+          <div style="margin-top:10px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;font-size:13px;font-weight:700;color:#fff;">Create Tagged Content →</div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.screen-nav button').forEach(b => b.classList.remove('active'));
+  const map = {home:'Home Feed',create:'Create',moderation:'My Content',profile:'Profile',explore:'Explore',reels:'Reels',wallet:'Wallet',redeem:'Redeem',myrewards:'My Rewards',settings:'Profile Details',leaderboard:'Leaderboard',creatorbiz:'Creator × Biz'};
+  document.querySelectorAll('.screen-nav button').forEach(b => {
+    if (b.textContent.replace(/[💰🎁🎫⚙️🏆💼]/g,'').trim() === (map[id]||'')) b.classList.add('active');
+  });
+  const content = document.querySelector('#screen-' + id + ' .content');
+  if (content) content.scrollTop = 0;
+}
+</script>
+</body>
+</html>
