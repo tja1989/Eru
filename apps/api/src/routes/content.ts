@@ -1,0 +1,340 @@
+import type { FastifyInstance } from 'fastify';
+import { prisma } from '../utils/prisma.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { rateLimitByUser } from '../middleware/rateLimit.js';
+import { createContentSchema, commentSchema, paginationSchema } from '../utils/validators.js';
+import { Errors } from '../utils/errors.js';
+
+export async function contentRoutes(app: FastifyInstance) {
+  // All routes in this plugin require authentication
+  app.addHook('preHandler', authMiddleware);
+
+  // POST /content/create — create new content and link any pre-uploaded media
+  app.post('/content/create', {
+    preHandler: [rateLimitByUser(20, '1m')],
+  }, async (request, reply) => {
+    const parsed = createContentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      throw Errors.badRequest(parsed.error.issues[0].message);
+    }
+
+    const { type, text, mediaIds, hashtags, locationPincode } = parsed.data;
+
+    // Create the content row first
+    const content = await prisma.content.create({
+      data: {
+        userId: request.userId,
+        type,
+        text,
+        hashtags,
+        locationPincode,
+        moderationStatus: 'pending',
+      },
+    });
+
+    // Link any pre-uploaded media to this new content row
+    if (mediaIds.length > 0) {
+      await prisma.contentMedia.updateMany({
+        where: {
+          id: { in: mediaIds },
+          // Only allow linking media that is still using the placeholder contentId
+          contentId: '00000000-0000-0000-0000-000000000000',
+        },
+        data: { contentId: content.id },
+      });
+    }
+
+    // Also create the moderation queue entry for human review
+    await prisma.moderationQueue.create({
+      data: { contentId: content.id },
+    });
+
+    return reply.status(201).send({ content });
+  });
+
+  // GET /content/:id — fetch a single piece of content with full details
+  app.get('/content/:id', async (request) => {
+    const { id } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const content = await prisma.content.findUnique({
+      where: { id },
+      include: {
+        media: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatarUrl: true,
+            isVerified: true,
+            tier: true,
+          },
+        },
+      },
+    });
+
+    if (!content) {
+      throw Errors.notFound('Content');
+    }
+
+    // Non-authors can only see published content
+    if (content.moderationStatus !== 'published' && content.userId !== currentUserId) {
+      throw Errors.notFound('Content');
+    }
+
+    // Check if the current user has liked or saved this content
+    const [likeInteraction, saveInteraction] = await Promise.all([
+      prisma.interaction.findUnique({
+        where: {
+          userId_contentId_type: { userId: currentUserId, contentId: id, type: 'like' },
+        },
+      }),
+      prisma.interaction.findUnique({
+        where: {
+          userId_contentId_type: { userId: currentUserId, contentId: id, type: 'save' },
+        },
+      }),
+    ]);
+
+    // Fetch a preview of the 3 most recent top-level comments
+    const commentsPreview = await prisma.comment.findMany({
+      where: { contentId: id, parentId: null },
+      take: 3,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, name: true, username: true, avatarUrl: true },
+        },
+      },
+    });
+
+    return {
+      content: {
+        ...content,
+        isLiked: likeInteraction !== null,
+        isSaved: saveInteraction !== null,
+        commentsPreview,
+      },
+    };
+  });
+
+  // POST /content/:id/resubmit — re-queue a declined post for moderation (max 4 queue entries)
+  app.post('/content/:id/resubmit', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const content = await prisma.content.findUnique({
+      where: { id },
+      include: { _count: { select: { moderationQueue: true } } },
+    });
+
+    if (!content) throw Errors.notFound('Content');
+    if (content.userId !== request.userId) throw Errors.forbidden();
+    if (content.moderationStatus !== 'declined') {
+      throw Errors.badRequest('Only declined content can be resubmitted');
+    }
+    if (content._count.moderationQueue >= 4) {
+      throw Errors.badRequest('Maximum resubmission limit (4) reached');
+    }
+
+    // Reset to pending and add a new moderation queue entry in a transaction
+    const [updated] = await prisma.$transaction([
+      prisma.content.update({
+        where: { id },
+        data: { moderationStatus: 'pending', declineReason: null },
+      }),
+      prisma.moderationQueue.create({
+        data: { contentId: id },
+      }),
+    ]);
+
+    return reply.status(200).send({ content: updated });
+  });
+
+  // POST /content/:id/appeal — appeal a moderation decision
+  app.post('/content/:id/appeal', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const content = await prisma.content.findUnique({
+      where: { id },
+    });
+
+    if (!content) throw Errors.notFound('Content');
+    if (content.userId !== request.userId) throw Errors.forbidden();
+    if (content.moderationStatus !== 'declined') {
+      throw Errors.badRequest('Only declined content can be appealed');
+    }
+
+    // Check for an existing appeal to prevent duplicates
+    const existingAppeal = await prisma.moderationQueue.findFirst({
+      where: { contentId: id, isAppeal: true },
+    });
+
+    if (existingAppeal) {
+      throw Errors.conflict('An appeal already exists for this content');
+    }
+
+    const appealEntry = await prisma.moderationQueue.create({
+      data: { contentId: id, isAppeal: true },
+    });
+
+    return reply.status(201).send({ appeal: appealEntry });
+  });
+
+  // POST /posts/:id/like — like a piece of content
+  app.post('/posts/:id/like', {
+    preHandler: [rateLimitByUser(60, '1m')],
+  }, async (request, reply) => {
+    const { id: contentId } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const content = await prisma.content.findUnique({ where: { id: contentId } });
+    if (!content) throw Errors.notFound('Content');
+
+    try {
+      await prisma.$transaction([
+        prisma.interaction.create({
+          data: { userId: currentUserId, contentId, type: 'like' },
+        }),
+        prisma.content.update({
+          where: { id: contentId },
+          data: { likeCount: { increment: 1 } },
+        }),
+      ]);
+    } catch (error: unknown) {
+      // P2002 = unique constraint violation — already liked
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
+        throw Errors.conflict('You have already liked this content');
+      }
+      throw error;
+    }
+
+    return reply.status(201).send({ success: true });
+  });
+
+  // DELETE /posts/:id/unlike — remove a like from content
+  app.delete('/posts/:id/unlike', async (request) => {
+    const { id: contentId } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const interaction = await prisma.interaction.findUnique({
+      where: {
+        userId_contentId_type: { userId: currentUserId, contentId, type: 'like' },
+      },
+    });
+
+    if (!interaction) {
+      throw Errors.notFound('Like');
+    }
+
+    await prisma.$transaction([
+      prisma.interaction.delete({
+        where: {
+          userId_contentId_type: { userId: currentUserId, contentId, type: 'like' },
+        },
+      }),
+      prisma.content.update({
+        where: { id: contentId },
+        data: { likeCount: { decrement: 1 } },
+      }),
+    ]);
+
+    return { success: true };
+  });
+
+  // POST /posts/:id/comments — add a comment (top-level or threaded reply)
+  app.post('/posts/:id/comments', {
+    preHandler: [rateLimitByUser(30, '1m')],
+  }, async (request, reply) => {
+    const { id: contentId } = request.params as { id: string };
+
+    const parsed = commentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      throw Errors.badRequest(parsed.error.issues[0].message);
+    }
+
+    const { text, parentId } = parsed.data;
+
+    const content = await prisma.content.findUnique({ where: { id: contentId } });
+    if (!content) throw Errors.notFound('Content');
+
+    // Validate parent comment exists if this is a reply
+    if (parentId) {
+      const parent = await prisma.comment.findUnique({ where: { id: parentId } });
+      if (!parent || parent.contentId !== contentId) {
+        throw Errors.notFound('Parent comment');
+      }
+    }
+
+    const [comment] = await prisma.$transaction([
+      prisma.comment.create({
+        data: {
+          userId: request.userId,
+          contentId,
+          text,
+          parentId: parentId ?? null,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, username: true, avatarUrl: true },
+          },
+        },
+      }),
+      prisma.content.update({
+        where: { id: contentId },
+        data: { commentCount: { increment: 1 } },
+      }),
+    ]);
+
+    return reply.status(201).send({ comment });
+  });
+
+  // GET /posts/:id/comments — paginated comments with threaded replies
+  app.get('/posts/:id/comments', async (request) => {
+    const { id: contentId } = request.params as { id: string };
+    const rawQuery = request.query as Record<string, string>;
+
+    const paginationParsed = paginationSchema.safeParse(rawQuery);
+    if (!paginationParsed.success) {
+      throw Errors.badRequest(paginationParsed.error.issues[0].message);
+    }
+
+    const { page, limit } = paginationParsed.data;
+    const skip = (page - 1) * limit;
+
+    const content = await prisma.content.findUnique({ where: { id: contentId } });
+    if (!content) throw Errors.notFound('Content');
+
+    // Fetch top-level comments (no parentId) with pagination
+    const topLevelComments = await prisma.comment.findMany({
+      where: { contentId, parentId: null },
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: { id: true, name: true, username: true, avatarUrl: true },
+        },
+        // Include up to 3 replies per top-level comment
+        replies: {
+          take: 3,
+          orderBy: { createdAt: 'asc' },
+          include: {
+            user: {
+              select: { id: true, name: true, username: true, avatarUrl: true },
+            },
+          },
+        },
+      },
+    });
+
+    const total = await prisma.comment.count({ where: { contentId, parentId: null } });
+
+    return { comments: topLevelComments, page, limit, total };
+  });
+}
