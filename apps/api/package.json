@@ -16,6 +16,7 @@
     "@eru/shared": "*",
     "@fastify/cors": "^10.0.0",
     "@prisma/client": "^6.5.0",
+    "dotenv": "^16.6.1",
     "fastify": "^5.2.0",
     "zod": "^3.24.0"
   },

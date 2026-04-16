@@ -1,0 +1,38 @@
+import Fastify, { type FastifyInstance } from 'fastify';
+import cors from '@fastify/cors';
+import { AppError } from './utils/errors.js';
+
+export function buildApp(): FastifyInstance {
+  const app = Fastify({
+    logger: process.env.NODE_ENV !== 'test',
+  });
+
+  app.register(cors, { origin: true, credentials: true });
+
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AppError) {
+      return reply.status(error.statusCode).send({
+        error: error.message,
+        code: error.code,
+        statusCode: error.statusCode,
+      });
+    }
+    if (error.validation) {
+      return reply.status(400).send({
+        error: error.message,
+        code: 'VALIDATION_ERROR',
+        statusCode: 400,
+      });
+    }
+    request.log.error(error);
+    return reply.status(500).send({
+      error: 'Internal server error',
+      code: 'INTERNAL',
+      statusCode: 500,
+    });
+  });
+
+  app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+
+  return app;
+}
