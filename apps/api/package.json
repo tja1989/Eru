@@ -17,6 +17,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1030.0",
     "@eru/shared": "*",
     "@fastify/cors": "^10.0.0",
+    "@google-cloud/vision": "^5.3.5",
     "@prisma/client": "^6.5.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
