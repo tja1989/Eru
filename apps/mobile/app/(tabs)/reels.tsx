@@ -131,7 +131,7 @@ export default function ReelsScreen() {
     reelsService
       .getReels('foryou', 1)
       .then((data) => {
-        setReels(data.reels ?? data.items ?? []);
+        setReels(data.data ?? data.reels ?? data.items ?? []);
         earn('view_reel');
       })
       .catch(() => setReels([]))

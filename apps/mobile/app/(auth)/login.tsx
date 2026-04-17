@@ -45,9 +45,10 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <Text style={styles.logo}>Eru</Text>
       <Text style={styles.subtitle}>Your attention has value</Text>
+      <Text style={styles.label}>Phone number</Text>
       <TextInput
         style={styles.input}
-        placeholder="Phone number (e.g., 9876543210)"
+        placeholder="e.g., 9876543210"
         keyboardType="phone-pad"
         value={phone}
         onChangeText={setPhone}
@@ -67,6 +68,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: spacing.xl },
   logo: { fontSize: 48, fontWeight: '800', fontStyle: 'italic', color: colors.g800, textAlign: 'center', fontFamily: 'Georgia' },
   subtitle: { fontSize: 16, color: colors.g500, textAlign: 'center', marginBottom: 40, marginTop: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.g800, marginBottom: 6 },
   input: { borderWidth: 1, borderColor: colors.g200, borderRadius: 12, padding: 16, fontSize: 16, marginBottom: 12, backgroundColor: '#fff' },
   button: { backgroundColor: colors.blue, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },

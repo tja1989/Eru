@@ -61,9 +61,14 @@ export default function OnboardingScreen() {
 
       {step === 1 && (
         <>
-          <TextInput style={styles.input} placeholder="Your name" value={name} onChangeText={setName} />
-          <TextInput style={styles.input} placeholder="Choose a username" value={username} onChangeText={(t) => setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoCapitalize="none" />
-          <TextInput style={styles.input} placeholder="Your pincode (6 digits)" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} />
+          <Text style={styles.label}>Full name</Text>
+          <TextInput style={styles.input} placeholder="e.g., Anjali Menon" value={name} onChangeText={setName} />
+
+          <Text style={styles.label}>Username</Text>
+          <TextInput style={styles.input} placeholder="e.g., anjali_m (letters, numbers, _)" value={username} onChangeText={(t) => setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoCapitalize="none" />
+
+          <Text style={styles.label}>Pincode</Text>
+          <TextInput style={styles.input} placeholder="6-digit postal code" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} />
           <TouchableOpacity style={styles.button} onPress={() => {
             if (!name || name.length < 2) return Alert.alert('Please enter your name');
             if (!username || username.length < 3) return Alert.alert('Username must be at least 3 characters');
@@ -101,6 +106,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: '800', color: colors.g800, textAlign: 'center' },
   subtitle: { fontSize: 16, color: colors.g500, textAlign: 'center', marginBottom: 32, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.g800, marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.g800, marginBottom: 6, marginTop: 4 },
   input: { borderWidth: 1, borderColor: colors.g200, borderRadius: 12, padding: 16, fontSize: 16, marginBottom: 12, backgroundColor: '#fff' },
   button: { backgroundColor: colors.blue, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 16 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
