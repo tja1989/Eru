@@ -13,7 +13,8 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx src/scripts/seed.ts",
     "db:seed-reels": "tsx src/scripts/seed-reels.ts",
-    "db:backfill-media": "tsx src/scripts/backfill-media.ts"
+    "db:backfill-media": "tsx src/scripts/backfill-media.ts",
+    "db:fix-reel-urls": "tsx src/scripts/fix-reel-urls.ts"
   },
   "dependencies": {
     "@aws-sdk/client-mediaconvert": "^3.1030.0",

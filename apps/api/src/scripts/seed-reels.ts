@@ -3,44 +3,45 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Short, publicly-hosted MP4 test videos from Google's sample bucket (~15s each).
-// These are royalty-free and reliable. Perfect for verifying the Reels flow.
+// Short, publicly-hosted MP4 test videos. All HTTP 200 verified.
+// NOTE: the original Google `gtv-videos-bucket` URLs started returning 403
+// in 2026 — do not use them. W3Schools + test-videos.co.uk are stable.
 const SAMPLE_VIDEOS = [
   {
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    duration: 15,
+    url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    duration: 10,
     caption: 'Street food tour of Kochi tonight — ending with Kulfi at Marine Drive. Watch till the end! 🍨 #kochifoodie #kulfi #streetfood',
     hashtags: ['kochifoodie', 'kulfi', 'streetfood', 'kerala'],
     width: 640,
     height: 360,
   },
   {
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    duration: 15,
+    url: 'https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4',
+    duration: 10,
     caption: 'Backwaters of Alleppey from a drone — this is why Kerala is called God\'s Own Country 🌴 #alleppey #backwaters #godsowncountry',
     hashtags: ['alleppey', 'backwaters', 'godsowncountry', 'kerala'],
     width: 640,
     height: 360,
   },
   {
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-    duration: 15,
+    url: 'https://www.w3schools.com/html/movie.mp4',
+    duration: 10,
     caption: 'Typical Monday morning traffic on MG Road, Kochi. 30 seconds you won\'t get back 😅 #kochilife #traffic #monday',
     hashtags: ['kochilife', 'traffic', 'monday'],
     width: 640,
     height: 360,
   },
   {
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-    duration: 15,
+    url: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4',
+    duration: 10,
     caption: 'Appam being made the traditional way — crispy edges, soft centre. Save this recipe! 🍚 #appam #keralarecipes #breakfast',
     hashtags: ['appam', 'keralarecipes', 'breakfast', 'food'],
     width: 640,
     height: 360,
   },
   {
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-    duration: 60,
+    url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    duration: 10,
     caption: 'Day in the life of a Technopark employee — from auto to desk to chai break. #technopark #trivandrum #devlife',
     hashtags: ['technopark', 'trivandrum', 'devlife', 'tech'],
     width: 640,
