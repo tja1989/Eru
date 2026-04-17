@@ -58,7 +58,12 @@ export async function exploreRoutes(app: FastifyInstance) {
 
     const total = await prisma.content.count({ where });
 
-    return { content, page, limit, total };
+    // Normalise to the standard PaginatedResponse shape {data, nextPage, total}
+    return {
+      data: content,
+      nextPage: page * limit < total ? page + 1 : null,
+      total,
+    };
   });
 
   // -------------------------------------------------------------------------

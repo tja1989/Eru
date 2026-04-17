@@ -4,6 +4,22 @@ import { prisma } from '../utils/prisma.js';
 // Types
 // ---------------------------------------------------------------------------
 
+interface ContentMediaLite {
+  id: string;
+  contentId: string;
+  type: string;
+  originalUrl: string;
+  thumbnailUrl: string | null;
+  video360pUrl: string | null;
+  video720pUrl: string | null;
+  video1080pUrl: string | null;
+  durationSeconds: number | null;
+  width: number;
+  height: number;
+  sortOrder: number;
+  transcodeStatus: string;
+}
+
 interface ScoredContent {
   id: string;
   userId: string;
@@ -21,6 +37,7 @@ interface ScoredContent {
   score: number;
   isLiked: boolean;
   isSaved: boolean;
+  media: ContentMediaLite[];
   user: {
     id: string;
     name: string;
@@ -187,6 +204,7 @@ export async function getFeed(ctx: FeedContext, page: number, limit: number): Pr
     take: 200,
     orderBy: { createdAt: 'desc' },
     include: {
+      media: true,
       user: {
         select: {
           id: true,

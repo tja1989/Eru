@@ -103,6 +103,9 @@ async function seedReels() {
         video360pUrl: video.url,
         video720pUrl: video.url,
         video1080pUrl: video.url,
+        // Poster image shown behind <VideoView> while the video loads (and as
+        // a graceful fallback if playback fails, e.g. in Expo Go).
+        thumbnailUrl: `https://picsum.photos/seed/eru-reel-${reel.id}/640/1136`,
         durationSeconds: video.duration,
         width: video.width,
         height: video.height,

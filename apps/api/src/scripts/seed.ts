@@ -1,4 +1,9 @@
-import { PrismaClient, Tier, UserRole, ModerationStatus, ContentType } from '@prisma/client';
+import { PrismaClient, Tier, UserRole, ModerationStatus, ContentType, MediaType, TranscodeStatus } from '@prisma/client';
+
+// Deterministic placeholder image URLs — same input always returns the same image.
+const pravatar = (username: string) => `https://i.pravatar.cc/300?u=${username}`;
+const picsumPost = (seed: string) => `https://picsum.photos/seed/eru-${seed}/1200/1200`;
+const picsumPostThumb = (seed: string) => `https://picsum.photos/seed/eru-${seed}/400/400`;
 
 const prisma = new PrismaClient();
 
@@ -201,7 +206,9 @@ async function seed() {
 
     const creator = await prisma.user.upsert({
       where: { username: creatorData.username },
-      update: {},
+      // Always ensure avatarUrl is set, even on re-runs against a DB where the
+      // user was created before avatars were seeded.
+      update: { avatarUrl: pravatar(creatorData.username) },
       create: {
         firebaseUid: creatorData.firebaseUid,
         phone: creatorData.phone,
@@ -212,6 +219,7 @@ async function seed() {
         bio: creatorData.bio,
         interests: creatorData.interests,
         contentLanguages: creatorData.contentLanguages,
+        avatarUrl: pravatar(creatorData.username),
         lifetimePoints: Math.floor(Math.random() * 2000) + 500,
         currentBalance: Math.floor(Math.random() * 1000) + 100,
       },
@@ -241,7 +249,7 @@ async function seed() {
       const publishedAt = new Date();
       publishedAt.setDate(publishedAt.getDate() - (i * 3 + Math.floor(Math.random() * 5)));
 
-      await prisma.content.create({
+      const post = await prisma.content.create({
         data: {
           userId: creator.id,
           type: ContentType.post,
@@ -255,6 +263,21 @@ async function seed() {
           shareCount: Math.floor(Math.random() * 20),
           viewCount: Math.floor(Math.random() * 800) + 50,
           pointsEarned: Math.floor(Math.random() * 100) + 10,
+        },
+      });
+
+      // Attach one placeholder image per post. Deterministic seed keeps the
+      // image stable across re-runs, and picsum.photos is free + HTTPS.
+      await prisma.contentMedia.create({
+        data: {
+          contentId: post.id,
+          type: MediaType.image,
+          originalUrl: picsumPost(post.id),
+          thumbnailUrl: picsumPostThumb(post.id),
+          width: 1200,
+          height: 1200,
+          sortOrder: 1,
+          transcodeStatus: TranscodeStatus.complete,
         },
       });
 

@@ -35,7 +35,7 @@ export default function ExploreScreen() {
   const loadExplore = useCallback(async (cat = category) => {
     try {
       const data = await exploreService.getExplore(cat);
-      setItems(data.items ?? data.posts ?? []);
+      setItems(data.data ?? data.content ?? data.items ?? data.posts ?? []);
     } catch {
       setItems([]);
     }
@@ -51,7 +51,7 @@ export default function ExploreScreen() {
     setLoading(true);
     try {
       const data = await exploreService.search(query.trim());
-      setItems(data.items ?? data.posts ?? []);
+      setItems(data.data ?? data.content ?? data.items ?? data.posts ?? []);
     } catch {
       setItems([]);
     } finally {

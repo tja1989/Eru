@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -9,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { reelsService } from '../../services/reelsService';
 import { usePointsStore } from '../../stores/pointsStore';
 import { colors, spacing } from '../../constants/theme';
@@ -22,7 +23,7 @@ interface Reel {
   id: string;
   user?: { username: string; avatarUrl?: string; tier?: string };
   text?: string;
-  media?: Array<{ originalUrl: string }>;
+  media?: Array<{ originalUrl: string; thumbnailUrl?: string | null }>;
   likeCount: number;
   commentCount: number;
   isLiked?: boolean;
@@ -37,11 +38,27 @@ function ReelItem({
   isActive: boolean;
 }) {
   const { earn } = usePointsStore();
-  const videoRef = useRef<Video>(null);
   const [liked, setLiked] = useState(item.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
 
   const videoUrl = item.media?.[0]?.originalUrl;
+  const posterUrl = item.media?.[0]?.thumbnailUrl;
+
+  // expo-video's player hook must run unconditionally (Rules of Hooks). We
+  // pass null when there's no URL so the hook stays stable per-render.
+  const player = useVideoPlayer(videoUrl ?? null, (p) => {
+    p.loop = true;
+    p.muted = false;
+  });
+
+  useEffect(() => {
+    if (!videoUrl) return;
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isActive, videoUrl, player]);
 
   const handleLike = async () => {
     if (liked) {
@@ -63,22 +80,28 @@ function ReelItem({
 
   return (
     <View style={styles.reelContainer}>
+      {/* Poster image — shown under the VideoView while video loads, and as a
+          graceful fallback if expo-video can't play (e.g. in Expo Go). */}
+      {posterUrl ? (
+        <Image
+          source={{ uri: posterUrl }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        />
+      ) : null}
       {/* Video */}
       {videoUrl ? (
-        <Video
-          ref={videoRef}
-          source={{ uri: videoUrl }}
+        <VideoView
           style={styles.video}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={isActive}
-          isLooping
-          isMuted={false}
+          player={player}
+          contentFit="cover"
+          nativeControls={false}
         />
-      ) : (
+      ) : !posterUrl ? (
         <View style={[styles.video, styles.videoPlaceholder]}>
           <Text style={{ fontSize: 48 }}>🎬</Text>
         </View>
-      )}
+      ) : null}
 
       {/* Points indicator top-right */}
       {item.pointsPreview != null && (
