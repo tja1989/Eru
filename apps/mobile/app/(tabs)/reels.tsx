@@ -46,12 +46,18 @@ function ReelItem({
   const videoUrl = item.media?.[0]?.originalUrl;
   const posterUrl = item.media?.[0]?.thumbnailUrl;
 
-  // expo-video's player hook must run unconditionally (Rules of Hooks). We
-  // pass null when there's no URL so the hook stays stable per-render.
-  const player = useVideoPlayer(videoUrl ?? null, (p) => {
-    p.loop = true;
-    p.muted = false;
-  });
+  // expo-video's player hook must run unconditionally (Rules of Hooks).
+  // We pass the source as an object `{ uri }` (more reliable on Android than
+  // a bare string) and kick off playback inside the setup callback — this
+  // runs the moment the player is ready, which avoids a useEffect race.
+  const player = useVideoPlayer(
+    videoUrl ? { uri: videoUrl } : null,
+    (p) => {
+      p.loop = true;
+      p.muted = false;
+      p.play();
+    },
+  );
 
   useEffect(() => {
     if (!videoUrl) return;
