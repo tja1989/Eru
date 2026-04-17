@@ -42,7 +42,30 @@ export function PostCard({ post }: { post: any }) {
       </View>
 
       {post.media?.length > 0 && (
-        <Image source={{ uri: post.media[0].thumbnailUrl || post.media[0].originalUrl }} style={styles.image} resizeMode="cover" />
+        <TouchableOpacity
+          activeOpacity={0.95}
+          onPress={() => {
+            if (post.type === 'reel') {
+              // Reels jump into the Reels tab scrolled to this reel.
+              router.push({ pathname: '/(tabs)/reels', params: { reelId: post.id } });
+            } else {
+              // Posts and videos open in the post detail (expanded) view.
+              router.push({ pathname: '/post/[id]', params: { id: post.id } });
+            }
+          }}
+        >
+          <Image
+            source={{ uri: post.media[0].thumbnailUrl || post.media[0].originalUrl }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+          {/* Video/reel play badge — signals tappable media */}
+          {(post.type === 'reel' || post.media[0].type === 'video') ? (
+            <View style={styles.playBadge} pointerEvents="none">
+              <Text style={styles.playBadgeText}>▶</Text>
+            </View>
+          ) : null}
+        </TouchableOpacity>
       )}
 
       <View style={styles.actions}>
@@ -80,6 +103,20 @@ const styles = StyleSheet.create({
   verified: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
   more: { fontSize: 16, color: colors.g800, letterSpacing: 2 },
   image: { width: SCREEN_WIDTH, height: SCREEN_WIDTH, backgroundColor: colors.g100 },
+  playBadge: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 64,
+    height: 64,
+    marginLeft: -32,
+    marginTop: -32,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playBadgeText: { color: '#fff', fontSize: 28, marginLeft: 4 },
   actions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 6 },
   actionsLeft: { flexDirection: 'row', gap: 14 },
   likes: { paddingHorizontal: spacing.md, fontSize: 13, fontWeight: '600', color: colors.g800 },
