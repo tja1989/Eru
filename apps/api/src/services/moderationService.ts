@@ -23,6 +23,11 @@ const AUTO_APPROVE_THRESHOLD = 0.95;
 async function runVisionCheck(
   imageUrl: string,
 ): Promise<{ adult: number; violence: number; racy: number; spoof: number; medical: number }> {
+  // Vision API is optional. If not configured, route all content to human review.
+  if (!process.env.GOOGLE_CLOUD_VISION_KEY) {
+    return { adult: 0.5, violence: 0.5, racy: 0.5, spoof: 0.5, medical: 0.5 };
+  }
+
   try {
     const client = new vision.ImageAnnotatorClient({
       apiKey: process.env.GOOGLE_CLOUD_VISION_KEY,

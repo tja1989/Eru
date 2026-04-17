@@ -16,7 +16,7 @@ const envSchema = z.object({
   CLOUDFRONT_DOMAIN: z.string(),
   MEDIACONVERT_ENDPOINT: z.string().url().optional(),
   MEDIACONVERT_ROLE_ARN: z.string(),
-  GOOGLE_CLOUD_VISION_KEY: z.string(),
+  GOOGLE_CLOUD_VISION_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(16),
 });
 
