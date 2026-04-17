@@ -65,8 +65,11 @@ export default function OnboardingScreen() {
           <TextInput style={styles.input} placeholder="Choose a username" value={username} onChangeText={(t) => setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoCapitalize="none" />
           <TextInput style={styles.input} placeholder="Your pincode (6 digits)" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} />
           <TouchableOpacity style={styles.button} onPress={() => {
-            if (name && username && pincode.length === 6) setStep(2);
-            else Alert.alert('Please fill all fields');
+            if (!name || name.length < 2) return Alert.alert('Please enter your name');
+            if (!username || username.length < 3) return Alert.alert('Username must be at least 3 characters');
+            if (username.length > 30) return Alert.alert('Username must be 30 characters or fewer');
+            if (pincode.length !== 6) return Alert.alert('Please enter a 6-digit pincode');
+            setStep(2);
           }}>
             <Text style={styles.buttonText}>Next: Pick Interests</Text>
           </TouchableOpacity>
