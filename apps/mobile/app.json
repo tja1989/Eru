@@ -32,6 +32,13 @@
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5fb96f5e-8595-40ac-a854-07f89029aa07"
+      }
+    },
+    "owner": "eru_aflo"
   }
 }

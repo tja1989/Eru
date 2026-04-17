@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 13.0.0"
+    "version": ">= 13.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -16,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://eru-api.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://eruapi-production.up.railway.app"
       }
     },
     "production": {
@@ -24,7 +25,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.eru.app"
+        "EXPO_PUBLIC_API_URL": "https://eruapi-production.up.railway.app"
       }
     }
   },
