@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useLocalSearchParams } from 'expo-router';
 import { reelsService } from '../../services/reelsService';
+import { contentService } from '../../services/contentService';
 import { usePointsStore } from '../../stores/pointsStore';
 import { colors, spacing } from '../../constants/theme';
 
@@ -146,20 +148,56 @@ function ReelItem({
 
 export default function ReelsScreen() {
   const { earn } = usePointsStore();
+  // reelId is set when the user taps a reel thumbnail from Explore. We fetch
+  // that specific reel and prepend it so it's the first thing they see.
+  const { reelId } = useLocalSearchParams<{ reelId?: string }>();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    reelsService
-      .getReels('foryou', 1)
-      .then((data) => {
-        setReels(data.data ?? data.reels ?? data.items ?? []);
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+
+      // If deep-linked to a specific reel, fetch it first so we can pin it
+      // to the top of the list even if it's not in page 1 of /reels.
+      let pinned: Reel | null = null;
+      if (reelId) {
+        try {
+          const r = await contentService.getById(reelId);
+          const target = r?.content ?? r;
+          if (target?.type === 'reel') pinned = target as Reel;
+        } catch {
+          // ignore — if the specific reel fails to load we fall back to the list
+        }
+      }
+
+      try {
+        const data = await reelsService.getReels('foryou', 1);
+        if (cancelled) return;
+        const list: Reel[] = data.data ?? data.reels ?? data.items ?? [];
+        if (pinned) {
+          const deduped = list.filter((r) => r.id !== pinned!.id);
+          setReels([pinned, ...deduped]);
+        } else {
+          setReels(list);
+        }
         earn('view_reel');
-      })
-      .catch(() => setReels([]))
-      .finally(() => setLoading(false));
-  }, []);
+      } catch {
+        if (cancelled) return;
+        setReels(pinned ? [pinned] : []);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [reelId]);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
