@@ -62,13 +62,13 @@ export default function OnboardingScreen() {
       {step === 1 && (
         <>
           <Text style={styles.label}>Full name</Text>
-          <TextInput style={styles.input} placeholder="e.g., Anjali Menon" value={name} onChangeText={setName} />
+          <TextInput style={styles.input} placeholder="e.g., Anjali Menon" placeholderTextColor={colors.g400} value={name} onChangeText={setName} />
 
           <Text style={styles.label}>Username</Text>
-          <TextInput style={styles.input} placeholder="e.g., anjali_m (letters, numbers, _)" value={username} onChangeText={(t) => setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoCapitalize="none" />
+          <TextInput style={styles.input} placeholder="e.g., anjali_m (letters, numbers, _)" placeholderTextColor={colors.g400} value={username} onChangeText={(t) => setUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))} autoCapitalize="none" />
 
           <Text style={styles.label}>Pincode</Text>
-          <TextInput style={styles.input} placeholder="6-digit postal code" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} />
+          <TextInput style={styles.input} placeholder="6-digit postal code" placeholderTextColor={colors.g400} value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} />
           <TouchableOpacity style={styles.button} onPress={() => {
             if (!name || name.length < 2) return Alert.alert('Please enter your name');
             if (!username || username.length < 3) return Alert.alert('Username must be at least 3 characters');

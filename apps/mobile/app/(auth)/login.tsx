@@ -49,6 +49,7 @@ export default function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="e.g., 9876543210"
+        placeholderTextColor={colors.g400}
         keyboardType="phone-pad"
         value={phone}
         onChangeText={setPhone}

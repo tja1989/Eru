@@ -59,6 +59,22 @@ function ReelItem({
     },
   );
 
+  // Surface the player's status on screen so we can diagnose why video might
+  // not be drawing on some devices (e.g. "idle"/"loading"/"error" vs "playing").
+  const [playerStatus, setPlayerStatus] = useState<string>('init');
+  const [playerError, setPlayerError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!videoUrl) return;
+    const sub = player.addListener('statusChange', (event: any) => {
+      const s = event?.status ?? event ?? 'unknown';
+      setPlayerStatus(String(s));
+      const err = event?.error ?? null;
+      if (err) setPlayerError(String(err?.message ?? err));
+    });
+    return () => sub.remove();
+  }, [player, videoUrl]);
+
   useEffect(() => {
     if (!videoUrl) return;
     if (isActive) {
@@ -100,7 +116,7 @@ function ReelItem({
       {/* Video */}
       {videoUrl ? (
         <VideoView
-          style={styles.video}
+          style={styles.videoOnTop}
           player={player}
           contentFit="cover"
           nativeControls={false}
@@ -108,6 +124,17 @@ function ReelItem({
       ) : !posterUrl ? (
         <View style={[styles.video, styles.videoPlaceholder]}>
           <Text style={{ fontSize: 48 }}>🎬</Text>
+        </View>
+      ) : null}
+
+      {/* Temporary diagnostic overlay — tells us what state the player is in.
+          Remove once reels reliably play on all devices. */}
+      {videoUrl ? (
+        <View style={styles.debugBadge} pointerEvents="none">
+          <Text style={styles.debugText}>
+            {playerStatus}
+            {playerError ? ` · ${playerError.slice(0, 40)}` : ''}
+          </Text>
         </View>
       ) : null}
 
@@ -276,6 +303,26 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: REEL_HEIGHT,
   },
+  // Same dimensions as `video` but forced on top of the poster image so the
+  // native VideoView surface isn't hidden underneath the <Image> fallback.
+  videoOnTop: {
+    width: SCREEN_WIDTH,
+    height: REEL_HEIGHT,
+    zIndex: 2,
+    elevation: 2,
+  },
+  debugBadge: {
+    position: 'absolute',
+    top: 50,
+    left: 14,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    zIndex: 10,
+    elevation: 10,
+  },
+  debugText: { color: '#fff', fontSize: 11, fontWeight: '600' },
   videoPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
