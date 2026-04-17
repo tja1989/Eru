@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PostCard } from '../../components/PostCard';
@@ -14,6 +14,8 @@ export default function HomeFeedScreen() {
   const { posts, loading, refreshing, refresh, loadMore, loadFeed } = useFeed();
   const { refreshSummary, earn } = usePointsStore();
   const [stories, setStories] = useState<any[]>([]);
+  // Index of the post currently most in view — only that post's video plays.
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     loadFeed(1);
@@ -21,6 +23,18 @@ export default function HomeFeedScreen() {
     feedService.getStories().then((r) => setStories(r.stories || [])).catch(() => {});
     earn('daily_checkin');
   }, []);
+
+  // When the user scrolls, switch the active video to whichever post is
+  // most visible. 60% threshold matches Instagram's feel.
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+        setActiveIndex(viewableItems[0].index);
+      }
+    },
+    [],
+  );
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
   const renderHeader = () => (
     <>
@@ -41,7 +55,9 @@ export default function HomeFeedScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <FlatList
         data={posts}
-        renderItem={({ item }) => <PostCard post={item} />}
+        renderItem={({ item, index }) => (
+          <PostCard post={item} isActive={index === activeIndex} />
+        )}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         onEndReached={loadMore}
@@ -49,6 +65,8 @@ export default function HomeFeedScreen() {
         onRefresh={refresh}
         refreshing={refreshing}
         showsVerticalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
     </SafeAreaView>
   );
