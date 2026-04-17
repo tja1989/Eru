@@ -113,7 +113,11 @@ export async function walletRoutes(app: FastifyInstance) {
       prisma.pointsLedger.count({ where: { userId } }),
     ]);
 
-    return { history: entries, page, limit, total };
+    return {
+      data: entries,
+      nextPage: page * limit < total ? page + 1 : null,
+      total,
+    };
   });
 
   // -------------------------------------------------------------------------

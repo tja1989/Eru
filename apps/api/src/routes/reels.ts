@@ -92,7 +92,12 @@ export async function reelsRoutes(app: FastifyInstance) {
 
     const total = await prisma.content.count({ where });
 
-    return { reels: reelsWithLiked, page, limit, total };
+    // Normalise to the standard PaginatedResponse shape {data, nextPage, total}
+    return {
+      data: reelsWithLiked,
+      nextPage: page * limit < total ? page + 1 : null,
+      total,
+    };
   });
 
   // -------------------------------------------------------------------------

@@ -56,7 +56,11 @@ export async function adminRoutes(app: FastifyInstance) {
       prisma.moderationQueue.count({ where: { decision: null } }),
     ]);
 
-    return { items, page, limit, total };
+    return {
+      data: items,
+      nextPage: page * limit < total ? page + 1 : null,
+      total,
+    };
   });
 
   /**
