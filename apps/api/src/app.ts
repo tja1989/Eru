@@ -51,6 +51,21 @@ export function buildApp(): FastifyInstance {
     });
   });
 
+  // Root welcome page — shown when someone visits the bare URL
+  app.get('/', async (_request, reply) => {
+    reply.type('text/html').send(`<!DOCTYPE html>
+<html><head><title>Eru API</title><meta charset="utf-8">
+<style>body{font-family:-apple-system,system-ui,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#262626;line-height:1.6}h1{font-style:italic;font-family:Georgia,serif;color:#E8792B;font-size:42px;margin:0}p{color:#737373}a{color:#0095F6;text-decoration:none}a:hover{text-decoration:underline}.list{background:#FAFAFA;padding:16px 24px;border-radius:12px;margin-top:24px}</style>
+</head><body>
+<h1>Eru</h1>
+<p>India's super content app where consumers earn rewards, creators earn money, and brands earn customers.</p>
+<div class="list">
+<p><strong>This is the API server.</strong> Install the Eru mobile app to use the product.</p>
+<p>For operators: <a href="/admin/">Moderation Panel</a> &middot; <a href="/health">Health Check</a></p>
+</div>
+</body></html>`);
+  });
+
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
   app.register(authRoutes, { prefix: '/api/v1' });
