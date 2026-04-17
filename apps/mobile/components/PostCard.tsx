@@ -99,6 +99,10 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
                 player={player}
                 contentFit="cover"
                 nativeControls={false}
+                // Let taps fall through to the TouchableOpacity wrapper so the
+                // user can open the reel in the Reels viewer by tapping the
+                // video. Without this, VideoView silently eats touches.
+                pointerEvents="none"
               />
             </>
           ) : (
