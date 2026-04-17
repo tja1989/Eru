@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { setAuthToken } from '../../services/api';
+import { feedService } from '../../services/feedService';
 import { colors, spacing } from '../../constants/theme';
 
 export default function LoginScreen() {
@@ -15,10 +16,25 @@ export default function LoginScreen() {
     if (!phone || phone.length < 10) return Alert.alert('Enter a valid phone number');
     setLoading(true);
     try {
-      // Pass the phone to onboarding — token is set only AFTER registration
-      // so the auth-gate redirect doesn't skip past the onboarding screen.
       const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-      router.push({ pathname: '/(auth)/onboarding', params: { phone: formattedPhone } });
+      const firebaseUid = 'dev-' + formattedPhone.replace(/[^0-9]/g, '');
+
+      // Try the dev token against /wallet/summary — it requires auth and returns
+      // 200 only if a user with this firebaseUid already exists in the DB.
+      setAuthToken(firebaseUid);
+      try {
+        await feedService.getWalletSummary();
+        // Existing user — flip auth on and the root layout redirects to /(tabs)
+        setToken(firebaseUid);
+      } catch (err: any) {
+        // No user yet → clear the temporary token and route to onboarding
+        setAuthToken(null);
+        if (err?.response?.status === 401) {
+          router.push({ pathname: '/(auth)/onboarding', params: { phone: formattedPhone } });
+        } else {
+          Alert.alert('Error', err?.response?.data?.error || err?.message || 'Login failed');
+        }
+      }
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
