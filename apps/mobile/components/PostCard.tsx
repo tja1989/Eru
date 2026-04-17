@@ -48,7 +48,9 @@ export function PostCard({ post }: { post: any }) {
       <View style={styles.actions}>
         <View style={styles.actionsLeft}>
           <TouchableOpacity onPress={handleLike}><Text style={{ fontSize: 26 }}>{liked ? '❤️' : '🤍'}</Text></TouchableOpacity>
-          <TouchableOpacity><Text style={{ fontSize: 26 }}>💬</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}>
+            <Text style={{ fontSize: 26 }}>💬</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => earn('share', post.id)}><Text style={{ fontSize: 26 }}>📤</Text></TouchableOpacity>
         </View>
         <TouchableOpacity onPress={() => { setSaved(!saved); earn('save', post.id); }}>
@@ -61,7 +63,9 @@ export function PostCard({ post }: { post: any }) {
         <Text style={styles.caption}><Text style={styles.captionUser}>{post.user?.username} </Text>{post.text}</Text>
       )}
       {post.commentCount > 0 && (
-        <Text style={styles.viewComments}>View all {post.commentCount} comments</Text>
+        <TouchableOpacity onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}>
+          <Text style={styles.viewComments}>View all {post.commentCount} comments</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
