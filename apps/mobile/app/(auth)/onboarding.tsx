@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { userService } from '../../services/userService';
 import { colors, spacing } from '../../constants/theme';
@@ -9,7 +9,8 @@ const INTERESTS = ['Food', 'Travel', 'Tech', 'Fitness', 'Film', 'Art', 'Music', 
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { register: registerUser } = useAuthStore();
+  const { phone: phoneParam } = useLocalSearchParams<{ phone: string }>();
+  const { register: registerUser, setToken } = useAuthStore();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -29,13 +30,24 @@ export default function OnboardingScreen() {
     }
     setLoading(true);
     try {
-      await registerUser({
-        firebaseUid: 'dev-uid-' + Date.now(),
-        phone: '+91' + Math.random().toString().slice(2, 12),
-        name,
-        username,
-      });
-      router.replace('/(tabs)');
+      // Use the phone as our stable firebase-style UID during beta.
+      // When real Firebase Auth is wired, this becomes auth().currentUser.uid.
+      const phone = phoneParam || `+91${Math.random().toString().slice(2, 12)}`;
+      const firebaseUid = 'dev-' + phone.replace(/[^0-9]/g, '');
+
+      await registerUser({ firebaseUid, phone, name, username });
+
+      // Update pincode + interests via settings after register
+      await userService.updateSettings({
+        primaryPincode: pincode,
+        interests: selectedInterests.map((i) => i.toLowerCase()),
+      }).catch(() => {});
+
+      // Now it's safe to flip auth on — the user exists in the DB and the
+      // dev token will validate against it on subsequent requests.
+      setToken(firebaseUid);
+
+      // Auth gate in _layout.tsx will redirect to /(tabs) because isAuthenticated flipped.
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.error || error.message);
     }

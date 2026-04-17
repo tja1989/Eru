@@ -19,10 +19,22 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   const token = authHeader.slice(7);
 
   try {
-    const decoded = await verifyFirebaseToken(token);
+    // Dev-token fast path: when ALLOW_DEV_TOKENS=true, treat tokens that start
+    // with "dev-" as already-verified. The full token string is the firebaseUid.
+    // This enables Expo Go testing without native Firebase phone-auth.
+    // Disable by setting ALLOW_DEV_TOKENS=false in production.
+    const allowDev = process.env.ALLOW_DEV_TOKENS === 'true';
+    let firebaseUid: string;
+
+    if (allowDev && token.startsWith('dev-')) {
+      firebaseUid = token;
+    } else {
+      const decoded = await verifyFirebaseToken(token);
+      firebaseUid = decoded.uid;
+    }
 
     const user = await prisma.user.findUnique({
-      where: { firebaseUid: decoded.uid },
+      where: { firebaseUid },
       select: { id: true, role: true },
     });
 

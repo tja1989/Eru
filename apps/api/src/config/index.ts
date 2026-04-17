@@ -18,6 +18,7 @@ const envSchema = z.object({
   MEDIACONVERT_ROLE_ARN: z.string().optional(),
   GOOGLE_CLOUD_VISION_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(16),
+  ALLOW_DEV_TOKENS: z.enum(['true', 'false']).default('false'),
 });
 
 function loadConfig() {

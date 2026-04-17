@@ -15,11 +15,10 @@ export default function LoginScreen() {
     if (!phone || phone.length < 10) return Alert.alert('Enter a valid phone number');
     setLoading(true);
     try {
-      // For beta: mock authentication
-      // In production: use Firebase phone auth
-      const mockToken = 'dev-token-' + Date.now();
-      setToken(mockToken);
-      router.replace('/(auth)/onboarding');
+      // Pass the phone to onboarding — token is set only AFTER registration
+      // so the auth-gate redirect doesn't skip past the onboarding screen.
+      const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+      router.push({ pathname: '/(auth)/onboarding', params: { phone: formattedPhone } });
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
