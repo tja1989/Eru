@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'url';
@@ -35,9 +35,10 @@ export function buildApp(): FastifyInstance {
         statusCode: error.statusCode,
       });
     }
-    if (error.validation) {
+    const fastifyError = error as FastifyError;
+    if (fastifyError.validation) {
       return reply.status(400).send({
-        error: error.message,
+        error: fastifyError.message,
         code: 'VALIDATION_ERROR',
         statusCode: 400,
       });

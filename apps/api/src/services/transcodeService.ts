@@ -18,6 +18,16 @@ function getClient(): MediaConvertClient {
 }
 
 export async function triggerTranscode(mediaId: string, s3Key: string): Promise<void> {
+  // Transcoding is optional. If MEDIACONVERT_ROLE_ARN is not set, skip it —
+  // the original video stays in S3 and is served directly (no adaptive bitrate).
+  if (!process.env.MEDIACONVERT_ROLE_ARN) {
+    await prisma.contentMedia.update({
+      where: { id: mediaId },
+      data: { transcodeStatus: 'complete' },
+    });
+    return;
+  }
+
   const bucket = process.env.S3_BUCKET!;
   const baseName = s3Key.replace(/\.[^/.]+$/, '');
   const outputPrefix = baseName.replace('originals/', 'transcoded/');
@@ -45,11 +55,20 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
     UserMetadata: { mediaId },
   });
 
-  await getClient().send(command);
-  await prisma.contentMedia.update({
-    where: { id: mediaId },
-    data: { transcodeStatus: 'processing' },
-  });
+  try {
+    await getClient().send(command);
+    await prisma.contentMedia.update({
+      where: { id: mediaId },
+      data: { transcodeStatus: 'processing' },
+    });
+  } catch (err) {
+    // MediaConvert unavailable (e.g. account not subscribed). Fall back to serving the original.
+    console.warn('MediaConvert unavailable, skipping transcode for media', mediaId, err instanceof Error ? err.message : err);
+    await prisma.contentMedia.update({
+      where: { id: mediaId },
+      data: { transcodeStatus: 'complete' },
+    });
+  }
 }
 
 function createOutput(suffix: string, width: number, height: number, bitrate: number) {

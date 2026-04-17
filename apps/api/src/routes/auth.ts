@@ -6,7 +6,7 @@ import { rateLimitByIp } from '../middleware/rateLimit.js';
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/auth/register', {
-    preHandler: [rateLimitByIp(5, '1m')],
+    preHandler: [rateLimitByIp(5, '1 m')],
   }, async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body);
     if (!parsed.success) {

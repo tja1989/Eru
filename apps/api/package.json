@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && cp -r src/admin-panel dist/admin-panel",
     "start": "node dist/server.js",
     "test": "vitest",
     "db:migrate": "prisma migrate dev",

@@ -99,7 +99,7 @@ export async function reelsRoutes(app: FastifyInstance) {
   // POST /reels/:id/like — like a reel
   // -------------------------------------------------------------------------
   app.post('/reels/:id/like', {
-    preHandler: [rateLimitByUser(60, '1m')],
+    preHandler: [rateLimitByUser(60, '1 m')],
   }, async (request, reply) => {
     const { id: contentId } = request.params as { id: string };
     const currentUserId = request.userId;
@@ -141,7 +141,7 @@ export async function reelsRoutes(app: FastifyInstance) {
   // POST /reels/:id/comments — add a comment to a reel
   // -------------------------------------------------------------------------
   app.post('/reels/:id/comments', {
-    preHandler: [rateLimitByUser(30, '1m')],
+    preHandler: [rateLimitByUser(30, '1 m')],
   }, async (request, reply) => {
     const { id: contentId } = request.params as { id: string };
 

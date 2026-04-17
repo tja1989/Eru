@@ -11,7 +11,7 @@ export async function actionRoutes(app: FastifyInstance) {
 
   app.post(
     '/actions/earn',
-    { preHandler: [rateLimitByUser(30, '1m')] },
+    { preHandler: [rateLimitByUser(30, '1 m')] },
     async (request) => {
       const parsed = earnSchema.safeParse(request.body);
       if (!parsed.success) {

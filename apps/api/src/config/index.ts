@@ -15,13 +15,17 @@ const envSchema = z.object({
   S3_BUCKET: z.string(),
   CLOUDFRONT_DOMAIN: z.string(),
   MEDIACONVERT_ENDPOINT: z.string().url().optional(),
-  MEDIACONVERT_ROLE_ARN: z.string(),
+  MEDIACONVERT_ROLE_ARN: z.string().optional(),
   GOOGLE_CLOUD_VISION_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(16),
 });
 
 function loadConfig() {
-  const parsed = envSchema.safeParse(process.env);
+  // Treat empty strings as undefined so optional fields can be left blank in .env
+  const cleaned = Object.fromEntries(
+    Object.entries(process.env).map(([k, v]) => [k, v === '' ? undefined : v]),
+  );
+  const parsed = envSchema.safeParse(cleaned);
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.path.join('.')).join(', ');
     throw new Error(`Missing or invalid environment variables: ${missing}`);

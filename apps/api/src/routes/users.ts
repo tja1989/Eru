@@ -63,7 +63,7 @@ export async function userRoutes(app: FastifyInstance) {
 
   // POST /users/:id/follow — follow a user
   app.post('/users/:id/follow', {
-    preHandler: [rateLimitByUser(30, '1m')],
+    preHandler: [rateLimitByUser(30, '1 m')],
   }, async (request, reply) => {
     const { id: targetId } = request.params as { id: string };
     const currentUserId = request.userId;

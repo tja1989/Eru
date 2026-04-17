@@ -28,7 +28,7 @@ export async function mediaRoutes(app: FastifyInstance) {
   // The ContentMedia row is pre-created with a placeholder contentId so that
   // it can be linked to real content in the /content/create endpoint.
   app.post('/media/upload', {
-    preHandler: [rateLimitByUser(20, '1m')],
+    preHandler: [rateLimitByUser(20, '1 m')],
   }, async (request, reply) => {
     const parsed = uploadSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -71,7 +71,7 @@ export async function mediaRoutes(app: FastifyInstance) {
   // POST /media/presign — generate a presigned URL only (no DB record created)
   // For clients that want to upload first and decide later whether to publish.
   app.post('/media/presign', {
-    preHandler: [rateLimitByUser(30, '1m')],
+    preHandler: [rateLimitByUser(30, '1 m')],
   }, async (request, reply) => {
     const parsed = presignSchema.safeParse(request.body);
     if (!parsed.success) {

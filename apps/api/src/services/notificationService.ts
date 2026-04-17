@@ -25,7 +25,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
       type,
       title,
       body,
-      data: data ?? null,
+      data: data ?? undefined,
       deepLink: deepLink ?? null,
     },
   });

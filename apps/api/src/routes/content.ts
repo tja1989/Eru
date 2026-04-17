@@ -11,7 +11,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // POST /content/create — create new content and link any pre-uploaded media
   app.post('/content/create', {
-    preHandler: [rateLimitByUser(20, '1m')],
+    preHandler: [rateLimitByUser(20, '1 m')],
   }, async (request, reply) => {
     const parsed = createContentSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -183,7 +183,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // POST /posts/:id/like — like a piece of content
   app.post('/posts/:id/like', {
-    preHandler: [rateLimitByUser(60, '1m')],
+    preHandler: [rateLimitByUser(60, '1 m')],
   }, async (request, reply) => {
     const { id: contentId } = request.params as { id: string };
     const currentUserId = request.userId;
@@ -249,7 +249,7 @@ export async function contentRoutes(app: FastifyInstance) {
 
   // POST /posts/:id/comments — add a comment (top-level or threaded reply)
   app.post('/posts/:id/comments', {
-    preHandler: [rateLimitByUser(30, '1m')],
+    preHandler: [rateLimitByUser(30, '1 m')],
   }, async (request, reply) => {
     const { id: contentId } = request.params as { id: string };
 
