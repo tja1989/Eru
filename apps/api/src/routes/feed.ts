@@ -51,7 +51,13 @@ export async function feedRoutes(app: FastifyInstance) {
       limit,
     );
 
-    return feedPage;
+    // Normalise to the standard PaginatedResponse shape {data, nextPage, total}
+    // that the mobile app and all other routes use.
+    return {
+      data: feedPage.items,
+      nextPage: feedPage.page * feedPage.limit < feedPage.total ? feedPage.page + 1 : null,
+      total: feedPage.total,
+    };
   });
 
   // -------------------------------------------------------------------------
