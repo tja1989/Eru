@@ -5,10 +5,14 @@ let client: MediaConvertClient | null = null;
 
 function getClient(): MediaConvertClient {
   if (!client) {
-    client = new MediaConvertClient({
+    const config: { region?: string; endpoint?: string } = {
       region: process.env.AWS_REGION,
-      endpoint: process.env.MEDIACONVERT_ENDPOINT,
-    });
+    };
+    // v3 SDK auto-discovers endpoint per account; override only if provided
+    if (process.env.MEDIACONVERT_ENDPOINT) {
+      config.endpoint = process.env.MEDIACONVERT_ENDPOINT;
+    }
+    client = new MediaConvertClient(config);
   }
   return client;
 }

@@ -14,7 +14,7 @@ const envSchema = z.object({
   AWS_REGION: z.string().default('ap-south-1'),
   S3_BUCKET: z.string(),
   CLOUDFRONT_DOMAIN: z.string(),
-  MEDIACONVERT_ENDPOINT: z.string().url(),
+  MEDIACONVERT_ENDPOINT: z.string().url().optional(),
   MEDIACONVERT_ROLE_ARN: z.string(),
   GOOGLE_CLOUD_VISION_KEY: z.string(),
   JWT_SECRET: z.string().min(16),
