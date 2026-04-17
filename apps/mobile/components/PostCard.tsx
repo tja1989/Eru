@@ -86,7 +86,7 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
       </View>
 
       {mediaItem && (
-        <TouchableOpacity activeOpacity={0.95} onPress={openDetail}>
+        <View style={styles.mediaWrap}>
           {videoUrl ? (
             <>
               {/* Poster behind VideoView so the card has something to show
@@ -99,22 +99,29 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
                 player={player}
                 contentFit="cover"
                 nativeControls={false}
-                // Let taps fall through to the TouchableOpacity wrapper so the
-                // user can open the reel in the Reels viewer by tapping the
-                // video. Without this, VideoView silently eats touches.
-                pointerEvents="none"
               />
             </>
           ) : (
             <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
           )}
+
           {/* Play badge — shown only for video/reel so users know it's tappable */}
           {isVideo ? (
             <View style={styles.playBadge} pointerEvents="none">
               <Text style={styles.playBadgeText}>▶</Text>
             </View>
           ) : null}
-        </TouchableOpacity>
+
+          {/* Transparent tap-catching overlay — sits ABOVE VideoView (which
+              swallows touches as a native view). Works reliably under the
+              new React Native architecture where child-level pointerEvents
+              doesn't always propagate through native surfaces. */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={openDetail}
+            style={styles.tapOverlay}
+          />
+        </View>
       )}
 
       <View style={styles.actions}>
@@ -151,6 +158,7 @@ const styles = StyleSheet.create({
   username: { fontSize: 13, fontWeight: '600', color: colors.g800 },
   verified: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
   more: { fontSize: 16, color: colors.g800, letterSpacing: 2 },
+  mediaWrap: { position: 'relative', width: SCREEN_WIDTH, height: SCREEN_WIDTH },
   image: { width: SCREEN_WIDTH, height: SCREEN_WIDTH, backgroundColor: colors.g100 },
   // VideoView sits on top of the poster Image. Matches image size exactly.
   videoOverlay: {
@@ -161,6 +169,17 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH,
     zIndex: 2,
     elevation: 2,
+  },
+  // Transparent overlay above everything — captures taps since the native
+  // VideoView would otherwise eat them. Higher zIndex than the play badge.
+  tapOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    elevation: 5,
   },
   playBadge: {
     position: 'absolute',
