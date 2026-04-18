@@ -20,3 +20,12 @@ jest.mock('expo-router', () => ({
   Redirect: () => null,
   Stack: { Screen: () => null },
 }));
+
+// Prevent axios from being imported during tests — causes stream issues with
+// Expo's fetch polyfill in jest-expo. Tests that need API behaviour mock
+// `@/services/contentService` directly.
+jest.mock('@/services/api', () => ({
+  __esModule: true,
+  default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
+  setAuthToken: jest.fn(),
+}));
