@@ -120,6 +120,10 @@ model User {
   followers         Follow[]  @relation("following")
   following         Follow[]  @relation("follower")
   contentReports    ContentReport[] @relation("contentReports")
+  userRewards       UserReward[]
+  questProgress     UserQuestProgress[]
+  spinResults       SpinResult[]
+  badges            UserBadge[]
 
   @@index([primaryPincode])
   @@map("users")
@@ -327,4 +331,166 @@ model ContentReport {
   @@unique([contentId, reporterId])
   @@index([status])
   @@map("content_reports")
+}
+
+// ========== P1 additions ==========
+
+enum OfferType {
+  local
+  giftcard
+  recharge
+  donate
+  premium
+}
+
+enum RewardStatus {
+  active
+  used
+  expired
+}
+
+enum QuestPeriod {
+  daily
+  weekly
+  seasonal
+}
+
+model Business {
+  id              String    @id @default(uuid())
+  name            String
+  category        String
+  description     String?
+  avatarUrl       String?   @map("avatar_url")
+  pincode         String    @db.VarChar(6)
+  address         String?
+  phone           String?
+  openHours       Json?     @map("open_hours")
+  isVerified      Boolean   @default(false) @map("is_verified")
+  rating          Decimal   @default(0) @db.Decimal(2, 1)
+  reviewCount     Int       @default(0) @map("review_count")
+  followerCount   Int       @default(0) @map("follower_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  offers Offer[]
+
+  @@index([pincode])
+  @@map("businesses")
+}
+
+model Offer {
+  id                 String      @id @default(uuid())
+  type               OfferType
+  businessId         String?     @map("business_id")
+  title              String
+  description        String?
+  imageUrl           String?     @map("image_url")
+  pointsCost         Int         @map("points_cost")
+  cashValue          Decimal     @map("cash_value") @db.Decimal(10, 2)
+  stock              Int?
+  perUserLimit       Int         @default(1) @map("per_user_limit")
+  validFrom          DateTime    @map("valid_from")
+  validUntil         DateTime    @map("valid_until")
+  isActive           Boolean     @default(true) @map("is_active")
+  metadata           Json?
+  createdAt          DateTime    @default(now()) @map("created_at")
+
+  business     Business?    @relation(fields: [businessId], references: [id])
+  userRewards  UserReward[]
+
+  @@index([type, isActive])
+  @@index([businessId])
+  @@map("offers")
+}
+
+model UserReward {
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  offerId       String       @map("offer_id")
+  claimCode     String       @unique @map("claim_code")
+  pointsSpent   Int          @map("points_spent")
+  status        RewardStatus @default(active)
+  expiresAt     DateTime     @map("expires_at")
+  usedAt        DateTime?    @map("used_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  offer Offer @relation(fields: [offerId], references: [id])
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("user_rewards")
+}
+
+model Quest {
+  id              String      @id @default(uuid())
+  title           String
+  description     String?
+  actionType      String      @map("action_type")
+  targetCount     Int         @map("target_count")
+  rewardPoints    Int         @map("reward_points")
+  period          QuestPeriod
+  isActive        Boolean     @default(true) @map("is_active")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  progress UserQuestProgress[]
+
+  @@map("quests")
+}
+
+model UserQuestProgress {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  questId      String    @map("quest_id")
+  periodStart  DateTime  @map("period_start") @db.Date
+  currentCount Int       @default(0) @map("current_count")
+  completedAt  DateTime? @map("completed_at")
+  claimedAt    DateTime? @map("claimed_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  quest Quest @relation(fields: [questId], references: [id])
+
+  @@unique([userId, questId, periodStart])
+  @@index([userId, completedAt])
+  @@map("user_quest_progress")
+}
+
+model SpinResult {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  spinDate      DateTime @map("spin_date") @db.Date
+  pointsAwarded Int      @map("points_awarded")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, spinDate])
+  @@map("spin_results")
+}
+
+model Badge {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  title           String
+  description     String
+  emoji           String
+  unlockRule      Json     @map("unlock_rule")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  badgeId    String   @map("badge_id")
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  badge Badge @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
 }
