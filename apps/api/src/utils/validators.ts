@@ -13,6 +13,19 @@ export const createContentSchema = z.object({
   mediaIds: z.array(z.string().uuid()).default([]),
   hashtags: z.array(z.string().max(50)).max(30).default([]),
   locationPincode: z.string().length(6).optional(),
+  pollOptions: z.array(z.string().min(1).max(200)).optional(),
+}).refine((data) => {
+  // poll type MUST have 2–4 options
+  if (data.type === 'poll') {
+    return Array.isArray(data.pollOptions) && data.pollOptions.length >= 2 && data.pollOptions.length <= 4;
+  }
+  // non-poll types MUST NOT supply pollOptions
+  if (data.pollOptions !== undefined && data.pollOptions.length > 0) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Poll type requires 2–4 options; non-poll types must not include pollOptions',
 });
 
 export const earnSchema = z.object({

@@ -18,7 +18,7 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.badRequest(parsed.error.issues[0].message);
     }
 
-    const { type, text, mediaIds, hashtags, locationPincode } = parsed.data;
+    const { type, text, mediaIds, hashtags, locationPincode, pollOptions } = parsed.data;
 
     // Create the content row first
     const content = await prisma.content.create({
@@ -31,6 +31,21 @@ export async function contentRoutes(app: FastifyInstance) {
         moderationStatus: 'pending',
       },
     });
+
+    // Persist poll options in the same transaction as the content row
+    if (type === 'poll' && pollOptions && pollOptions.length > 0) {
+      await prisma.$transaction(
+        pollOptions.map((optText, idx) =>
+          prisma.pollOption.create({
+            data: {
+              contentId: content.id,
+              text: optText,
+              sortOrder: idx,
+            },
+          })
+        )
+      );
+    }
 
     // Link any pre-uploaded media to this new content row
     if (mediaIds.length > 0) {
@@ -119,6 +134,29 @@ export async function contentRoutes(app: FastifyInstance) {
       },
     });
 
+    // For poll content, fetch options and the current user's vote
+    let pollOptions: Array<{ id: string; text: string; sortOrder: number; voteCount: number }> | undefined;
+    let userVote: string | null = null;
+
+    if (content.type === 'poll') {
+      const options = await prisma.pollOption.findMany({
+        where: { contentId: id },
+        orderBy: { sortOrder: 'asc' },
+        select: { id: true, text: true, sortOrder: true, voteCount: true },
+      });
+      pollOptions = options;
+
+      // Find which option (if any) this user voted for
+      const vote = await prisma.pollVote.findFirst({
+        where: {
+          userId: currentUserId,
+          pollOption: { contentId: id },
+        },
+        select: { pollOptionId: true },
+      });
+      userVote = vote?.pollOptionId ?? null;
+    }
+
     return {
       content: {
         ...content,
@@ -126,6 +164,7 @@ export async function contentRoutes(app: FastifyInstance) {
         isDisliked: dislikeInteraction !== null,
         isSaved: saveInteraction !== null,
         commentsPreview,
+        ...(content.type === 'poll' && { pollOptions, userVote }),
       },
     };
   });
