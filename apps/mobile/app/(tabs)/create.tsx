@@ -19,6 +19,7 @@ import { mediaService } from '../../services/mediaService';
 import { PollForm } from '../../components/PollForm';
 import { ThreadComposer } from '../../components/ThreadComposer';
 import { LocationPicker } from '../../components/LocationPicker';
+import { UserTagPicker, TagUser } from '../../components/UserTagPicker';
 import { colors, spacing, radius } from '../../constants/theme';
 
 const CONTENT_TYPES = ['photo', 'video', 'text', 'poll', 'thread'] as const;
@@ -47,6 +48,9 @@ export default function CreateScreen() {
   // Location state
   const [showLocPicker, setShowLocPicker] = useState(false);
   const [selectedPincode, setSelectedPincode] = useState<string | null>(null);
+  // Tag users state
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [taggedUsers, setTaggedUsers] = useState<TagUser[]>([]);
 
   const pickMedia = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,6 +127,8 @@ export default function CreateScreen() {
         .map((h) => h.replace(/^#/, '').trim())
         .filter(Boolean);
 
+      const taggedUserIds = taggedUsers.length > 0 ? taggedUsers.map((u) => u.id) : undefined;
+
       if (contentType === 'poll') {
         await contentService.create({
           type: 'poll',
@@ -131,6 +137,7 @@ export default function CreateScreen() {
           mediaIds: [],
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
+          taggedUserIds,
         });
       } else if (contentType === 'thread') {
         await contentService.create({
@@ -139,6 +146,7 @@ export default function CreateScreen() {
           mediaIds: [],
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
+          taggedUserIds,
         });
       } else {
         await contentService.create({
@@ -147,6 +155,7 @@ export default function CreateScreen() {
           mediaIds,
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
+          taggedUserIds,
         });
       }
 
@@ -275,6 +284,21 @@ export default function CreateScreen() {
           />
         </View>
 
+        {/* Tagged users chip row */}
+        {taggedUsers.length > 0 && (
+          <TouchableOpacity
+            style={styles.taggedChipRow}
+            onPress={() => setShowTagPicker(true)}
+            accessibilityLabel="Edit tagged users"
+          >
+            <Text style={styles.taggedChipText}>
+              {'👥 Tagged: '}
+              {taggedUsers.slice(0, 2).map((u) => `@${u.username}`).join(', ')}
+              {taggedUsers.length > 2 ? ` +${taggedUsers.length - 2}` : ''}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Moderation notice */}
         <View style={styles.moderationBanner}>
           <Text style={styles.moderationIcon}>⚠️</Text>
@@ -321,6 +345,16 @@ export default function CreateScreen() {
               {selectedPincode ?? 'Location'}
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolbarBtn}
+            onPress={() => setShowTagPicker(true)}
+            accessibilityLabel="Tag users"
+          >
+            <Text style={styles.toolbarIcon}>👥</Text>
+            <Text style={styles.toolbarLabel}>
+              {taggedUsers.length > 0 ? `${taggedUsers.length} tagged` : 'Tag'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -343,6 +377,31 @@ export default function CreateScreen() {
               setSelectedPincode(pc);
               setShowLocPicker(false);
             }}
+          />
+        </SafeAreaView>
+      </Modal>
+
+      {/* Tag Users Modal */}
+      <Modal
+        visible={showTagPicker}
+        animationType="slide"
+        onRequestClose={() => setShowTagPicker(false)}
+      >
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowTagPicker(false)}>
+              <Text style={styles.headerBtn}>✕</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Tag Users</Text>
+            <View style={{ width: 36 }} />
+          </View>
+          <UserTagPicker
+            initialSelected={taggedUsers}
+            onConfirm={(selected) => {
+              setTaggedUsers(selected);
+              setShowTagPicker(false);
+            }}
+            onCancel={() => setShowTagPicker(false)}
           />
         </SafeAreaView>
       </Modal>
@@ -498,4 +557,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: colors.g200,
   },
+  taggedChipRow: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    backgroundColor: colors.g100,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  taggedChipText: { fontSize: 13, fontWeight: '600', color: colors.g700 },
 });

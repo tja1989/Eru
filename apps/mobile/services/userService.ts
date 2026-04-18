@@ -1,6 +1,8 @@
 import api from './api';
 
 export const userService = {
+  search: (q: string) =>
+    api.get('/search', { params: { q } }).then((r) => (r.data.users ?? []) as Array<{ id: string; name: string; username: string; avatarUrl?: string }>),
   getProfile: (id: string) => api.get(`/users/${id}/profile`).then((r) => r.data),
   follow: (id: string) => api.post(`/users/${id}/follow`).then((r) => r.data),
   unfollow: (id: string) => api.delete(`/users/${id}/unfollow`).then((r) => r.data),

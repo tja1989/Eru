@@ -27,6 +27,7 @@ const GRID_TABS = [
   { key: 'reels', icon: '🎬', label: 'Reels' },
   { key: 'created', icon: '✨', label: 'Created' },
   { key: 'saved', icon: '🔖', label: 'Saved' },
+  { key: 'tagged', icon: '👥', label: 'Tagged' },
 ] as const;
 
 type GridTab = (typeof GRID_TABS)[number]['key'];
