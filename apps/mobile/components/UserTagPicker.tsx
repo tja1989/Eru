@@ -39,7 +39,7 @@ export function UserTagPicker({ initialSelected, onConfirm, onCancel }: UserTagP
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const runSearch = useCallback(async (q: string) => {
-    if (q.length < 2) {
+    if (q.length < 1) {
       setResults([]);
       return;
     }
@@ -56,7 +56,7 @@ export function UserTagPicker({ initialSelected, onConfirm, onCancel }: UserTagP
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (query.length < 2) {
+    if (query.length < 1) {
       setResults([]);
       return;
     }
@@ -141,7 +141,7 @@ export function UserTagPicker({ initialSelected, onConfirm, onCancel }: UserTagP
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
-        initialNumToRender={20}
+        initialNumToRender={8}
         renderItem={({ item }) => {
           const sel = isSelected(item.id);
           return (

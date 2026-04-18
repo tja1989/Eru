@@ -51,13 +51,13 @@ describe('<CreateScreen /> — Tag Users picker', () => {
     fireEvent.press(getByLabelText('Tag users'));
     await waitFor(() => getByPlaceholderText(/search by username/i));
 
-    fireEvent.changeText(getByPlaceholderText(/search by username/i), 'ali');
+    fireEvent.changeText(getByPlaceholderText(/search by username/i), 'a');
     // service not called yet — debounce pending
     expect(userService.search).not.toHaveBeenCalled();
 
     act(() => { jest.advanceTimersByTime(300); });
     await waitFor(() => {
-      expect(userService.search).toHaveBeenCalledWith('ali');
+      expect(userService.search).toHaveBeenCalledWith('a');
     });
     jest.useRealTimers();
   });
@@ -106,7 +106,7 @@ describe('<CreateScreen /> — Tag Users picker', () => {
     jest.useRealTimers();
   });
 
-  it('cancel discards in-modal changes without updating create screen', async () => {
+  it('cancel closes modal without applying selection to the post', async () => {
     jest.useFakeTimers();
     const { getByLabelText, getByPlaceholderText, findByText, queryByPlaceholderText, queryByText } = render(<CreateScreen />);
 
@@ -160,17 +160,8 @@ describe('<CreateScreen /> — Tag Users picker', () => {
   });
 
   it('cap at 10: UserTagPicker enforces MAX_TAGS and shows warning', async () => {
-    // Use CreateScreen → Modal path (where FlatList renders correctly in RNTL).
-    // Setup mock with 11 users. Open picker, advance debounce, then
-    // switch to real timers BEFORE any findByText calls.
-    const elevenUsers = Array.from({ length: 11 }, (_, i) => ({
-      id: `cap${i}`,
-      name: `CapUser ${i}`,
-      username: `cap${i}`,
-      avatarUrl: undefined,
-    }));
-    (userService.search as jest.Mock).mockResolvedValue(elevenUsers);
-
+    // Strategy: select 10 users across 10 separate search rounds (one result each).
+    // This avoids needing 11 rows visible in the virtualized FlatList at once.
     jest.useFakeTimers();
     const { getByLabelText, getByPlaceholderText, findByText } = render(<CreateScreen />);
 
@@ -178,24 +169,36 @@ describe('<CreateScreen /> — Tag Users picker', () => {
     fireEvent.press(getByLabelText('Tag users'));
     await waitFor(() => { getByPlaceholderText(/search by username/i); });
 
-    // Trigger debounce-protected search
-    fireEvent.changeText(getByPlaceholderText(/search by username/i), 'ca');
-    act(() => { jest.advanceTimersByTime(300); });
+    const input = getByPlaceholderText(/search by username/i);
 
-    // Switch to real timers NOW so findByText can poll properly
-    jest.useRealTimers();
-
-    // Wait for all 11 results to render (search has resolved)
-    await waitFor(() => expect(userService.search).toHaveBeenCalledWith('ca'));
-
-    // Select first 10 users
+    // Select 10 different users, one per search round
     for (let i = 0; i < 10; i++) {
+      const user = { id: `cap${i}`, name: `CapUser ${i}`, username: `cap${i}`, avatarUrl: undefined };
+      (userService.search as jest.Mock).mockResolvedValue([user]);
+
+      fireEvent.changeText(input, `cap${i}`);
+      act(() => { jest.advanceTimersByTime(300); });
+
+      jest.useRealTimers();
       const el = await findByText(`CapUser ${i}`);
       fireEvent.press(el);
+      jest.useFakeTimers();
     }
 
-    // Tap the 11th user — should show warning and NOT add them
+    // Now 10 are selected. Set up an 11th user result.
+    const user11 = { id: 'cap10', name: 'CapUser 10', username: 'cap10', avatarUrl: undefined };
+    (userService.search as jest.Mock).mockResolvedValue([user11]);
+
+    fireEvent.changeText(input, 'cap10');
+    act(() => { jest.advanceTimersByTime(300); });
+
+    jest.useRealTimers();
+
+    // Wait for the 11th result to appear
+    await waitFor(() => expect(userService.search).toHaveBeenCalledWith('cap10'));
     const el11 = await findByText('CapUser 10');
+
+    // Tapping the 11th should trigger the warning — not add to selected
     fireEvent.press(el11);
 
     expect(await findByText(/maximum of 10/i)).toBeTruthy();
