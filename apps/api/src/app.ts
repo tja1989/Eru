@@ -22,6 +22,7 @@ import { rewardRoutes } from './routes/rewards.js';
 import { spinRoutes } from './routes/spin.js';
 import { badgesRoutes } from './routes/badges.js';
 import { businessRoutes } from './routes/business.js';
+import { messagesRoutes } from './routes/messages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -92,6 +93,7 @@ export function buildApp(): FastifyInstance {
   app.register(spinRoutes, { prefix: '/api/v1' });
   app.register(badgesRoutes, { prefix: '/api/v1' });
   app.register(businessRoutes, { prefix: '/api/v1' });
+  app.register(messagesRoutes, { prefix: '/api/v1' });
 
   app.register(fastifyStatic, {
     root: join(__dirname, 'admin-panel'),
