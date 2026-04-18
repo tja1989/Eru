@@ -52,14 +52,20 @@ export async function leaderboardRoutes(app: FastifyInstance) {
 
       const users = await prisma.user.findMany({
         where: { id: { in: ids } },
-        select: { id: true, name: true, username: true, avatarUrl: true, isVerified: true, tier: true, streakDays: true },
+        select: { id: true, name: true, username: true, avatarUrl: true, isVerified: true, tier: true, streakDays: true, creatorScore: true },
       });
       const userMap = new Map(users.map((u) => [u.id, u]));
 
       const rankings = sorted
         .map((r, idx) => {
           const u = userMap.get(r.userId);
-          return u ? { rank: idx + 1, ...u, pointsThisWeek: r.pointsThisWeek } : null;
+          if (!u) return null;
+          return {
+            rank: idx + 1,
+            ...u,
+            creatorScore: u.creatorScore != null ? Number(u.creatorScore) : null,
+            pointsThisWeek: r.pointsThisWeek,
+          };
         })
         .filter((x): x is NonNullable<typeof x> => x !== null);
 

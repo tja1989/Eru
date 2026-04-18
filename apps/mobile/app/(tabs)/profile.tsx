@@ -17,7 +17,7 @@ import { HighlightsRow } from '../../components/HighlightsRow';
 import { HighlightEditor } from '../../components/HighlightEditor';
 import { HighlightViewer } from '../../components/HighlightViewer';
 import { CreatorScoreCard } from '../../components/CreatorScoreCard';
-import { userService } from '../../services/userService';
+import { userService, type UserProfile } from '../../services/userService';
 import { highlightsService, Highlight, HighlightItem } from '../../services/highlightsService';
 import { useAuthStore } from '../../stores/authStore';
 import { usePointsStore } from '../../stores/pointsStore';
@@ -34,19 +34,9 @@ const GRID_TABS = [
 
 type GridTab = (typeof GRID_TABS)[number]['key'];
 
-interface Profile {
-  id: string;
-  name: string;
-  username: string;
-  bio?: string;
-  avatarUrl?: string;
-  tier: string;
-  currentBalance: number;
-  streak?: number;
-  postsCount?: number;
-  followersCount?: number;
-  followingCount?: number;
-}
+// Re-use the typed profile shape from userService so TypeScript
+// knows creatorScore is number | null (not any).
+type Profile = UserProfile;
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -75,7 +65,7 @@ export default function ProfileScreen() {
     if (!userId) return;
     try {
       const data = await userService.getProfile(userId);
-      setProfile(data.user ?? data);
+      setProfile(data.user);
     } catch {
       // fall back to auth store snapshot
       if (user) {
@@ -116,12 +106,12 @@ export default function ProfileScreen() {
 
   // Compute weekly creator-score delta from local snapshot (MVP approach).
   // Replace with a server-side snapshot table when DAU grows.
+  // Single derived value prevents the double-fire that occurred when both
+  // profile?.creatorScore and user?.creatorScore were listed as separate deps.
+  const currentScore = profile?.creatorScore ?? user?.creatorScore ?? 50;
   useEffect(() => {
-    const currentScore = Number(
-      (profile as any)?.creatorScore ?? user?.creatorScore ?? 50,
-    );
-    getOrCreateWeeklySnapshot(currentScore).then(setScoreDelta);
-  }, [(profile as any)?.creatorScore, user?.creatorScore]);
+    getOrCreateWeeklySnapshot(Number(currentScore)).then(setScoreDelta);
+  }, [currentScore]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -236,7 +226,7 @@ export default function ProfileScreen() {
 
           {/* Creator Score card */}
           <CreatorScoreCard
-            score={Number((profile as any)?.creatorScore ?? user?.creatorScore ?? 50)}
+            score={Number(currentScore)}
             deltaThisWeek={scoreDelta}
           />
 

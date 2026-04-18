@@ -10,7 +10,7 @@ export async function getLeaderboard(pincode: string, scope: string, limit = 50)
   const userIds = rankings.filter((_, i) => i % 2 === 0) as string[];
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, name: true, username: true, avatarUrl: true, tier: true, isVerified: true, streakDays: true },
+    select: { id: true, name: true, username: true, avatarUrl: true, tier: true, isVerified: true, streakDays: true, creatorScore: true },
   });
   const userMap = new Map(users.map((u) => [u.id, u]));
 
@@ -20,7 +20,12 @@ export async function getLeaderboard(pincode: string, scope: string, limit = 50)
     const points = Number(rankings[i + 1]);
     const user = userMap.get(userId);
     if (user) {
-      result.push({ rank: Math.floor(i / 2) + 1, ...user, pointsThisWeek: points });
+      result.push({
+        rank: Math.floor(i / 2) + 1,
+        ...user,
+        creatorScore: user.creatorScore != null ? Number(user.creatorScore) : null,
+        pointsThisWeek: points,
+      });
     }
   }
   return result;

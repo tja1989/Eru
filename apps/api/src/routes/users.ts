@@ -86,6 +86,7 @@ export async function userRoutes(app: FastifyInstance) {
     return {
       user: {
         ...user,
+        creatorScore: user.creatorScore != null ? Number(user.creatorScore) : null,
         postCount: user._count.content,
         followerCount: user._count.followers,
         followingCount: user._count.following,
