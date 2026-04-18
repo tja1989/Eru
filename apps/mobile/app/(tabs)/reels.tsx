@@ -33,6 +33,7 @@ interface Reel {
   commentCount: number;
   isLiked?: boolean;
   isDisliked?: boolean;
+  isSaved?: boolean;
   pointsPreview?: number;
 }
 
@@ -49,6 +50,7 @@ function ReelItem({
   const [liked, setLiked] = useState(item.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
   const [disliked, setDisliked] = useState(item.isDisliked ?? false);
+  const [saved, setSaved] = useState(item.isSaved ?? false);
 
   const videoUrl = item.media?.[0]?.originalUrl;
   const posterUrl = item.media?.[0]?.thumbnailUrl;
@@ -107,6 +109,20 @@ function ReelItem({
     }
   };
 
+  const handleSave = async () => {
+    if (saved) {
+      setSaved(false);
+      await contentService.unsave(item.id).catch(() => { setSaved(true); });
+    } else {
+      setSaved(true);
+      await contentService.save(item.id).catch((err: any) => {
+        // 409 = already saved — optimistic state is correct, keep it
+        if (err?.response?.status === 409) return;
+        setSaved(false);
+      });
+    }
+  };
+
   return (
     <View style={styles.reelContainer}>
       {/* Poster image — shown under the VideoView while video loads, and as a
@@ -148,6 +164,10 @@ function ReelItem({
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me" accessibilityState={{ selected: disliked }}>
           <Text style={[styles.actionIcon, { color: disliked ? '#E53E3E' : '#fff' }]}>👎</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={handleSave} accessibilityLabel="Save post" accessibilityState={{ selected: saved }}>
+          <Text style={[styles.actionIcon, { color: saved ? '#0095F6' : '#fff' }]}>🔖</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn}>

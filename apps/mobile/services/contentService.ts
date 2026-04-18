@@ -10,6 +10,8 @@ export const contentService = {
   unlike: (id: string) => api.delete(`/posts/${id}/unlike`).then((r) => r.data),
   dislike: (id: string) => api.post(`/posts/${id}/dislike`).then((r) => r.data),
   undislike: (id: string) => api.delete(`/posts/${id}/undislike`).then((r) => r.data),
+  save: (id: string) => api.post(`/posts/${id}/save`).then((r) => r.data),
+  unsave: (id: string) => api.delete(`/posts/${id}/unsave`).then((r) => r.data),
   comment: (id: string, text: string, parentId?: string) =>
     api.post(`/posts/${id}/comments`, { text, parentId }).then((r) => r.data),
   getComments: (id: string, page = 1) =>

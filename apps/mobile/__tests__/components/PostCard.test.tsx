@@ -38,6 +38,8 @@ describe('<PostCard /> dislike button', () => {
     (contentService.undislike as jest.Mock).mockResolvedValue({});
     (contentService.like as jest.Mock).mockResolvedValue({});
     (contentService.unlike as jest.Mock).mockResolvedValue({});
+    (contentService.save as jest.Mock).mockResolvedValue({});
+    (contentService.unsave as jest.Mock).mockResolvedValue({});
   });
 
   it('renders 👎 when post is not disliked', () => {
@@ -133,6 +135,113 @@ describe('<PostCard /> dislike button', () => {
     // Stays selected after 409
     await waitFor(() => {
       expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
+    });
+  });
+});
+
+describe('<PostCard /> save button', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (contentService.save as jest.Mock).mockResolvedValue({});
+    (contentService.unsave as jest.Mock).mockResolvedValue({});
+    (contentService.like as jest.Mock).mockResolvedValue({});
+    (contentService.unlike as jest.Mock).mockResolvedValue({});
+    (contentService.dislike as jest.Mock).mockResolvedValue({});
+    (contentService.undislike as jest.Mock).mockResolvedValue({});
+  });
+
+  it('renders 🔖 with accessibilityLabel "Save post"', () => {
+    const { getByLabelText, getByText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
+    expect(getByLabelText('Save post')).toBeTruthy();
+    expect(getByText('🔖')).toBeTruthy();
+  });
+
+  it('is not selected when post.isSaved is false', () => {
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(false);
+  });
+
+  it('is selected when post.isSaved is true', () => {
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: true }} />);
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(true);
+  });
+
+  it('optimistically flips to saved on tap before promise resolves', async () => {
+    let resolveSave!: () => void;
+    (contentService.save as jest.Mock).mockReturnValue(
+      new Promise<void>((res) => { resolveSave = res; }),
+    );
+
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
+
+    fireEvent.press(getByLabelText('Save post'));
+
+    // Must flip immediately — before we resolve the promise
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(true);
+
+    await act(async () => { resolveSave(); });
+  });
+
+  it('optimistically flips back to unsaved when tap unsaves', async () => {
+    let resolveUnsave!: () => void;
+    (contentService.unsave as jest.Mock).mockReturnValue(
+      new Promise<void>((res) => { resolveUnsave = res; }),
+    );
+
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: true }} />);
+
+    // Initially selected (saved)
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(true);
+
+    fireEvent.press(getByLabelText('Save post'));
+
+    // Flips back immediately — deselected
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(false);
+
+    await act(async () => { resolveUnsave(); });
+  });
+
+  it('rolls back optimistic flip when save() throws a non-409 error', async () => {
+    (contentService.save as jest.Mock).mockRejectedValue(new Error('network error'));
+
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
+
+    fireEvent.press(getByLabelText('Save post'));
+    // Optimistic flip — selected immediately
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(true);
+
+    // Wait for rollback after rejected promise
+    await waitFor(() => {
+      expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(false);
+    });
+  });
+
+  it('does NOT roll back when save() rejects with 409 (already saved = success)', async () => {
+    const err409 = { response: { status: 409 } };
+    (contentService.save as jest.Mock).mockRejectedValue(err409);
+
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
+
+    fireEvent.press(getByLabelText('Save post'));
+    // Stays selected after 409
+    await waitFor(() => {
+      expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(true);
+    });
+  });
+
+  it('rolls back when unsave() throws a non-409 error', async () => {
+    (contentService.unsave as jest.Mock).mockRejectedValue(new Error('network error'));
+
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: true }} />);
+
+    // Tap to unsave
+    fireEvent.press(getByLabelText('Save post'));
+    // Optimistic flip — deselected immediately
+    expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(false);
+
+    // Wait for rollback — should go back to saved (true)
+    await waitFor(() => {
+      expect(getByLabelText('Save post').props.accessibilityState?.selected).toBe(true);
     });
   });
 });

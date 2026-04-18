@@ -86,6 +86,20 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
     }
   };
 
+  const handleSave = async () => {
+    if (saved) {
+      setSaved(false);
+      await contentService.unsave(post.id).catch(() => { setSaved(true); });
+    } else {
+      setSaved(true);
+      await contentService.save(post.id).catch((err: any) => {
+        // 409 means "already saved" — the optimistic state is correct, keep it
+        if (err?.response?.status === 409) return;
+        setSaved(false);
+      });
+    }
+  };
+
   const handleDelete = () => {
     Alert.alert(
       'Delete this post?',
@@ -190,8 +204,8 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
             caption={post.text ?? ''}
           />
         </View>
-        <TouchableOpacity onPress={() => { setSaved(!saved); earn('save', post.id); }}>
-          <Text style={{ fontSize: 26 }}>{saved ? '🔖' : '🏷️'}</Text>
+        <TouchableOpacity onPress={handleSave} accessibilityLabel="Save post" accessibilityState={{ selected: saved }}>
+          <Text style={{ fontSize: 26, color: saved ? '#0095F6' : '#737373' }}>🔖</Text>
         </TouchableOpacity>
       </View>
 
