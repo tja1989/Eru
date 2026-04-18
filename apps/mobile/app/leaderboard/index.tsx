@@ -15,6 +15,7 @@ import { colors, spacing, radius, tierColors } from '../../constants/theme';
 import { WeeklyQuestsCard } from '@/components/WeeklyQuestsCard';
 import { LeaderboardPodium } from '@/components/LeaderboardPodium';
 import { LeaderboardScopeTabs, type Scope } from '@/components/LeaderboardScopeTabs';
+import { CreatorScoreCard } from '@/components/CreatorScoreCard';
 
 interface Season {
   name: string;
@@ -39,6 +40,7 @@ interface LeaderUser {
   tier: string;
   streak: number;
   weeklyPoints: number;
+  creatorScore?: number;
 }
 
 const TIER_EMOJI: Record<string, string> = {
@@ -222,10 +224,18 @@ export default function LeaderboardScreen() {
                   </View>
                 </View>
 
-                {/* Weekly points */}
-                <Text style={styles.weeklyPts}>
-                  {user.weeklyPoints.toLocaleString()} pts
-                </Text>
+                {/* Weekly points + creator score (compact) */}
+                <View style={styles.rightCol}>
+                  <Text style={styles.weeklyPts}>
+                    {user.weeklyPoints.toLocaleString()} pts
+                  </Text>
+                  {user.creatorScore !== undefined && (
+                    <CreatorScoreCard
+                      score={user.creatorScore}
+                      compact
+                    />
+                  )}
+                </View>
               </View>
             );
           })
@@ -333,6 +343,7 @@ const styles = StyleSheet.create({
   userTier: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
   userStreak: { fontSize: 12, color: colors.orange },
 
+  rightCol: { alignItems: 'flex-end', gap: spacing.xs },
   weeklyPts: { fontSize: 14, fontWeight: '700', color: colors.navy },
 
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: spacing.md },

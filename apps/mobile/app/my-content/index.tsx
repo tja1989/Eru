@@ -17,6 +17,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, radius } from '../../constants/theme';
 import { MyContentStatsBar } from '../../components/MyContentStatsBar';
 import { CreatorEarningsCard } from '../../components/CreatorEarningsCard';
+import { CreatorScoreCard } from '../../components/CreatorScoreCard';
+import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
 
 type StatusFilter = 'all' | 'published' | 'pending' | 'declined';
 
@@ -55,6 +57,8 @@ export default function MyContentScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // MVP: weekly score delta — swap for server-side snapshot table when DAU grows.
+  const [scoreDelta, setScoreDelta] = useState<number | undefined>(undefined);
 
   const loadContent = useCallback(async () => {
     if (!user?.id) return;
@@ -69,6 +73,11 @@ export default function MyContentScreen() {
   useEffect(() => {
     loadContent().finally(() => setLoading(false));
   }, [loadContent]);
+
+  useEffect(() => {
+    const currentScore = Number(user?.creatorScore ?? 50);
+    getOrCreateWeeklySnapshot(currentScore).then(setScoreDelta);
+  }, [user?.creatorScore]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -166,6 +175,10 @@ export default function MyContentScreen() {
 
       <MyContentStatsBar />
       <CreatorEarningsCard />
+      <CreatorScoreCard
+        score={Number(user?.creatorScore ?? 50)}
+        deltaThisWeek={scoreDelta}
+      />
 
       {/* Filter pills */}
       <ScrollView
