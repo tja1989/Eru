@@ -20,6 +20,7 @@ import { offerRoutes } from './routes/offers.js';
 import { questsRoutes } from './routes/quests.js';
 import { rewardRoutes } from './routes/rewards.js';
 import { spinRoutes } from './routes/spin.js';
+import { badgesRoutes } from './routes/badges.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -88,6 +89,7 @@ export function buildApp(): FastifyInstance {
   app.register(questsRoutes, { prefix: '/api/v1' });
   app.register(rewardRoutes, { prefix: '/api/v1' });
   app.register(spinRoutes, { prefix: '/api/v1' });
+  app.register(badgesRoutes, { prefix: '/api/v1' });
 
   app.register(fastifyStatic, {
     root: join(__dirname, 'admin-panel'),
