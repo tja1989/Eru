@@ -62,6 +62,23 @@ enum ModerationDecision {
   declined
 }
 
+enum ReportReason {
+  spam
+  harassment
+  nudity
+  hate
+  violence
+  misinformation
+  other
+}
+
+enum ReportStatus {
+  pending
+  reviewed
+  dismissed
+  actioned
+}
+
 model User {
   id                  String    @id @default(uuid())
   firebaseUid         String    @unique @map("firebase_uid")
@@ -102,6 +119,7 @@ model User {
   notifications     Notification[]
   followers         Follow[]  @relation("following")
   following         Follow[]  @relation("follower")
+  contentReports    ContentReport[] @relation("contentReports")
 
   @@index([primaryPincode])
   @@map("users")
@@ -131,6 +149,7 @@ model Content {
   comments         Comment[]
   moderationQueue  ModerationQueue[]
   pointsLedger     PointsLedger[]
+  reports          ContentReport[]
 
   @@index([userId])
   @@index([moderationStatus])
@@ -289,4 +308,23 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+model ContentReport {
+  id         String       @id @default(uuid())
+  contentId  String       @map("content_id")
+  reporterId String       @map("reporter_id")
+  reason     ReportReason
+  notes      String?
+  status     ReportStatus @default(pending)
+  reviewerId String?      @map("reviewer_id")
+  reviewedAt DateTime?    @map("reviewed_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  content  Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  reporter User    @relation("contentReports", fields: [reporterId], references: [id])
+
+  @@unique([contentId, reporterId])
+  @@index([status])
+  @@map("content_reports")
 }
