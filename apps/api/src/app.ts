@@ -28,6 +28,7 @@ import { storiesRoutes } from './routes/stories.js';
 import { pollRoutes } from './routes/polls.js';
 import { locationsRoutes } from './routes/locations.js';
 import { highlightRoutes } from './routes/highlights.js';
+import { whatsappOtpRoutes } from './routes/whatsapp-otp.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -81,6 +82,7 @@ export function buildApp(): FastifyInstance {
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
   app.register(authRoutes, { prefix: '/api/v1' });
+  app.register(whatsappOtpRoutes, { prefix: '/api/v1' });
   app.register(userRoutes, { prefix: '/api/v1' });
   app.register(actionRoutes, { prefix: '/api/v1' });
   app.register(contentRoutes, { prefix: '/api/v1' });
