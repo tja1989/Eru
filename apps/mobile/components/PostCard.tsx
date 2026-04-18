@@ -28,9 +28,9 @@ interface PostCardProps {
 export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   const router = useRouter();
   const { earn } = usePointsStore();
-  const [liked, setLiked] = useState(post.isLiked);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
-  const [saved, setSaved] = useState(post.isSaved);
+  const [liked, setLiked] = useState(post.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
+  const [saved, setSaved] = useState(post.isSaved ?? false);
   const [disliked, setDisliked] = useState(post.isDisliked ?? false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
