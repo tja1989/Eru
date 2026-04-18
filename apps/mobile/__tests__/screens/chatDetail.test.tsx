@@ -10,6 +10,10 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ id: 'c1' }),
 }));
 
+jest.mock('@/stores/authStore', () => ({
+  useAuthStore: (sel: any) => sel({ user: { id: 'u-me', name: 't', username: 't', phone: '+0', tier: 'explorer', currentBalance: 0 } }),
+}));
+
 describe('<ChatDetailScreen />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -51,5 +55,25 @@ describe('<ChatDetailScreen />', () => {
     await waitFor(() => {
       expect(messagesService.send).not.toHaveBeenCalled();
     });
+  });
+
+  it('renders historic messages from the current user as "mine" (sourced from authStore, not last-sent)', async () => {
+    // A message sent by the authenticated user BEFORE they send anything this session.
+    // Pre-fix, currentUserId was '' until the user sent a message, so this would
+    // incorrectly render as theirs (left-aligned, grey bubble). The fix reads the
+    // id from authStore, which this test's mock hands back as 'u-me'.
+    (messagesService.listMessages as jest.Mock).mockResolvedValue([
+      { id: 'm-historic', text: 'I sent this yesterday', senderId: 'u-me', createdAt: '2026-04-17T10:00:00Z' },
+    ]);
+
+    const { findAllByTestId } = render(<ChatDetailScreen />);
+    const wrappers = await findAllByTestId('bubble-wrapper');
+    expect(wrappers).toHaveLength(1);
+    // "mine" bubbles align to flex-end (right side). The MessageBubble applies
+    // `alignSelf: 'flex-end'` when isMine is true — a cheap proxy for the flag.
+    const style = Array.isArray(wrappers[0].props.style)
+      ? Object.assign({}, ...wrappers[0].props.style.flat())
+      : wrappers[0].props.style;
+    expect(style.alignSelf).toBe('flex-end');
   });
 });

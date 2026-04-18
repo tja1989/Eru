@@ -13,15 +13,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { messagesService, Message } from '@/services/messagesService';
 import { MessageBubble } from '@/components/MessageBubble';
+import { useAuthStore } from '@/stores/authStore';
 
 const POLL_INTERVAL_MS = 5000;
 
 export default function ChatDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   const loadMessages = useCallback(async () => {
     if (!id) return;
@@ -44,7 +45,6 @@ export default function ChatDetailScreen() {
     const sent = await messagesService.send(id, text.trim());
     setText('');
     setMessages((prev) => [...prev, sent]);
-    setCurrentUserId(sent.senderId);
   };
 
   return (
