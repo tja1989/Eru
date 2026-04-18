@@ -47,6 +47,7 @@ export async function cleanupTestData() {
     { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } },
   ] } });
   await prisma.content.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.userReward.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.user.deleteMany({ where: { firebaseUid: { startsWith: 'dev-test-' } } });
 }
 
