@@ -117,6 +117,42 @@ describe('Thread endpoints', () => {
 
       expect(res.statusCode).toBe(400);
     });
+
+    it('rejects a poll body that also includes threadParts', async () => {
+      await seedUser({ firebaseUid: 'dev-test-thrpoll1', phone: '+912600000010', username: 'tthrpoll1' });
+
+      const res = await getTestApp().inject({
+        method: 'POST', url: '/api/v1/content/create',
+        headers: { Authorization: devToken('dev-test-thrpoll1'), 'content-type': 'application/json' },
+        body: JSON.stringify({
+          type: 'poll',
+          pollOptions: ['A', 'B'],
+          threadParts: ['X', 'Y'],
+          mediaIds: [],
+          hashtags: [],
+        }),
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects a thread body that also includes pollOptions', async () => {
+      await seedUser({ firebaseUid: 'dev-test-thrpoll2', phone: '+912600000011', username: 'tthrpoll2' });
+
+      const res = await getTestApp().inject({
+        method: 'POST', url: '/api/v1/content/create',
+        headers: { Authorization: devToken('dev-test-thrpoll2'), 'content-type': 'application/json' },
+        body: JSON.stringify({
+          type: 'thread',
+          threadParts: ['X', 'Y'],
+          pollOptions: ['A', 'B'],
+          mediaIds: [],
+          hashtags: [],
+        }),
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
   // ── GET /content/:id/thread ─────────────────────────────────────────────────

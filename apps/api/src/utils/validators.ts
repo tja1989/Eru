@@ -16,16 +16,18 @@ export const createContentSchema = z.object({
   pollOptions: z.array(z.string().min(1).max(200)).optional(),
   threadParts: z.array(z.string().min(1).max(2200)).optional(),
 }).refine((data) => {
-  // poll type MUST have 2–4 options
+  // poll type MUST have 2–4 options and MUST NOT supply threadParts
   if (data.type === 'poll') {
+    if (data.threadParts !== undefined && data.threadParts.length > 0) return false;
     return Array.isArray(data.pollOptions) && data.pollOptions.length >= 2 && data.pollOptions.length <= 4;
   }
   // non-poll types MUST NOT supply pollOptions
   if (data.pollOptions !== undefined && data.pollOptions.length > 0) {
     return false;
   }
-  // thread type MUST have 2–10 parts
+  // thread type MUST have 2–10 parts and MUST NOT supply pollOptions
   if (data.type === 'thread') {
+    if (data.pollOptions !== undefined && data.pollOptions.length > 0) return false;
     return Array.isArray(data.threadParts) && data.threadParts.length >= 2 && data.threadParts.length <= 10;
   }
   // non-thread types MUST NOT supply threadParts
