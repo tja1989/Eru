@@ -146,8 +146,8 @@ function ReelItem({
           <Text style={styles.actionCount}>{likeCount}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me">
-          <Text style={styles.actionIcon}>{disliked ? '👎🏿' : '👎'}</Text>
+        <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me" accessibilityState={{ selected: disliked }}>
+          <Text style={[styles.actionIcon, { color: disliked ? '#E53E3E' : '#fff' }]}>👎</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn}>

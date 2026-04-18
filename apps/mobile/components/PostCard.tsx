@@ -178,8 +178,8 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
       <View style={styles.actions}>
         <View style={styles.actionsLeft}>
           <TouchableOpacity onPress={handleLike}><Text style={{ fontSize: 26 }}>{liked ? '❤️' : '🤍'}</Text></TouchableOpacity>
-          <TouchableOpacity onPress={handleDislike} accessibilityLabel="Not for me">
-            <Text style={{ fontSize: 26 }}>{disliked ? '👎🏿' : '👎'}</Text>
+          <TouchableOpacity onPress={handleDislike} accessibilityLabel="Not for me" accessibilityState={{ selected: disliked }}>
+            <Text style={{ fontSize: 26, color: disliked ? '#E53E3E' : '#737373' }}>👎</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={openDetail}>
             <Text style={{ fontSize: 26 }}>💬</Text>

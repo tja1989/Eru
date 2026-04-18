@@ -51,11 +51,13 @@ describe('<PostCard /> dislike button', () => {
     expect(getByLabelText('Not for me')).toBeTruthy();
   });
 
-  it('shows 👎 when not disliked and highlighted variant when disliked', () => {
+  it('shows 👎 when not disliked and active state when disliked', () => {
     const { getByLabelText, getByText } = render(<PostCard post={{ ...basePost, isDisliked: false }} />);
     expect(getByLabelText('Not for me')).toBeTruthy();
-    // Before tap: unhighlighted emoji
+    // Always renders the plain emoji
     expect(getByText('👎')).toBeTruthy();
+    // Not selected when not disliked
+    expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(false);
   });
 
   it('optimistically flips to disliked immediately on tap (before promise resolves)', async () => {
@@ -71,7 +73,9 @@ describe('<PostCard /> dislike button', () => {
     fireEvent.press(getByLabelText('Not for me'));
 
     // State must flip immediately — before we resolve the promise
-    expect(getByText('👎🏿')).toBeTruthy();
+    // Emoji stays '👎' but button is now selected
+    expect(getByText('👎')).toBeTruthy();
+    expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
 
     // Cleanup: resolve promise so no hanging promises exist
     await act(async () => { resolveDislike(); });
@@ -87,13 +91,15 @@ describe('<PostCard /> dislike button', () => {
       <PostCard post={{ ...basePost, isDisliked: true }} />,
     );
 
-    // Initially showing highlighted variant
-    expect(getByText('👎🏿')).toBeTruthy();
+    // Initially selected (disliked)
+    expect(getByText('👎')).toBeTruthy();
+    expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
 
     fireEvent.press(getByLabelText('Not for me'));
 
-    // Flips back immediately
+    // Flips back immediately — deselected
     expect(getByText('👎')).toBeTruthy();
+    expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(false);
 
     await act(async () => { resolveUndislike(); });
   });
@@ -101,17 +107,17 @@ describe('<PostCard /> dislike button', () => {
   it('rolls back optimistic flip when dislike() throws a non-409 error', async () => {
     (contentService.dislike as jest.Mock).mockRejectedValue(new Error('network error'));
 
-    const { getByLabelText, getByText } = render(
+    const { getByLabelText } = render(
       <PostCard post={{ ...basePost, isDisliked: false }} />,
     );
 
     fireEvent.press(getByLabelText('Not for me'));
-    // Optimistic flip
-    expect(getByText('👎🏿')).toBeTruthy();
+    // Optimistic flip — selected immediately
+    expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
 
     // Wait for rollback after rejected promise
     await waitFor(() => {
-      expect(getByText('👎')).toBeTruthy();
+      expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(false);
     });
   });
 
@@ -119,14 +125,14 @@ describe('<PostCard /> dislike button', () => {
     const err409 = { response: { status: 409 } };
     (contentService.dislike as jest.Mock).mockRejectedValue(err409);
 
-    const { getByLabelText, getByText } = render(
+    const { getByLabelText } = render(
       <PostCard post={{ ...basePost, isDisliked: false }} />,
     );
 
     fireEvent.press(getByLabelText('Not for me'));
-    // Stays disliked after 409
+    // Stays selected after 409
     await waitFor(() => {
-      expect(getByText('👎🏿')).toBeTruthy();
+      expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
     });
   });
 });

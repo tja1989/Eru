@@ -59,28 +59,55 @@ describe('<ReelItem /> dislike button', () => {
     const { findByLabelText, getByText } = render(<ReelsScreen />);
     const btn = await findByLabelText('Not for me');
 
-    // Before tap: unhighlighted
+    // Before tap: unhighlighted, not selected
     expect(getByText('👎')).toBeTruthy();
+    expect(btn.props.accessibilityState?.selected).toBe(false);
 
     fireEvent.press(btn);
 
     // Flips optimistically — before promise resolves
-    expect(getByText('👎🏿')).toBeTruthy();
+    expect(getByText('👎')).toBeTruthy();
+    expect(btn.props.accessibilityState?.selected).toBe(true);
 
     await act(async () => { resolveDislike(); });
+  });
+
+  it('optimistically flips back to un-disliked immediately when undisliking', async () => {
+    // Mock reel that starts already disliked
+    (reelsService.getReels as jest.Mock).mockResolvedValue({
+      data: [{ ...mockReel, isDisliked: true }],
+    });
+
+    let resolveUndislike!: () => void;
+    (contentService.undislike as jest.Mock).mockReturnValue(
+      new Promise<void>((res) => { resolveUndislike = res; }),
+    );
+
+    const { findByLabelText } = render(<ReelsScreen />);
+    const btn = await findByLabelText('Not for me');
+
+    // Initially selected (disliked)
+    expect(btn.props.accessibilityState?.selected).toBe(true);
+
+    fireEvent.press(btn);
+
+    // Flips back immediately — deselected before promise resolves
+    expect(btn.props.accessibilityState?.selected).toBe(false);
+
+    await act(async () => { resolveUndislike(); });
   });
 
   it('rolls back optimistic flip when dislike() throws a non-409 error', async () => {
     (contentService.dislike as jest.Mock).mockRejectedValue(new Error('network'));
 
-    const { findByLabelText, getByText } = render(<ReelsScreen />);
+    const { findByLabelText } = render(<ReelsScreen />);
     const btn = await findByLabelText('Not for me');
 
     fireEvent.press(btn);
-    expect(getByText('👎🏿')).toBeTruthy();
+    expect(btn.props.accessibilityState?.selected).toBe(true);
 
     await waitFor(() => {
-      expect(getByText('👎')).toBeTruthy();
+      expect(btn.props.accessibilityState?.selected).toBe(false);
     });
   });
 
@@ -88,13 +115,13 @@ describe('<ReelItem /> dislike button', () => {
     const err409 = { response: { status: 409 } };
     (contentService.dislike as jest.Mock).mockRejectedValue(err409);
 
-    const { findByLabelText, getByText } = render(<ReelsScreen />);
+    const { findByLabelText } = render(<ReelsScreen />);
     const btn = await findByLabelText('Not for me');
 
     fireEvent.press(btn);
 
     await waitFor(() => {
-      expect(getByText('👎🏿')).toBeTruthy();
+      expect(btn.props.accessibilityState?.selected).toBe(true);
     });
   });
 });
