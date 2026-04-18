@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, spacing, radius } from '../../constants/theme';
 
@@ -74,9 +73,8 @@ export default function Tutorial() {
   const toggleCard = (index: number) =>
     setExpandedIndex((prev) => (prev === index ? null : index));
 
-  const handleStart = async () => {
+  const handleStart = () => {
     setOnboardingComplete(true);
-    await AsyncStorage.setItem('onboarding.completed', 'true');
     router.replace('/(tabs)');
   };
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import Tutorial from '@/app/(auth)/tutorial';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
@@ -54,7 +53,7 @@ describe('<Tutorial />', () => {
     expect(getByText(/\+250 pts/)).toBeTruthy();
   });
 
-  it('"Start Earning" calls setOnboardingComplete, writes to AsyncStorage, and navigates to /(tabs)', async () => {
+  it('"Start Earning" calls setOnboardingComplete and navigates to /(tabs)', async () => {
     const replace = jest.fn();
     jest
       .spyOn(require('expo-router'), 'useRouter')
@@ -65,10 +64,6 @@ describe('<Tutorial />', () => {
 
     await waitFor(() => {
       expect(mockSetOnboarding).toHaveBeenCalledWith(true);
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        'onboarding.completed',
-        'true',
-      );
       expect(replace).toHaveBeenCalledWith('/(tabs)');
     });
   });
