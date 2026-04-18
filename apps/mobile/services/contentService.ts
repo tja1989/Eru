@@ -8,6 +8,8 @@ export const contentService = {
   appeal: (id: string) => api.post(`/content/${id}/appeal`).then((r) => r.data),
   like: (id: string) => api.post(`/posts/${id}/like`).then((r) => r.data),
   unlike: (id: string) => api.delete(`/posts/${id}/unlike`).then((r) => r.data),
+  dislike: (id: string) => api.post(`/posts/${id}/dislike`).then((r) => r.data),
+  undislike: (id: string) => api.delete(`/posts/${id}/undislike`).then((r) => r.data),
   comment: (id: string, text: string, parentId?: string) =>
     api.post(`/posts/${id}/comments`, { text, parentId }).then((r) => r.data),
   getComments: (id: string, page = 1) =>

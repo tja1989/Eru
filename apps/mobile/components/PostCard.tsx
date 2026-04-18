@@ -31,6 +31,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   const [liked, setLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [saved, setSaved] = useState(post.isSaved);
+  const [disliked, setDisliked] = useState(post.isDisliked ?? false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
 
@@ -68,6 +69,20 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
       setLiked(true); setLikeCount((c: number) => c + 1);
       await contentService.like(post.id).catch(() => { setLiked(false); setLikeCount((c: number) => c - 1); });
       earn('like', post.id);
+    }
+  };
+
+  const handleDislike = async () => {
+    if (disliked) {
+      setDisliked(false);
+      await contentService.undislike(post.id).catch(() => { setDisliked(true); });
+    } else {
+      setDisliked(true);
+      await contentService.dislike(post.id).catch((err: any) => {
+        // 409 means "already disliked" — the optimistic state is correct, keep it
+        if (err?.response?.status === 409) return;
+        setDisliked(false);
+      });
     }
   };
 
@@ -163,6 +178,9 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
       <View style={styles.actions}>
         <View style={styles.actionsLeft}>
           <TouchableOpacity onPress={handleLike}><Text style={{ fontSize: 26 }}>{liked ? '❤️' : '🤍'}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={handleDislike} accessibilityLabel="Not for me">
+            <Text style={{ fontSize: 26 }}>{disliked ? '👎🏿' : '👎'}</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={openDetail}>
             <Text style={{ fontSize: 26 }}>💬</Text>
           </TouchableOpacity>

@@ -32,6 +32,7 @@ interface Reel {
   likeCount: number;
   commentCount: number;
   isLiked?: boolean;
+  isDisliked?: boolean;
   pointsPreview?: number;
 }
 
@@ -47,6 +48,7 @@ function ReelItem({
   const { earn } = usePointsStore();
   const [liked, setLiked] = useState(item.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
+  const [disliked, setDisliked] = useState(item.isDisliked ?? false);
 
   const videoUrl = item.media?.[0]?.originalUrl;
   const posterUrl = item.media?.[0]?.thumbnailUrl;
@@ -91,6 +93,20 @@ function ReelItem({
     }
   };
 
+  const handleDislike = async () => {
+    if (disliked) {
+      setDisliked(false);
+      await contentService.undislike(item.id).catch(() => { setDisliked(true); });
+    } else {
+      setDisliked(true);
+      await contentService.dislike(item.id).catch((err: any) => {
+        // 409 = already disliked — optimistic state is correct, keep it
+        if (err?.response?.status === 409) return;
+        setDisliked(false);
+      });
+    }
+  };
+
   return (
     <View style={styles.reelContainer}>
       {/* Poster image — shown under the VideoView while video loads, and as a
@@ -128,6 +144,10 @@ function ReelItem({
         <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
           <Text style={styles.actionIcon}>{liked ? '❤️' : '🤍'}</Text>
           <Text style={styles.actionCount}>{likeCount}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me">
+          <Text style={styles.actionIcon}>{disliked ? '👎🏿' : '👎'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn}>
