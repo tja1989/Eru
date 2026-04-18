@@ -177,12 +177,16 @@ export default function ReelsScreen() {
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [tab, setTab] = useState<'foryou' | 'following' | 'local'>('foryou');
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
+      // Clear stale items before fetching so the FlatList doesn't flash
+      // results from the previous tab while the new tab is loading.
+      setReels([]);
 
       // If deep-linked to a specific reel, fetch it first so we can pin it
       // to the top of the list even if it's not in page 1 of /reels.
@@ -198,7 +202,7 @@ export default function ReelsScreen() {
       }
 
       try {
-        const data = await reelsService.getReels('foryou', 1);
+        const data = await reelsService.getReels(tab, 1);
         if (cancelled) return;
         const list: Reel[] = data.data ?? data.reels ?? data.items ?? [];
         if (pinned) {
@@ -220,7 +224,7 @@ export default function ReelsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [reelId]);
+  }, [reelId, tab]);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
@@ -234,25 +238,48 @@ export default function ReelsScreen() {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
+  const tabBar = (
+    <View style={styles.tabs} pointerEvents="box-none">
+      {(['following', 'foryou', 'local'] as const).map((t) => (
+        <TouchableOpacity
+          key={t}
+          onPress={() => setTab(t)}
+          style={[styles.tab, tab === t && styles.tabActive]}
+        >
+          <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+            {t === 'foryou' ? 'For You' : t === 'following' ? 'Following' : 'Local'}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.g400} />
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        {tabBar}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.g400} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (reels.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={{ fontSize: 40 }}>🎬</Text>
-        <Text style={{ color: '#fff', marginTop: spacing.md, fontSize: 16 }}>No reels yet</Text>
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        {tabBar}
+        <View style={styles.loadingContainer}>
+          <Text style={{ fontSize: 40 }}>🎬</Text>
+          <Text style={{ color: '#fff', marginTop: spacing.md, fontSize: 16 }}>No reels yet</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {tabBar}
       <FlatList
         data={reels}
         keyExtractor={(item) => item.id}
@@ -282,6 +309,18 @@ export default function ReelsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#000' },
+  tabs: {
+    flexDirection: 'row',
+    position: 'absolute',
+    top: 50,
+    alignSelf: 'center',
+    gap: 20,
+    zIndex: 10,
+  },
+  tab: { paddingVertical: 6, paddingHorizontal: 12 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#fff' },
+  tabText: { color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
+  tabTextActive: { color: '#fff', fontWeight: '800' },
   loadingContainer: {
     flex: 1,
     backgroundColor: '#000',
