@@ -132,6 +132,7 @@ model User {
   stories               Story[]
   storyViews            StoryView[]
   pollVotes             PollVote[]
+  highlights            Highlight[]
 
   @@index([primaryPincode])
   @@map("users")
@@ -171,6 +172,7 @@ model Content {
   reports          ContentReport[]
   sponsorshipProposals SponsorshipProposal[]
   pollOptions      PollOption[]
+  highlightItems   HighlightItem[]
 
   @@index([userId])
   @@index([moderationStatus])
@@ -640,4 +642,33 @@ model PollVote {
 
   @@unique([userId, pollOptionId])
   @@map("poll_votes")
+}
+
+// ========== F7.1 additions ==========
+
+model Highlight {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  emoji     String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User            @relation(fields: [userId], references: [id])
+  items HighlightItem[]
+
+  @@index([userId, sortOrder])
+  @@map("highlights")
+}
+
+model HighlightItem {
+  id          String @id @default(uuid())
+  highlightId String @map("highlight_id")
+  contentId   String @map("content_id")
+  sortOrder   Int    @default(0) @map("sort_order")
+
+  highlight Highlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  content   Content   @relation(fields: [contentId], references: [id])
+
+  @@map("highlight_items")
 }

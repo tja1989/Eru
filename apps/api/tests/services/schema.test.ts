@@ -30,6 +30,11 @@ describe('P1 schema sanity', () => {
     await expect(prisma.pollVote.count()).resolves.toBeTypeOf('number');
   });
 
+  it('can count F7.1 highlight tables', async () => {
+    await expect(prisma.highlight.count()).resolves.toBeTypeOf('number');
+    await expect(prisma.highlightItem.count()).resolves.toBeTypeOf('number');
+  });
+
   it('Content has thread columns (threadParentId + threadPosition)', async () => {
     // If the columns don't exist in the DB, this query would throw a Prisma error.
     // A successful count proves the columns are live and the Prisma client knows them.
