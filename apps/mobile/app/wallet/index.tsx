@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { walletService } from '../../services/walletService';
 import { usePointsStore } from '../../stores/pointsStore';
 import { colors, spacing, radius } from '../../constants/theme';
+import { TierProgressCard } from '../../components/TierProgressCard';
+import { WalletQuickActions } from '../../components/WalletQuickActions';
 
 interface WalletData {
   balance: number;
@@ -21,6 +23,10 @@ interface WalletData {
   dailyGoal: number;
   expiringPoints?: number;
   expiringDays?: number;
+  currentTier?: string;
+  nextTier?: string | null;
+  pointsToNext?: number;
+  lifetimePoints?: number;
 }
 
 interface HistoryItem {
@@ -64,6 +70,10 @@ export default function WalletScreen() {
         dailyGoal: data.dailyGoal ?? dailyGoal,
         expiringPoints: data.expiringPoints,
         expiringDays: data.expiringDays,
+        currentTier: data.currentTier,
+        nextTier: data.nextTier,
+        pointsToNext: data.pointsToNext,
+        lifetimePoints: data.lifetimePoints,
       });
     } catch {
       setWallet({
@@ -181,7 +191,24 @@ export default function WalletScreen() {
               </Text>
             </View>
           ) : null}
+
+          {/* Quick actions (Shop / Local / Gift / Recharge / Donate) */}
+          <View style={styles.quickActionsWrap}>
+            <WalletQuickActions />
+          </View>
         </View>
+
+        {/* Tier progress */}
+        {wallet?.currentTier ? (
+          <View style={styles.tierCardWrap}>
+            <TierProgressCard
+              currentTier={wallet.currentTier}
+              nextTier={wallet.nextTier ?? null}
+              pointsToNext={wallet.pointsToNext ?? 0}
+              lifetimePoints={wallet.lifetimePoints ?? 0}
+            />
+          </View>
+        ) : null}
 
         {/* Daily progress */}
         <View style={styles.progressCard}>
@@ -282,6 +309,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   expiryText: { fontSize: 13, color: '#FCA5A5', fontWeight: '600' },
+  quickActionsWrap: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'stretch',
+  },
+  tierCardWrap: {
+    marginHorizontal: spacing.lg,
+  },
 
   progressCard: {
     marginHorizontal: spacing.lg,
