@@ -65,3 +65,13 @@ describe('contentService.report', () => {
     });
   });
 });
+
+describe('contentService.delete', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('calls DELETE /content/:id', async () => {
+    (api.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
+    await contentService.delete('post-1');
+    expect(api.delete).toHaveBeenCalledWith('/content/post-1');
+  });
+});

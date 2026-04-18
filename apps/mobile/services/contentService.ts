@@ -27,4 +27,7 @@ export const contentService = {
     const res = await api.post(`/content/${contentId}/report`, payload);
     return res.data.report;
   },
+  delete: async (contentId: string) => {
+    await api.delete(`/content/${contentId}`);
+  },
 };

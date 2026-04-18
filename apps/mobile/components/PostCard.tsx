@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Avatar } from './Avatar';
@@ -19,9 +19,13 @@ interface PostCardProps {
   // to save battery/bandwidth. Defaults to true for callers that don't wire
   // viewability (e.g. the detail page).
   isActive?: boolean;
+  // Optional: fires after the author confirms a delete and the API call
+  // succeeds. Parents (feed/profile screens) can use this to remove the card
+  // from their list. Not wired into any screen yet — that's a later task.
+  onDeleted?: (id: string) => void;
 }
 
-export function PostCard({ post, isActive = true }: PostCardProps) {
+export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   const router = useRouter();
   const { earn } = usePointsStore();
   const [liked, setLiked] = useState(post.isLiked);
@@ -65,6 +69,28 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
       await contentService.like(post.id).catch(() => { setLiked(false); setLikeCount((c: number) => c - 1); });
       earn('like', post.id);
     }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete this post?',
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await contentService.delete(post.id);
+              onDeleted?.(post.id);
+            } catch {
+              Alert.alert('Could not delete', 'Please try again.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const openDetail = () => {
@@ -167,7 +193,7 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
         contentId={post.id}
         authorUserId={post.user?.id ?? ''}
         currentUserId={currentUserId}
-        onDelete={() => { /* wired in P1 F8 */ }}
+        onDelete={handleDelete}
       />
     </View>
   );
