@@ -44,3 +44,24 @@ describe('contentService.createComment', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 });
+
+describe('contentService.report', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('POSTs to /content/:id/report with reason + notes', async () => {
+    (api.post as jest.Mock).mockResolvedValue({ data: { report: { id: 'r1' } } });
+    await contentService.report('post-1', 'spam', 'repeated promo');
+    expect(api.post).toHaveBeenCalledWith('/content/post-1/report', {
+      reason: 'spam',
+      notes: 'repeated promo',
+    });
+  });
+
+  it('omits notes when not provided', async () => {
+    (api.post as jest.Mock).mockResolvedValue({ data: { report: { id: 'r1' } } });
+    await contentService.report('post-1', 'harassment');
+    expect(api.post).toHaveBeenCalledWith('/content/post-1/report', {
+      reason: 'harassment',
+    });
+  });
+});

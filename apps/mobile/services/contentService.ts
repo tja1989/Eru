@@ -21,4 +21,10 @@ export const contentService = {
     const res = await api.post(`/posts/${contentId}/comments`, payload);
     return res.data.comment;
   },
+  async report(contentId: string, reason: string, notes?: string) {
+    const payload: { reason: string; notes?: string } = { reason };
+    if (notes) payload.notes = notes;
+    const res = await api.post(`/content/${contentId}/report`, payload);
+    return res.data.report;
+  },
 };
