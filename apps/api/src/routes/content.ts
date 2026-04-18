@@ -340,6 +340,60 @@ export async function contentRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
+  // POST /posts/:id/save — bookmark a piece of content (private; no saveCount column)
+  app.post('/posts/:id/save', {
+    preHandler: [rateLimitByUser(60, '1 m')],
+  }, async (request, reply) => {
+    const { id: contentId } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const content = await prisma.content.findUnique({ where: { id: contentId } });
+    if (!content) throw Errors.notFound('Content');
+
+    try {
+      await prisma.interaction.create({
+        data: { userId: currentUserId, contentId, type: 'save' },
+      });
+    } catch (error: unknown) {
+      // P2002 = unique constraint violation — already saved
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
+        throw Errors.conflict('You have already saved this content');
+      }
+      throw error;
+    }
+
+    return reply.status(201).send({ success: true });
+  });
+
+  // DELETE /posts/:id/unsave — remove a bookmark
+  app.delete('/posts/:id/unsave', async (request, reply) => {
+    const { id: contentId } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const interaction = await prisma.interaction.findUnique({
+      where: {
+        userId_contentId_type: { userId: currentUserId, contentId, type: 'save' },
+      },
+    });
+
+    if (!interaction) {
+      throw Errors.notFound('Save');
+    }
+
+    await prisma.interaction.delete({
+      where: {
+        userId_contentId_type: { userId: currentUserId, contentId, type: 'save' },
+      },
+    });
+
+    return reply.status(200).send({ success: true });
+  });
+
   // POST /posts/:id/comments — add a comment (top-level or threaded reply)
   app.post('/posts/:id/comments', {
     preHandler: [rateLimitByUser(30, '1 m')],
