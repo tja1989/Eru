@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { Prisma } from '@prisma/client';
 import { creatorScoreService } from '../../src/services/creatorScoreService.js';
 import { prisma } from '../../src/utils/prisma.js';
-import { seedUser, cleanupTestData } from '../helpers/db.js';
+import { seedUser, seedContent, cleanupTestData } from '../helpers/db.js';
 
 describe('creatorScoreService.recalculate', () => {
   beforeEach(async () => {
@@ -13,19 +14,21 @@ describe('creatorScoreService.recalculate', () => {
     await prisma.$disconnect();
   });
 
-  it('returns 50 for a user with no posts', async () => {
-    const user = await seedUser({
+  it('returns 50 for a user with no published posts (does not overwrite existing DB value)', async () => {
+    const u = await seedUser({
       firebaseUid: 'dev-test-cs1',
       phone: '+919800000001',
       username: 'tcs1',
     });
+    // Set a non-default value to prove recalculate() does NOT write when posts=0
+    await prisma.user.update({ where: { id: u.id }, data: { creatorScore: new Prisma.Decimal(73.5) } });
 
-    const score = await creatorScoreService.recalculate(user.id);
+    const score = await creatorScoreService.recalculate(u.id);
 
     expect(score).toBe(50);
-    // Verify the DB value is still the default 50
-    const fetched = await prisma.user.findUnique({ where: { id: user.id } });
-    expect(Number(fetched!.creatorScore)).toBeCloseTo(50, 1);
+    // DB value is preserved (no write) when the user has no published posts
+    const fetched = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(Number(fetched!.creatorScore)).toBeCloseTo(73.5, 1);
   });
 
   it('calculates correct score for known engagement counts', async () => {
@@ -132,5 +135,49 @@ describe('creatorScoreService.recalculate', () => {
     const score = await creatorScoreService.recalculate(user.id);
 
     expect(score).toBe(50);
+  });
+
+  it('subtracts 5*reports where reports are actioned/reviewed', async () => {
+    // Formula: (10 + 0 + 0 - 0 - 5*1) / 1 = 5
+    const author = await seedUser({ firebaseUid: 'dev-test-csrep1', phone: '+913100000010', username: 'tcsrep1' });
+    const reporter = await seedUser({ firebaseUid: 'dev-test-csrep2', phone: '+913100000011', username: 'tcsrep2' });
+    const c = await seedContent(author.id);
+    await prisma.content.update({
+      where: { id: c.id },
+      data: { likeCount: 10 },
+    });
+    await prisma.contentReport.create({
+      data: {
+        contentId: c.id,
+        reporterId: reporter.id,
+        reason: 'spam',
+        status: 'actioned',
+      },
+    });
+
+    const score = await creatorScoreService.recalculate(author.id);
+
+    expect(score).toBeCloseTo(5, 1);
+  });
+
+  it('ignores pending and dismissed reports', async () => {
+    // Two reports (pending + dismissed) on the same content by two different reporters.
+    // @@unique([contentId, reporterId]) means one report per reporter per piece of content.
+    // Formula: (10 + 0 + 0 - 0 - 0) / 1 = 10
+    const author    = await seedUser({ firebaseUid: 'dev-test-csrep3', phone: '+913100000012', username: 'tcsrep3' });
+    const reporter1 = await seedUser({ firebaseUid: 'dev-test-csrep4', phone: '+913100000013', username: 'tcsrep4' });
+    const reporter2 = await seedUser({ firebaseUid: 'dev-test-csrep5', phone: '+913100000014', username: 'tcsrep5' });
+    const c = await seedContent(author.id);
+    await prisma.content.update({ where: { id: c.id }, data: { likeCount: 10 } });
+    await prisma.contentReport.create({
+      data: { contentId: c.id, reporterId: reporter1.id, reason: 'spam', status: 'pending' },
+    });
+    await prisma.contentReport.create({
+      data: { contentId: c.id, reporterId: reporter2.id, reason: 'spam', status: 'dismissed' },
+    });
+
+    const score = await creatorScoreService.recalculate(author.id);
+
+    expect(score).toBeCloseTo(10, 1);
   });
 });
