@@ -9,9 +9,12 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { userService } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, radius } from '../../constants/theme';
@@ -23,6 +26,7 @@ interface UserSettings {
   pushNotifications: boolean;
   privateAccount: boolean;
   shareDataWithBrands: boolean;
+  dob: string | null;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -32,7 +36,25 @@ const DEFAULT_SETTINGS: UserSettings = {
   pushNotifications: true,
   privateAccount: false,
   shareDataWithBrands: true,
+  dob: null,
 };
+
+/** Formats an ISO date string (YYYY-MM-DD) to a human-friendly form like "15 Jan 1990". */
+function formatDob(isoDate: string | null): string {
+  if (!isoDate) return 'Not set';
+  // Parse as UTC noon to avoid timezone-off-by-one errors
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+/** Converts a JS Date to an ISO date string YYYY-MM-DD in UTC. */
+function toISODateString(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -45,6 +67,7 @@ export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showDobPicker, setShowDobPicker] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -57,6 +80,7 @@ export default function SettingsScreen() {
           pushNotifications: data.pushNotifications ?? true,
           privateAccount: data.privateAccount ?? false,
           shareDataWithBrands: data.shareDataWithBrands ?? true,
+          dob: data.dob ?? null,
         });
       } catch {
         setSettings((prev) => ({ ...prev, name: user?.name ?? '' }));
@@ -82,6 +106,17 @@ export default function SettingsScreen() {
       Alert.alert('Error', 'Could not save settings. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDobChange = (_event: DateTimePickerEvent, date?: Date) => {
+    // On Android the picker dismisses itself; on iOS we use a modal.
+    // If date is undefined the user cancelled — close without saving.
+    if (Platform.OS === 'android') {
+      setShowDobPicker(false);
+    }
+    if (date !== undefined) {
+      updateField('dob', toISODateString(date));
     }
   };
 
@@ -173,6 +208,18 @@ export default function SettingsScreen() {
             <Text style={styles.charCount}>{settings.bio.length}/150</Text>
           </View>
           <View style={styles.divider} />
+          <TouchableOpacity
+            testID="dob-row"
+            style={styles.fieldRow}
+            onPress={() => setShowDobPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.fieldLabel}>Date of Birth</Text>
+            <Text style={[styles.fieldInput, styles.fieldValue]}>
+              {formatDob(settings.dob)}
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>Pincode</Text>
             <TextInput
@@ -187,6 +234,48 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
+
+        {/* DOB picker — Android shows native dialog; iOS uses a modal sheet */}
+        {showDobPicker && Platform.OS === 'android' && (
+          <DateTimePicker
+            testID="dob-picker"
+            mode="date"
+            display="default"
+            value={settings.dob ? new Date(settings.dob + 'T12:00:00Z') : new Date()}
+            maximumDate={new Date()}
+            onChange={handleDobChange}
+          />
+        )}
+        {Platform.OS !== 'android' && (
+          <Modal
+            visible={showDobPicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowDobPicker(false)}
+          >
+            <View style={styles.pickerModalOverlay}>
+              <View style={styles.pickerModalSheet}>
+                <View style={styles.pickerModalHeader}>
+                  <TouchableOpacity onPress={() => setShowDobPicker(false)}>
+                    <Text style={styles.pickerCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.pickerTitle}>Date of Birth</Text>
+                  <TouchableOpacity onPress={() => setShowDobPicker(false)}>
+                    <Text style={styles.pickerDoneText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  testID="dob-picker"
+                  mode="date"
+                  display="spinner"
+                  value={settings.dob ? new Date(settings.dob + 'T12:00:00Z') : new Date()}
+                  maximumDate={new Date()}
+                  onChange={handleDobChange}
+                />
+              </View>
+            </View>
+          </Modal>
+        )}
 
         {/* Notifications section */}
         <Text style={styles.sectionHeader}>Notifications</Text>
@@ -357,4 +446,30 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 
   bottomPad: { height: spacing.xxxl * 2 },
+
+  fieldValue: { textAlign: 'right', color: colors.g500 },
+
+  pickerModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  pickerModalSheet: {
+    backgroundColor: colors.card,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingBottom: spacing.xxxl,
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
+  },
+  pickerTitle: { fontSize: 15, fontWeight: '600', color: colors.g900 },
+  pickerCancelText: { fontSize: 15, color: colors.g500 },
+  pickerDoneText: { fontSize: 15, fontWeight: '700', color: colors.navy },
 });
