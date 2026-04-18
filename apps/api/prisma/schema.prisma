@@ -55,6 +55,7 @@ enum InteractionType {
   like
   save
   share
+  dislike
 }
 
 enum ModerationDecision {
@@ -146,6 +147,7 @@ model Content {
   declineReason    String?          @map("decline_reason")
   isTrending       Boolean          @default(false) @map("is_trending")
   likeCount        Int              @default(0) @map("like_count")
+  dislikeCount     Int              @default(0) @map("dislike_count")
   commentCount     Int              @default(0) @map("comment_count")
   shareCount       Int              @default(0) @map("share_count")
   viewCount        Int              @default(0) @map("view_count")

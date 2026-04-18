@@ -268,6 +268,72 @@ export async function contentRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
+  // POST /posts/:id/dislike — dislike a piece of content
+  app.post('/posts/:id/dislike', {
+    preHandler: [rateLimitByUser(60, '1 m')],
+  }, async (request, reply) => {
+    const { id: contentId } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const content = await prisma.content.findUnique({ where: { id: contentId } });
+    if (!content) throw Errors.notFound('Content');
+
+    try {
+      await prisma.$transaction([
+        prisma.interaction.create({
+          data: { userId: currentUserId, contentId, type: 'dislike' },
+        }),
+        prisma.content.update({
+          where: { id: contentId },
+          data: { dislikeCount: { increment: 1 } },
+        }),
+      ]);
+    } catch (error: unknown) {
+      // P2002 = unique constraint violation — already disliked
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
+        return reply.status(200).send({ success: true });
+      }
+      throw error;
+    }
+
+    return reply.status(201).send({ success: true });
+  });
+
+  // DELETE /posts/:id/undislike — remove a dislike from content
+  app.delete('/posts/:id/undislike', async (request) => {
+    const { id: contentId } = request.params as { id: string };
+    const currentUserId = request.userId;
+
+    const interaction = await prisma.interaction.findUnique({
+      where: {
+        userId_contentId_type: { userId: currentUserId, contentId, type: 'dislike' },
+      },
+    });
+
+    if (!interaction) {
+      throw Errors.notFound('Dislike');
+    }
+
+    await prisma.$transaction([
+      prisma.interaction.delete({
+        where: {
+          userId_contentId_type: { userId: currentUserId, contentId, type: 'dislike' },
+        },
+      }),
+      prisma.content.update({
+        where: { id: contentId },
+        data: { dislikeCount: { decrement: 1 } },
+      }),
+    ]);
+
+    return { success: true };
+  });
+
   // POST /posts/:id/comments — add a comment (top-level or threaded reply)
   app.post('/posts/:id/comments', {
     preHandler: [rateLimitByUser(30, '1 m')],
