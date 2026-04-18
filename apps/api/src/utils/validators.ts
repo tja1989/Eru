@@ -71,7 +71,7 @@ export const reelsQuerySchema = paginationSchema.extend({
 });
 
 export const leaderboardQuerySchema = z.object({
-  scope: z.enum(['pincode', 'state', 'national']).default('pincode'),
+  scope: z.enum(['pincode', 'state', 'national', 'friends']).default('pincode'),
   pincode: z.string().length(6).optional(),
 });
 

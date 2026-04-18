@@ -5,6 +5,16 @@ import { leaderboardQuerySchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
 import { getLeaderboard, getUserRank } from '../services/leaderboardService.js';
 
+function startOfCurrentWeek(): Date {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun
+  const diff = day === 0 ? 6 : day - 1; // week starts Mon
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
 export async function leaderboardRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
   app.addHook('preHandler', authMiddleware);
@@ -21,6 +31,40 @@ export async function leaderboardRoutes(app: FastifyInstance) {
     }
 
     const { scope, pincode } = parsed.data;
+
+    if (scope === 'friends') {
+      const follows = await prisma.follow.findMany({
+        where: { followerId: request.userId },
+        select: { followingId: true },
+      });
+      const ids = follows.map((f) => f.followingId);
+      if (ids.length === 0) return { rankings: [], scope };
+
+      const weekStart = startOfCurrentWeek();
+      const rows = await prisma.pointsLedger.groupBy({
+        by: ['userId'],
+        where: { userId: { in: ids }, createdAt: { gte: weekStart } },
+        _sum: { points: true },
+      });
+      const sorted = rows
+        .map((r) => ({ userId: r.userId, pointsThisWeek: r._sum.points ?? 0 }))
+        .sort((a, b) => b.pointsThisWeek - a.pointsThisWeek);
+
+      const users = await prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, name: true, username: true, avatarUrl: true, isVerified: true, tier: true, streakDays: true },
+      });
+      const userMap = new Map(users.map((u) => [u.id, u]));
+
+      const rankings = sorted
+        .map((r, idx) => {
+          const u = userMap.get(r.userId);
+          return u ? { rank: idx + 1, ...u, pointsThisWeek: r.pointsThisWeek } : null;
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      return { rankings, scope };
+    }
 
     // If pincode not provided, fall back to the authenticated user's pincode
     let resolvedPincode = pincode;
