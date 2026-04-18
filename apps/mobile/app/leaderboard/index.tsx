@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { leaderboardService } from '../../services/leaderboardService';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
+import { WeeklyQuestsCard } from '@/components/WeeklyQuestsCard';
 
 interface Season {
   name: string;
@@ -213,6 +214,8 @@ export default function LeaderboardScreen() {
             );
           })
         )}
+
+        <WeeklyQuestsCard />
 
         <View style={styles.bottomPad} />
       </ScrollView>
