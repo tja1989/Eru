@@ -18,6 +18,11 @@ let _data: Pincode[] | null = null;
 function getData(): Pincode[] {
   if (_data === null) {
     const filePath = path.join(__dirname, '../data/pincodes.json');
+    if (!fs.existsSync(filePath)) {
+      console.warn('[locationsService] pincodes.json missing — run npm run db:pincodes');
+      _data = [];
+      return _data;
+    }
     const raw = fs.readFileSync(filePath, 'utf-8');
     _data = JSON.parse(raw) as Pincode[];
   }
@@ -34,23 +39,23 @@ export const locationsService = {
    * - Otherwise, substring-matches on area or district (case-insensitive), capped at 10.
    */
   search(query: string): Pincode[] {
-    if (query.length < 2) return [];
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
 
     const data = getData();
 
     // Exact 6-digit pincode lookup
-    if (/^\d{6}$/.test(query)) {
-      const match = data.find((p) => p.pincode === query);
+    if (/^\d{6}$/.test(q)) {
+      const match = data.find((p) => p.pincode === q);
       return match ? [match] : [];
     }
 
     // Substring match on area or district, case-insensitive, capped at 10
-    const lower = query.toLowerCase();
     const results: Pincode[] = [];
     for (const p of data) {
       if (
-        p.area.toLowerCase().includes(lower) ||
-        p.district.toLowerCase().includes(lower)
+        p.area.toLowerCase().includes(q) ||
+        p.district.toLowerCase().includes(q)
       ) {
         results.push(p);
         if (results.length === 10) break;

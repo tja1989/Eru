@@ -27,8 +27,8 @@ describe('locationsService', () => {
       expect(upper).toEqual(lower);
     });
 
-    it('caps results at 10 entries (Bangalore has 11+ in fixture)', () => {
-      // The fixture has 10 Bangalore entries (560001-560010), all matching "Bangalore"
+    it('caps results at 10 entries (Bangalore has 11 in fixture)', () => {
+      // The fixture has 11 Bangalore entries (560001-560011), so the cap actually fires
       const results = locationsService.search('Bangalore');
       expect(results.length).toBeLessThanOrEqual(10);
       expect(results.length).toBe(10);
@@ -46,6 +46,15 @@ describe('locationsService', () => {
     it('returns empty array for an exact pincode that does not exist', () => {
       const results = locationsService.search('999999');
       expect(results).toEqual([]);
+    });
+
+    it('trims whitespace from the query before matching', () => {
+      const results = locationsService.search('  ernakulam  ');
+      expect(results.length).toBeGreaterThan(0);
+    });
+
+    it('returns empty array when trimmed query is < 2 chars', () => {
+      expect(locationsService.search('  k  ')).toEqual([]);
     });
   });
 
