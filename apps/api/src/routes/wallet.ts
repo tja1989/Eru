@@ -54,9 +54,10 @@ export async function walletRoutes(app: FastifyInstance) {
       tierProgress = Math.min(pointsInCurrentTier / pointsNeededForNext, 1.0);
     }
 
-    // Count points expiring within the warning window
+    // Count points expiring within the warning window, and find the earliest
+    // expiry date so we can surface "X pts expiring in N days" on the wallet.
     const expiryWarningDate = new Date(Date.now() + POINTS_EXPIRY_WARNING_DAYS * 24 * 60 * 60 * 1000);
-    const expiringPoints = await prisma.pointsLedger.aggregate({
+    const expiringAgg = await prisma.pointsLedger.aggregate({
       where: {
         userId,
         expiresAt: {
@@ -66,18 +67,41 @@ export async function walletRoutes(app: FastifyInstance) {
         points: { gt: 0 },
       },
       _sum: { points: true },
+      _min: { expiresAt: true },
     });
 
+    const expiringPoints = expiringAgg._sum.points ?? 0;
+    const expiringDays = expiringAgg._min.expiresAt
+      ? Math.max(
+          0,
+          Math.ceil(
+            (expiringAgg._min.expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000),
+          ),
+        )
+      : null;
+
+    // Absolute points-to-next-tier (a simpler companion to `tierProgress` which
+    // is a 0-1 fraction). Mobile screens render this as "N pts away".
+    const pointsToNext = nextTier
+      ? Math.max(0, TIER_CONFIGS[nextTier].threshold - user.lifetimePoints)
+      : 0;
+
     return {
-      balance: user.currentBalance,
-      dailyEarned,
-      dailyGoal: DAILY_POINTS_GOAL,
-      streak: user.streakDays,
-      tier: user.tier,
-      tierProgress,
-      nextTier,
-      lifetimePoints: user.lifetimePoints,
-      expiringPoints: expiringPoints._sum.points ?? 0,
+      wallet: {
+        balance: user.currentBalance,
+        rupeeValue: user.currentBalance * 0.01,
+        dailyEarned,
+        dailyGoal: DAILY_POINTS_GOAL,
+        streak: user.streakDays,
+        tier: user.tier,
+        currentTier: user.tier,
+        nextTier,
+        pointsToNext,
+        tierProgress,
+        lifetimePoints: user.lifetimePoints,
+        expiringPoints,
+        expiringDays,
+      },
     };
   });
 
