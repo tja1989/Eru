@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { Errors } from '../utils/errors.js';
 
 const voteSchema = z.object({
-  pollOptionId: z.string().min(1),
+  pollOptionId: z.string().uuid(),
 });
 
 export async function pollRoutes(app: FastifyInstance) {

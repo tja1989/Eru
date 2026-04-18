@@ -39,7 +39,7 @@ describe('Poll endpoints', () => {
     });
 
     it('creating a poll with <2 options returns 400', async () => {
-      const u = await seedUser({ firebaseUid: 'dev-test-poll2a', phone: '+919100000002', username: 'tpoll2a' });
+      await seedUser({ firebaseUid: 'dev-test-poll2a', phone: '+919100000002', username: 'tpoll2a' });
       const res = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll2a'), 'content-type': 'application/json' },
@@ -53,7 +53,7 @@ describe('Poll endpoints', () => {
     });
 
     it('creating a poll with >4 options returns 400', async () => {
-      const u = await seedUser({ firebaseUid: 'dev-test-poll3a', phone: '+919100000003', username: 'tpoll3a' });
+      await seedUser({ firebaseUid: 'dev-test-poll3a', phone: '+919100000003', username: 'tpoll3a' });
       const res = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll3a'), 'content-type': 'application/json' },
@@ -67,7 +67,7 @@ describe('Poll endpoints', () => {
     });
 
     it('providing pollOptions on a non-poll type returns 400', async () => {
-      const u = await seedUser({ firebaseUid: 'dev-test-poll4a', phone: '+919100000004', username: 'tpoll4a' });
+      await seedUser({ firebaseUid: 'dev-test-poll4a', phone: '+919100000004', username: 'tpoll4a' });
       const res = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll4a'), 'content-type': 'application/json' },
@@ -188,8 +188,8 @@ describe('Poll endpoints', () => {
     });
 
     it('voting on a content whose type is not poll returns 400', async () => {
-      const u = await seedUser({ firebaseUid: 'dev-test-poll8a', phone: '+919100000008', username: 'tpoll8a' });
-      const nonPollContent = await seedContent(u.id, { type: 'post' });
+      const owner = await seedUser({ firebaseUid: 'dev-test-poll8a', phone: '+919100000008', username: 'tpoll8a' });
+      const nonPollContent = await seedContent(owner.id, { type: 'post' });
 
       const res = await getTestApp().inject({
         method: 'POST', url: `/api/v1/polls/${nonPollContent.id}/vote`,
@@ -197,6 +197,46 @@ describe('Poll endpoints', () => {
         body: JSON.stringify({ pollOptionId: 'some-fake-id' }),
       });
       expect(res.statusCode).toBe(400);
+    });
+
+    it('voting with a pollOptionId from a different poll returns 400 and creates no PollVote', async () => {
+      // Create poll A
+      await seedUser({ firebaseUid: 'dev-test-pollxa', phone: '+919100000010', username: 'tpollxa' });
+      const createResA = await getTestApp().inject({
+        method: 'POST', url: '/api/v1/content/create',
+        headers: { Authorization: devToken('dev-test-pollxa'), 'content-type': 'application/json' },
+        body: JSON.stringify({ type: 'poll', text: 'Poll A question?', pollOptions: ['A1', 'A2'] }),
+      });
+      expect(createResA.statusCode).toBe(201);
+      const { content: pollA } = createResA.json();
+
+      // Create poll B (same user is fine — we just need two polls)
+      const createResB = await getTestApp().inject({
+        method: 'POST', url: '/api/v1/content/create',
+        headers: { Authorization: devToken('dev-test-pollxa'), 'content-type': 'application/json' },
+        body: JSON.stringify({ type: 'poll', text: 'Poll B question?', pollOptions: ['B1', 'B2'] }),
+      });
+      expect(createResB.statusCode).toBe(201);
+      const { content: pollB } = createResB.json();
+
+      // Grab the first option from poll B
+      const pollBOptions = await prisma.pollOption.findMany({
+        where: { contentId: pollB.id },
+        orderBy: { sortOrder: 'asc' },
+      });
+      const pollBOptionId = pollBOptions[0].id;
+
+      // Vote on poll A using poll B's option — should be rejected
+      const voteRes = await getTestApp().inject({
+        method: 'POST', url: `/api/v1/polls/${pollA.id}/vote`,
+        headers: { Authorization: devToken('dev-test-pollxa'), 'content-type': 'application/json' },
+        body: JSON.stringify({ pollOptionId: pollBOptionId }),
+      });
+      expect(voteRes.statusCode).toBe(400);
+
+      // Confirm no PollVote row was created for that option
+      const vote = await prisma.pollVote.findFirst({ where: { pollOptionId: pollBOptionId } });
+      expect(vote).toBeNull();
     });
   });
 

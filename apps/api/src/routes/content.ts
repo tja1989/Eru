@@ -20,32 +20,36 @@ export async function contentRoutes(app: FastifyInstance) {
 
     const { type, text, mediaIds, hashtags, locationPincode, pollOptions } = parsed.data;
 
-    // Create the content row first
-    const content = await prisma.content.create({
-      data: {
-        userId: request.userId,
-        type,
-        text,
-        hashtags,
-        locationPincode,
-        moderationStatus: 'pending',
-      },
-    });
+    // Create the content row and any poll options atomically so we never
+    // end up with a poll content that has zero options (unvoteable broken state).
+    const content = await prisma.$transaction(async (tx) => {
+      const created = await tx.content.create({
+        data: {
+          userId: request.userId,
+          type,
+          text,
+          hashtags,
+          locationPincode,
+          moderationStatus: 'pending',
+        },
+      });
 
-    // Persist poll options in the same transaction as the content row
-    if (type === 'poll' && pollOptions && pollOptions.length > 0) {
-      await prisma.$transaction(
-        pollOptions.map((optText, idx) =>
-          prisma.pollOption.create({
-            data: {
-              contentId: content.id,
-              text: optText,
-              sortOrder: idx,
-            },
-          })
-        )
-      );
-    }
+      if (type === 'poll' && pollOptions && pollOptions.length > 0) {
+        await Promise.all(
+          pollOptions.map((optText, idx) =>
+            tx.pollOption.create({
+              data: {
+                contentId: created.id,
+                text: optText,
+                sortOrder: idx,
+              },
+            })
+          )
+        );
+      }
+
+      return created;
+    });
 
     // Link any pre-uploaded media to this new content row
     if (mediaIds.length > 0) {
