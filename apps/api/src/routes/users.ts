@@ -405,9 +405,18 @@ export async function userRoutes(app: FastifyInstance) {
           shareDataWithBrands: true,
         },
       });
-    } catch (error: any) {
-      // P2002 = Prisma unique constraint violation (e.g. username already taken)
-      if (error?.code === 'P2002') {
+    } catch (error: unknown) {
+      // P2002 = Prisma unique constraint violation — only treat as username conflict
+      // if the violating field is actually "username". Future unique fields (email,
+      // phone, etc.) must not produce a misleading "Username already taken" message.
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === 'P2002' &&
+        Array.isArray((error as any).meta?.target) &&
+        ((error as any).meta.target as string[]).includes('username')
+      ) {
         throw Errors.conflict('Username already taken');
       }
       throw error;
