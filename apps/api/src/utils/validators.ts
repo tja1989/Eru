@@ -15,6 +15,7 @@ export const createContentSchema = z.object({
   locationPincode: z.string().length(6).optional(),
   pollOptions: z.array(z.string().min(1).max(200)).optional(),
   threadParts: z.array(z.string().min(1).max(2200)).optional(),
+  taggedUserIds: z.array(z.string().uuid()).max(10).optional(),
 }).refine((data) => {
   // poll type MUST have 2–4 options and MUST NOT supply threadParts
   if (data.type === 'poll') {

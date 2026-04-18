@@ -18,7 +18,13 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.badRequest(parsed.error.issues[0].message);
     }
 
-    const { type, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts } = parsed.data;
+    const { type, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts, taggedUserIds } = parsed.data;
+
+    // Validate that every tagged user actually exists
+    if (taggedUserIds && taggedUserIds.length > 0) {
+      const count = await prisma.user.count({ where: { id: { in: taggedUserIds } } });
+      if (count !== taggedUserIds.length) throw Errors.badRequest('One or more tagged users do not exist');
+    }
 
     // Create the content row and any poll options / thread parts atomically so we
     // never end up with a poll that has zero options or a thread that's missing parts.
@@ -33,6 +39,7 @@ export async function contentRoutes(app: FastifyInstance) {
           moderationStatus: 'pending',
           threadPosition: type === 'thread' ? 0 : null,
           threadParentId: null,
+          taggedUserIds: taggedUserIds ?? [],
         },
       });
 

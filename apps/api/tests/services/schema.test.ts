@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, afterEach } from 'vitest';
 import { prisma } from '../../src/utils/prisma.js';
 
 describe('P1 schema sanity', () => {
@@ -44,5 +44,33 @@ describe('P1 schema sanity', () => {
     await expect(
       prisma.content.count({ where: { threadParentId: null } })
     ).resolves.toBeTypeOf('number');
+  });
+
+  it('F8.1: Content.taggedUserIds persists and reads back correctly', async () => {
+    // Create a temp user to be tagged and another to be the author
+    const author = await prisma.user.create({
+      data: { firebaseUid: 'dev-test-tag-schema1', phone: '+919900000001', username: 'ttagsch1', name: 'Schema Tag Author', primaryPincode: '000000' },
+    });
+    const tagged = await prisma.user.create({
+      data: { firebaseUid: 'dev-test-tag-schema2', phone: '+919900000002', username: 'ttagsch2', name: 'Schema Tagged User', primaryPincode: '000000' },
+    });
+
+    const content = await prisma.content.create({
+      data: {
+        userId: author.id,
+        type: 'post',
+        text: 'Tagging test',
+        moderationStatus: 'published',
+        publishedAt: new Date(),
+        taggedUserIds: [tagged.id],
+      },
+    });
+
+    const fetched = await prisma.content.findUnique({ where: { id: content.id } });
+    expect(fetched?.taggedUserIds).toEqual([tagged.id]);
+
+    // Cleanup
+    await prisma.content.delete({ where: { id: content.id } });
+    await prisma.user.deleteMany({ where: { firebaseUid: { in: ['dev-test-tag-schema1', 'dev-test-tag-schema2'] } } });
   });
 });

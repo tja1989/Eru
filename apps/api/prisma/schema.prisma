@@ -158,6 +158,8 @@ model Content {
   createdAt        DateTime         @default(now()) @map("created_at")
   deletedAt        DateTime?        @map("deleted_at")
 
+  taggedUserIds    String[]         @default([]) @map("tagged_user_ids")
+
   threadParentId   String?          @map("thread_parent_id")
   threadPosition   Int?             @map("thread_position")
 

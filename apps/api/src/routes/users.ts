@@ -176,10 +176,10 @@ export async function userRoutes(app: FastifyInstance) {
 
     const { page, limit } = paginationParsed.data;
 
-    // Default tab is 'posts'; saved requires querying interactions
+    // Default tab is 'posts'; saved requires querying interactions; tagged queries taggedUserIds
     const tab = rawQuery.tab ?? 'posts';
-    if (!['posts', 'reels', 'created', 'saved'].includes(tab)) {
-      throw Errors.badRequest('tab must be one of: posts, reels, created, saved');
+    if (!['posts', 'reels', 'created', 'saved', 'tagged'].includes(tab)) {
+      throw Errors.badRequest('tab must be one of: posts, reels, created, saved, tagged');
     }
 
     const skip = (page - 1) * limit;
@@ -204,6 +204,22 @@ export async function userRoutes(app: FastifyInstance) {
       });
 
       return { content: interactions.map((i) => i.content), page, limit };
+    }
+
+    if (tab === 'tagged') {
+      // Return published content where this user appears in taggedUserIds
+      const content = await prisma.content.findMany({
+        where: {
+          ...baseWhere,
+          taggedUserIds: { has: id },
+        },
+        skip,
+        take: limit,
+        orderBy: { publishedAt: 'desc' },
+        include: { media: true },
+      });
+
+      return { content, page, limit };
     }
 
     // For posts/reels/created tabs — filter by content type and userId
