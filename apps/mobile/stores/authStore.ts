@@ -9,8 +9,10 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasCompletedOnboarding: boolean;
   setToken: (token: string) => void;
   setUser: (user: AuthState['user']) => void;
+  setOnboardingComplete: (value: boolean) => void;
   register: (data: { firebaseUid: string; phone: string; name: string; username: string }) => Promise<void>;
   logout: () => Promise<void>;
   reset: () => void;
@@ -23,8 +25,10 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      hasCompletedOnboarding: false,
       setToken: (token) => { setAuthToken(token); set({ token, isAuthenticated: true }); },
       setUser: (user) => set({ user }),
+      setOnboardingComplete: (value) => set({ hasCompletedOnboarding: value }),
       register: async (data) => {
         set({ isLoading: true });
         try {
@@ -37,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
         setAuthToken(null);
         set({ user: null, token: null, isAuthenticated: false });
       },
-      reset: () => { setAuthToken(null); set({ user: null, token: null, isAuthenticated: false, isLoading: false }); },
+      reset: () => { setAuthToken(null); set({ user: null, token: null, isAuthenticated: false, isLoading: false, hasCompletedOnboarding: false }); },
     }),
     {
       name: 'eru-auth',
@@ -46,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),
       onRehydrateStorage: () => (state) => {
         // Re-attach the token to the axios client after the store is restored
