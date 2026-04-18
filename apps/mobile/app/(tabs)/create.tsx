@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { contentService } from '../../services/contentService';
 import { mediaService } from '../../services/mediaService';
+import { PollForm } from '../../components/PollForm';
 import { colors, spacing, radius } from '../../constants/theme';
 
 const CONTENT_TYPES = ['photo', 'video', 'text', 'poll'] as const;
@@ -34,6 +35,9 @@ export default function CreateScreen() {
   const [hashtags, setHashtags] = useState('');
   const [media, setMedia] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // Poll-specific state
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>([]);
 
   const pickMedia = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -53,8 +57,25 @@ export default function CreateScreen() {
     }
   };
 
+  const isPollValid =
+    contentType === 'poll' &&
+    pollQuestion.trim().length > 0 &&
+    pollOptions.length >= 2 &&
+    pollOptions.every((o) => o.trim().length > 0);
+
+  const isShareDisabled =
+    submitting ||
+    (contentType === 'poll'
+      ? !isPollValid
+      : !text.trim() && media.length === 0);
+
   const handleSubmit = async () => {
-    if (!text.trim() && media.length === 0) {
+    if (contentType === 'poll') {
+      if (!isPollValid) {
+        Alert.alert('Incomplete poll', 'Add a question and at least 2 options.');
+        return;
+      }
+    } else if (!text.trim() && media.length === 0) {
       Alert.alert('Nothing to post', 'Add some text or media before submitting.');
       return;
     }
@@ -81,12 +102,22 @@ export default function CreateScreen() {
         .map((h) => h.replace(/^#/, '').trim())
         .filter(Boolean);
 
-      await contentService.create({
-        type: contentType,
-        text: text.trim() || undefined,
-        mediaIds,
-        hashtags: parsedHashtags,
-      });
+      if (contentType === 'poll') {
+        await contentService.create({
+          type: 'poll',
+          text: pollQuestion.trim(),
+          pollOptions: pollOptions.filter((o) => o.trim()),
+          mediaIds: [],
+          hashtags: parsedHashtags,
+        } as any);
+      } else {
+        await contentService.create({
+          type: contentType,
+          text: text.trim() || undefined,
+          mediaIds,
+          hashtags: parsedHashtags,
+        });
+      }
 
       Alert.alert('Submitted!', 'Your content is being reviewed.', [
         { text: 'OK', onPress: () => router.push('/my-content' as any) },
@@ -110,9 +141,9 @@ export default function CreateScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Post</Text>
         <TouchableOpacity
-          style={[styles.shareBtn, submitting && styles.shareBtnDisabled]}
+          style={[styles.shareBtn, isShareDisabled && styles.shareBtnDisabled]}
           onPress={handleSubmit}
-          disabled={submitting}
+          disabled={isShareDisabled}
         >
           {submitting ? (
             <ActivityIndicator size="small" color="#fff" />
@@ -138,23 +169,36 @@ export default function CreateScreen() {
           ))}
         </View>
 
-        {/* Text input */}
-        <View style={styles.textBox}>
-          <TextInput
-            style={styles.textInput}
-            placeholder={
-              contentType === 'text'
-                ? "What's on your mind?"
-                : 'Add a caption...'
-            }
-            placeholderTextColor={colors.g400}
-            multiline
-            value={text}
-            onChangeText={setText}
-            maxLength={2200}
+        {/* Poll form — shown only when contentType is 'poll' */}
+        {contentType === 'poll' && (
+          <PollForm
+            question={pollQuestion}
+            onQuestionChange={setPollQuestion}
+            options={pollOptions}
+            onOptionsChange={setPollOptions}
+            disabled={submitting}
           />
-          <Text style={styles.charCount}>{text.length}/2200</Text>
-        </View>
+        )}
+
+        {/* Text input — hidden for polls */}
+        {contentType !== 'poll' && (
+          <View style={styles.textBox}>
+            <TextInput
+              style={styles.textInput}
+              placeholder={
+                contentType === 'text'
+                  ? "What's on your mind?"
+                  : 'Add a caption...'
+              }
+              placeholderTextColor={colors.g400}
+              multiline
+              value={text}
+              onChangeText={setText}
+              maxLength={2200}
+            />
+            <Text style={styles.charCount}>{text.length}/2200</Text>
+          </View>
+        )}
 
         {/* Media picker */}
         {contentType !== 'text' && contentType !== 'poll' && (

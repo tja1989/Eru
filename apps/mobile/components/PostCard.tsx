@@ -9,6 +9,7 @@ import { colors, spacing } from '../constants/theme';
 import { contentService } from '../services/contentService';
 import { usePointsStore } from '../stores/pointsStore';
 import { useAuthStore } from '../stores/authStore';
+import { PollCard } from './PollCard';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -210,8 +211,17 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
       </View>
 
       <Text style={styles.likes}>{likeCount.toLocaleString()} likes</Text>
-      {post.text && (
-        <Text style={styles.caption}><Text style={styles.captionUser}>{post.user?.username} </Text>{post.text}</Text>
+      {post.type === 'poll' && post.pollOptions ? (
+        <PollCard
+          contentId={post.id}
+          question={post.text ?? ''}
+          pollOptions={post.pollOptions}
+          userVote={post.userVote ?? null}
+        />
+      ) : (
+        post.text && (
+          <Text style={styles.caption}><Text style={styles.captionUser}>{post.user?.username} </Text>{post.text}</Text>
+        )
       )}
       {post.commentCount > 0 && (
         <TouchableOpacity onPress={openDetail}>
