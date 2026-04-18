@@ -10,6 +10,7 @@ import { contentService } from '../services/contentService';
 import { usePointsStore } from '../stores/pointsStore';
 import { useAuthStore } from '../stores/authStore';
 import { PollCard } from './PollCard';
+import { ThreadView } from './ThreadView';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -218,6 +219,16 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
           pollOptions={post.pollOptions}
           userVote={post.userVote ?? null}
         />
+      ) : post.type === 'thread' && post.threadParentId === null ? (
+        // Thread parent row: if parts are pre-fetched show them inline,
+        // otherwise show a "View thread →" button that navigates to detail.
+        post.parts && post.parts.length > 0 ? (
+          <ThreadView parts={post.parts} />
+        ) : (
+          <TouchableOpacity onPress={openDetail} style={styles.viewThreadBtn}>
+            <Text style={styles.viewThreadText}>View thread →</Text>
+          </TouchableOpacity>
+        )
       ) : (
         post.text && (
           <Text style={styles.caption}><Text style={styles.captionUser}>{post.user?.username} </Text>{post.text}</Text>
@@ -294,4 +305,6 @@ const styles = StyleSheet.create({
   caption: { paddingHorizontal: spacing.md, paddingVertical: 4, fontSize: 13, color: colors.g800, lineHeight: 19 },
   captionUser: { fontWeight: '600' },
   viewComments: { paddingHorizontal: spacing.md, paddingBottom: 8, fontSize: 13, color: colors.g400 },
+  viewThreadBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  viewThreadText: { fontSize: 13, color: colors.blue, fontWeight: '600' },
 });

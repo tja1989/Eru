@@ -16,9 +16,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { contentService } from '../../services/contentService';
 import { mediaService } from '../../services/mediaService';
 import { PollForm } from '../../components/PollForm';
+import { ThreadComposer } from '../../components/ThreadComposer';
 import { colors, spacing, radius } from '../../constants/theme';
 
-const CONTENT_TYPES = ['photo', 'video', 'text', 'poll'] as const;
+const CONTENT_TYPES = ['photo', 'video', 'text', 'poll', 'thread'] as const;
 type ContentType = (typeof CONTENT_TYPES)[number];
 
 const TYPE_LABELS: Record<ContentType, string> = {
@@ -26,6 +27,7 @@ const TYPE_LABELS: Record<ContentType, string> = {
   video: '🎬 Video',
   text: '✍️ Text',
   poll: '📊 Poll',
+  thread: '🧵 Thread',
 };
 
 export default function CreateScreen() {
@@ -38,6 +40,8 @@ export default function CreateScreen() {
   // Poll-specific state
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>([]);
+  // Thread-specific state
+  const [threadParts, setThreadParts] = useState<string[]>([]);
 
   const pickMedia = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -63,16 +67,28 @@ export default function CreateScreen() {
     pollOptions.length >= 2 &&
     pollOptions.every((o) => o.trim().length > 0);
 
+  const isThreadValid =
+    contentType === 'thread' &&
+    threadParts.length >= 2 &&
+    threadParts.every((p) => p.trim().length > 0);
+
   const isShareDisabled =
     submitting ||
     (contentType === 'poll'
       ? !isPollValid
+      : contentType === 'thread'
+      ? !isThreadValid
       : !text.trim() && media.length === 0);
 
   const handleSubmit = async () => {
     if (contentType === 'poll') {
       if (!isPollValid) {
         Alert.alert('Incomplete poll', 'Add a question and at least 2 options.');
+        return;
+      }
+    } else if (contentType === 'thread') {
+      if (!isThreadValid) {
+        Alert.alert('Incomplete thread', 'Each part must have text, and you need at least 2 parts.');
         return;
       }
     } else if (!text.trim() && media.length === 0) {
@@ -107,6 +123,13 @@ export default function CreateScreen() {
           type: 'poll',
           text: pollQuestion.trim(),
           pollOptions: pollOptions.map((o) => o.trim()).filter(Boolean),
+          mediaIds: [],
+          hashtags: parsedHashtags,
+        });
+      } else if (contentType === 'thread') {
+        await contentService.create({
+          type: 'thread',
+          threadParts: threadParts.map((p) => p.trim()).filter(Boolean),
           mediaIds: [],
           hashtags: parsedHashtags,
         });
@@ -180,8 +203,17 @@ export default function CreateScreen() {
           />
         )}
 
-        {/* Text input — hidden for polls */}
-        {contentType !== 'poll' && (
+        {/* Thread composer — shown only when contentType is 'thread' */}
+        {contentType === 'thread' && (
+          <ThreadComposer
+            parts={threadParts}
+            onPartsChange={setThreadParts}
+            disabled={submitting}
+          />
+        )}
+
+        {/* Text input — hidden for polls and threads */}
+        {contentType !== 'poll' && contentType !== 'thread' && (
           <View style={styles.textBox}>
             <TextInput
               style={styles.textInput}
@@ -201,7 +233,7 @@ export default function CreateScreen() {
         )}
 
         {/* Media picker */}
-        {contentType !== 'text' && contentType !== 'poll' && (
+        {contentType !== 'text' && contentType !== 'poll' && contentType !== 'thread' && (
           <View style={styles.mediaSection}>
             <TouchableOpacity style={styles.mediaPickerBtn} onPress={pickMedia}>
               <Text style={styles.mediaPickerIcon}>🖼️</Text>
