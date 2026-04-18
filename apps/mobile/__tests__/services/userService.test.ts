@@ -18,3 +18,15 @@ describe('userService.follow/unfollow', () => {
     expect(api.delete).toHaveBeenCalledWith('/users/user-123/unfollow');
   });
 });
+
+describe('userService.getMyContentSummary', () => {
+  beforeEach(() => jest.clearAllMocks());
+  it('calls GET /users/me/content-summary and returns the summary object', async () => {
+    (api.get as jest.Mock).mockResolvedValue({
+      data: { summary: { published: 5, pending: 1, declined: 0, totalLikes: 42 } },
+    });
+    const result = await userService.getMyContentSummary();
+    expect(api.get).toHaveBeenCalledWith('/users/me/content-summary');
+    expect(result.totalLikes).toBe(42);
+  });
+});
