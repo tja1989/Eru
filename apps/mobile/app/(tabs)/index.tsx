@@ -47,7 +47,9 @@ export default function HomeFeedScreen() {
           <TouchableOpacity onPress={() => router.push('/notifications')} accessibilityLabel="Open notifications">
             <Text style={{ fontSize: 22 }}>🔔</Text>
           </TouchableOpacity>
-          <Text style={{ fontSize: 24 }}>💬</Text>
+          <TouchableOpacity onPress={() => router.push('/messages')} accessibilityLabel="Open messages">
+            <Text style={{ fontSize: 22 }}>✉️</Text>
+          </TouchableOpacity>
         </View>
       </View>
       <StoryRow stories={stories} />
