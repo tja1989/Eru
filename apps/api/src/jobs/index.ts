@@ -4,6 +4,7 @@ import { runStreakReset } from './streakReset.js';
 import { runPointsExpiry } from './pointsExpiry.js';
 import { runLeaderboardReset } from './leaderboardReset.js';
 import { runModerationSLA } from './moderationSLA.js';
+import { runCreatorScoreRecalc } from './creatorScoreRecalc.js';
 
 /**
  * Wraps a job function so that any unhandled error is caught and logged
@@ -45,5 +46,10 @@ export function startCronJobs(): void {
     timezone: 'UTC',
   });
 
-  console.log('[cron] All 5 cron jobs scheduled.');
+  // 3 AM IST = 21:30 UTC — recalculate creator scores for recently-active users
+  cron.schedule('30 21 * * *', safe('creatorScoreRecalc', runCreatorScoreRecalc), {
+    timezone: 'UTC',
+  });
+
+  console.log('[cron] All 6 cron jobs scheduled.');
 }

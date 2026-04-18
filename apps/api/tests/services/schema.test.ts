@@ -46,6 +46,24 @@ describe('P1 schema sanity', () => {
     ).resolves.toBeTypeOf('number');
   });
 
+  it('F11.1: User.creatorScore column exists and defaults to 50', async () => {
+    const user = await prisma.user.create({
+      data: {
+        firebaseUid: 'dev-test-cs-schema1',
+        phone: '+919800009001',
+        username: 'tcsschema1',
+        name: 'Creator Score Schema Test',
+        primaryPincode: '000000',
+      },
+    });
+
+    // Default should be 50
+    expect(Number(user.creatorScore)).toBeCloseTo(50, 1);
+
+    // Cleanup
+    await prisma.user.delete({ where: { id: user.id } });
+  });
+
   it('F8.1: Content.taggedUserIds persists and reads back correctly', async () => {
     // Create a temp user to be tagged and another to be the author
     const author = await prisma.user.create({

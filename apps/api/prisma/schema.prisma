@@ -108,6 +108,7 @@ model User {
   shareDataWithBrands Boolean   @default(false) @map("share_data_with_brands")
   fcmToken            String?   @map("fcm_token")
   role                UserRole  @default(user)
+  creatorScore        Decimal   @default(50) @db.Decimal(5, 2) @map("creator_score")
   createdAt           DateTime  @default(now()) @map("created_at")
   lastActive          DateTime  @default(now()) @map("last_active")
 
