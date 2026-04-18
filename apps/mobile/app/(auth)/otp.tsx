@@ -8,15 +8,20 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { signInWithCustomToken } from 'firebase/auth';
 import { authService } from '@/services/authService';
+import { whatsappAuthService } from '@/services/whatsappAuthService';
+import { getFirebaseAuth } from '@/services/firebase';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function OtpScreen() {
   const router = useRouter();
-  const { phone, verificationId } = useLocalSearchParams<{
+  const { phone, verificationId, channel } = useLocalSearchParams<{
     phone: string;
     verificationId: string;
+    channel: string;
   }>();
+  const isWhatsApp = channel === 'whatsapp';
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [submitting, setSubmitting] = useState(false);
@@ -39,14 +44,22 @@ export default function OtpScreen() {
   }
 
   async function handleVerify() {
-    if (!complete || !verificationId) return;
+    if (!complete) return;
+    if (!isWhatsApp && !verificationId) return;
     setSubmitting(true);
     setError(null);
     try {
-      const idToken = await authService.verifyOtpAndSignIn(
-        String(verificationId),
-        full,
-      );
+      let idToken: string;
+      if (isWhatsApp) {
+        const customToken = await whatsappAuthService.verify(String(phone), full);
+        const userCred = await signInWithCustomToken(getFirebaseAuth(), customToken);
+        idToken = await userCred.user.getIdToken();
+      } else {
+        idToken = await authService.verifyOtpAndSignIn(
+          String(verificationId),
+          full,
+        );
+      }
       const registered = await authService.checkRegistered(idToken);
       if (registered) {
         useAuthStore.getState().setToken(idToken);
@@ -72,7 +85,9 @@ export default function OtpScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.title}>Verify your number</Text>
-      <Text style={styles.subtitle}>We sent a 6-digit code to {phone}</Text>
+      <Text style={styles.subtitle}>
+        We sent a 6-digit code via {isWhatsApp ? 'WhatsApp' : 'SMS'} to {phone}
+      </Text>
 
       <View style={styles.digitsRow}>
         {digits.map((d, i) => (

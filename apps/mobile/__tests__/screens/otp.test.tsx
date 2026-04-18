@@ -10,6 +10,17 @@ jest.mock('@/services/authService', () => ({
   },
 }));
 
+jest.mock('@/services/whatsappAuthService', () => ({
+  whatsappAuthService: {
+    send: jest.fn(),
+    verify: jest.fn(),
+  },
+}));
+
+jest.mock('firebase/auth', () => ({
+  signInWithCustomToken: jest.fn(),
+}));
+
 jest.mock('@/stores/authStore', () => ({
   useAuthStore: {
     getState: () => ({ setToken: jest.fn() }),

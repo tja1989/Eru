@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { setAuthToken } from '../../services/api';
@@ -9,6 +9,7 @@ import {
   getFirebaseAuth,
   PhoneAuthProvider,
 } from '../../services/firebase';
+import { whatsappAuthService } from '../../services/whatsappAuthService';
 import { colors, spacing } from '../../constants/theme';
 
 export default function LoginScreen() {
@@ -16,6 +17,7 @@ export default function LoginScreen() {
   const { setToken } = useAuthStore();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [useWhatsApp, setUseWhatsApp] = useState(false);
 
   // If the Firebase config block in app.json still has placeholder values we
   // fall through to the dev-token bypass so the simulator / Expo Go flow keeps
@@ -41,6 +43,14 @@ export default function LoginScreen() {
     }
   };
 
+  const handleWhatsAppOtp = async (formattedPhone: string) => {
+    await whatsappAuthService.send(formattedPhone);
+    router.push({
+      pathname: '/(auth)/otp',
+      params: { phone: formattedPhone, channel: 'whatsapp' },
+    });
+  };
+
   const handleFirebaseOtp = async (formattedPhone: string) => {
     // TODO: Firebase Phone Auth in Expo Go requires `expo-firebase-recaptcha`
     // for the web recaptcha modal. For production use a dev-client build with
@@ -62,7 +72,9 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-      if (firebaseReady) {
+      if (useWhatsApp) {
+        await handleWhatsAppOtp(formattedPhone);
+      } else if (firebaseReady) {
         await handleFirebaseOtp(formattedPhone);
       } else {
         await handleDevBypass(formattedPhone);
@@ -86,6 +98,7 @@ export default function LoginScreen() {
       ) : null}
       <Text style={styles.label}>Phone number</Text>
       <TextInput
+        testID="phone-input"
         style={styles.input}
         placeholder="e.g., 9876543210"
         placeholderTextColor={colors.g400}
@@ -94,6 +107,16 @@ export default function LoginScreen() {
         onChangeText={setPhone}
         maxLength={15}
       />
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Send via WhatsApp</Text>
+        <Switch
+          testID="whatsapp-toggle"
+          value={useWhatsApp}
+          onValueChange={setUseWhatsApp}
+          trackColor={{ false: colors.g200, true: colors.green }}
+          thumbColor={colors.card}
+        />
+      </View>
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Continue'}</Text>
       </TouchableOpacity>
@@ -119,6 +142,8 @@ const styles = StyleSheet.create({
   devBannerText: { fontSize: 12, color: '#7A5C00', textAlign: 'center' },
   label: { fontSize: 14, fontWeight: '600', color: colors.g800, marginBottom: 6 },
   input: { borderWidth: 1, borderColor: colors.g200, borderRadius: 12, padding: 16, fontSize: 16, marginBottom: 12, backgroundColor: '#fff' },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  toggleLabel: { fontSize: 14, color: colors.g700, fontWeight: '500' },
   button: { backgroundColor: colors.blue, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   googleButton: { borderWidth: 1, borderColor: colors.g200, borderRadius: 12, padding: 16, alignItems: 'center' },
