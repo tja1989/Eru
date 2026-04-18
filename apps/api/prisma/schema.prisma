@@ -124,6 +124,12 @@ model User {
   questProgress     UserQuestProgress[]
   spinResults       SpinResult[]
   badges            UserBadge[]
+  convsAsA              Conversation[]        @relation("convUserA")
+  convsAsB              Conversation[]        @relation("convUserB")
+  messagesSent          Message[]
+  sponsorshipsAsCreator SponsorshipProposal[]
+  stories               Story[]
+  storyViews            StoryView[]
 
   @@index([primaryPincode])
   @@map("users")
@@ -155,6 +161,7 @@ model Content {
   moderationQueue  ModerationQueue[]
   pointsLedger     PointsLedger[]
   reports          ContentReport[]
+  sponsorshipProposals SponsorshipProposal[]
 
   @@index([userId])
   @@index([moderationStatus])
@@ -373,7 +380,8 @@ model Business {
   followerCount   Int       @default(0) @map("follower_count")
   createdAt       DateTime  @default(now()) @map("created_at")
 
-  offers Offer[]
+  offers               Offer[]
+  sponsorshipProposals SponsorshipProposal[]
 
   @@index([pincode])
   @@map("businesses")
@@ -495,4 +503,102 @@ model UserBadge {
 
   @@unique([userId, badgeId])
   @@map("user_badges")
+}
+
+// ========== P2 additions ==========
+
+enum SponsorshipStatus {
+  pending
+  accepted
+  active
+  completed
+  declined
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  userAId       String    @map("user_a_id")
+  userBId       String    @map("user_b_id")
+  lastMessageAt DateTime? @map("last_message_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  userA    User      @relation("convUserA", fields: [userAId], references: [id])
+  userB    User      @relation("convUserB", fields: [userBId], references: [id])
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, lastMessageAt])
+  @@index([userBId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String       @map("conversation_id")
+  senderId        String       @map("sender_id")
+  text            String
+  readAt          DateTime?    @map("read_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model SponsorshipProposal {
+  id              String            @id @default(uuid())
+  businessId      String            @map("business_id")
+  contentId       String?           @map("content_id")
+  creatorId       String            @map("creator_id")
+  boostAmount     Decimal           @map("boost_amount") @db.Decimal(10, 2)
+  commissionPct   Decimal           @default(20) @map("commission_pct") @db.Decimal(5, 2)
+  creatorEarnings Decimal?          @map("creator_earnings") @db.Decimal(10, 2)
+  status          SponsorshipStatus @default(pending)
+  reach           Int               @default(0)
+  clicks          Int               @default(0)
+  boostSpent      Decimal           @default(0) @map("boost_spent") @db.Decimal(10, 2)
+  acceptedAt      DateTime?         @map("accepted_at")
+  startsAt        DateTime?         @map("starts_at")
+  endsAt          DateTime?         @map("ends_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id])
+  creator  User     @relation(fields: [creatorId], references: [id])
+  content  Content? @relation(fields: [contentId], references: [id])
+
+  @@index([businessId])
+  @@index([creatorId, status])
+  @@map("sponsorship_proposals")
+}
+
+model Story {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  mediaUrl     String   @map("media_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  isLive       Boolean  @default(false) @map("is_live")
+  createdAt    DateTime @default(now()) @map("created_at")
+  expiresAt    DateTime @map("expires_at")
+
+  user  User        @relation(fields: [userId], references: [id])
+  views StoryView[]
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model StoryView {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  viewerId  String   @map("viewer_id")
+  viewedAt  DateTime @default(now()) @map("viewed_at")
+
+  story  Story @relation(fields: [storyId], references: [id])
+  viewer User  @relation(fields: [viewerId], references: [id])
+
+  @@unique([storyId, viewerId])
+  @@map("story_views")
 }
