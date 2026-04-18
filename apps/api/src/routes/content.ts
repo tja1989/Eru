@@ -88,8 +88,8 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.notFound('Content');
     }
 
-    // Check if the current user has liked or saved this content
-    const [likeInteraction, saveInteraction] = await Promise.all([
+    // Check if the current user has liked, disliked, or saved this content
+    const [likeInteraction, saveInteraction, dislikeInteraction] = await Promise.all([
       prisma.interaction.findUnique({
         where: {
           userId_contentId_type: { userId: currentUserId, contentId: id, type: 'like' },
@@ -98,6 +98,11 @@ export async function contentRoutes(app: FastifyInstance) {
       prisma.interaction.findUnique({
         where: {
           userId_contentId_type: { userId: currentUserId, contentId: id, type: 'save' },
+        },
+      }),
+      prisma.interaction.findUnique({
+        where: {
+          userId_contentId_type: { userId: currentUserId, contentId: id, type: 'dislike' },
         },
       }),
     ]);
@@ -118,6 +123,7 @@ export async function contentRoutes(app: FastifyInstance) {
       content: {
         ...content,
         isLiked: likeInteraction !== null,
+        isDisliked: dislikeInteraction !== null,
         isSaved: saveInteraction !== null,
         commentsPreview,
       },
@@ -296,7 +302,7 @@ export async function contentRoutes(app: FastifyInstance) {
         'code' in error &&
         (error as { code: string }).code === 'P2002'
       ) {
-        return reply.status(200).send({ success: true });
+        throw Errors.conflict('You have already disliked this content');
       }
       throw error;
     }
