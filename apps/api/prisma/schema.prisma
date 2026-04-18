@@ -146,6 +146,7 @@ model Content {
   pointsEarned     Int              @default(0) @map("points_earned")
   publishedAt      DateTime?        @map("published_at")
   createdAt        DateTime         @default(now()) @map("created_at")
+  deletedAt        DateTime?        @map("deleted_at")
 
   user             User             @relation(fields: [userId], references: [id])
   media            ContentMedia[]
@@ -160,6 +161,7 @@ model Content {
   @@index([locationPincode])
   @@index([publishedAt(sort: Desc)])
   @@index([isTrending])
+  @@index([deletedAt])
   @@map("content")
 }
 
@@ -196,7 +198,7 @@ model PointsLedger {
   createdAt         DateTime @default(now()) @map("created_at")
 
   user    User     @relation(fields: [userId], references: [id])
-  content Content? @relation(fields: [contentId], references: [id])
+  content Content? @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([actionType])
