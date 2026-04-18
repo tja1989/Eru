@@ -106,10 +106,10 @@ export default function CreateScreen() {
         await contentService.create({
           type: 'poll',
           text: pollQuestion.trim(),
-          pollOptions: pollOptions.filter((o) => o.trim()),
+          pollOptions: pollOptions.map((o) => o.trim()).filter(Boolean),
           mediaIds: [],
           hashtags: parsedHashtags,
-        } as any);
+        });
       } else {
         await contentService.create({
           type: contentType,

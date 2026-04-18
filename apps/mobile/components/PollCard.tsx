@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import pollService from '../services/pollService';
 import { colors, spacing, radius } from '../constants/theme';
 
@@ -21,6 +21,29 @@ export function PollCard({ contentId, question, pollOptions, userVote: initialUs
   const [userVote, setUserVote] = useState<string | null>(initialUserVote);
 
   const totalVotes = options.reduce((sum, o) => sum + o.voteCount, 0);
+
+  // One Animated.Value per option, keyed by option.id
+  const animatedWidths = useRef<Record<string, Animated.Value>>({});
+  options.forEach((o) => {
+    if (!animatedWidths.current[o.id]) {
+      const pct = totalVotes === 0 ? 0 : Math.round((o.voteCount / totalVotes) * 100);
+      animatedWidths.current[o.id] = new Animated.Value(pct);
+    }
+  });
+
+  // Whenever options or totalVotes change, animate each bar to its new %
+  useEffect(() => {
+    const total = options.reduce((sum, o) => sum + o.voteCount, 0);
+    const animations = options.map((o) => {
+      const pct = total === 0 ? 0 : Math.round((o.voteCount / total) * 100);
+      return Animated.timing(animatedWidths.current[o.id], {
+        toValue: pct,
+        duration: 300,
+        useNativeDriver: false,
+      });
+    });
+    Animated.parallel(animations).start();
+  }, [options]);
 
   const handleVote = async (optionId: string) => {
     // Idempotent: tapping the already-voted option is a no-op
@@ -63,9 +86,20 @@ export function PollCard({ contentId, question, pollOptions, userVote: initialUs
             activeOpacity={0.75}
             style={styles.optionWrap}
           >
-            {/* Background fill bar */}
+            {/* Background fill bar — animated width */}
             <View style={styles.barBackground}>
-              <View style={[styles.barFill, { width: `${pct}%` as any, backgroundColor: isSelected ? colors.blue + '33' : colors.g100 }]} />
+              <Animated.View
+                style={[
+                  styles.barFill,
+                  {
+                    width: animatedWidths.current[option.id].interpolate({
+                      inputRange: [0, 100],
+                      outputRange: ['0%', '100%'],
+                    }),
+                    backgroundColor: isSelected ? colors.blue + '33' : colors.g100,
+                  },
+                ]}
+              />
             </View>
 
             {/* Option text + percentage overlay */}
