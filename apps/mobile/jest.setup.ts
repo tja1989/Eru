@@ -29,3 +29,14 @@ jest.mock('@/services/api', () => ({
   default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
   setAuthToken: jest.fn(),
 }));
+
+// expo-video pulls in a native module that fails to initialize in the jest
+// environment. Stub it so components that import it can render.
+jest.mock('expo-video', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    useVideoPlayer: () => ({ play: jest.fn(), pause: jest.fn(), replace: jest.fn() }),
+    VideoView: (props: any) => React.createElement(View, props),
+  };
+});

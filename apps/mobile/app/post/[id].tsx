@@ -7,10 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { PostCard } from '../../components/PostCard';
+import { CommentInput } from '../../components/CommentInput';
 import { contentService } from '../../services/contentService';
 import { colors, spacing } from '../../constants/theme';
 
@@ -125,61 +128,93 @@ export default function PostDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Header with back arrow */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Post</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.g400} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        {/* Header with back arrow */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Post</Text>
+          <View style={styles.headerSpacer} />
         </View>
-      ) : error ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorIcon}>🚫</Text>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : post ? (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <PostCard post={post} />
 
-          {/* Comments thread */}
-          <View style={styles.commentsSection}>
-            <Text style={styles.commentsHeading}>
-              Comments{commentsTotal > 0 ? ` (${commentsTotal})` : ''}
-            </Text>
-
-            {commentsLoading && comments.length === 0 ? (
-              <View style={styles.commentsLoading}>
-                <ActivityIndicator color={colors.g400} />
-              </View>
-            ) : comments.length === 0 ? (
-              <View style={styles.emptyComments}>
-                <Text style={styles.emptyCommentsIcon}>💬</Text>
-                <Text style={styles.emptyCommentsText}>No comments yet.</Text>
-                <Text style={styles.emptyCommentsSubtext}>Be the first to comment.</Text>
-              </View>
-            ) : (
-              <>
-                {comments.map((c) => (
-                  <CommentRow key={c.id} comment={c} />
-                ))}
-                {hasMoreComments ? (
-                  <TouchableOpacity onPress={handleLoadMore} style={styles.loadMore}>
-                    <Text style={styles.loadMoreText}>
-                      {commentsLoading ? 'Loading…' : `Load ${commentsTotal - comments.length} more`}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-              </>
-            )}
+        {loading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={colors.g400} />
           </View>
-        </ScrollView>
-      ) : null}
+        ) : error ? (
+          <View style={styles.centered}>
+            <Text style={styles.errorIcon}>🚫</Text>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : post ? (
+          <>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+              <PostCard post={post} />
+
+              {/* Comments thread */}
+              <View style={styles.commentsSection}>
+                <Text style={styles.commentsHeading}>
+                  Comments{commentsTotal > 0 ? ` (${commentsTotal})` : ''}
+                </Text>
+
+                {commentsLoading && comments.length === 0 ? (
+                  <View style={styles.commentsLoading}>
+                    <ActivityIndicator color={colors.g400} />
+                  </View>
+                ) : comments.length === 0 ? (
+                  <View style={styles.emptyComments}>
+                    <Text style={styles.emptyCommentsIcon}>💬</Text>
+                    <Text style={styles.emptyCommentsText}>No comments yet.</Text>
+                    <Text style={styles.emptyCommentsSubtext}>Be the first to comment.</Text>
+                  </View>
+                ) : (
+                  <>
+                    {comments.map((c) => (
+                      <CommentRow key={c.id} comment={c} />
+                    ))}
+                    {hasMoreComments ? (
+                      <TouchableOpacity onPress={handleLoadMore} style={styles.loadMore}>
+                        <Text style={styles.loadMoreText}>
+                          {commentsLoading ? 'Loading…' : `Load ${commentsTotal - comments.length} more`}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </>
+                )}
+              </View>
+            </ScrollView>
+
+            <CommentInput
+              contentId={id as string}
+              onPosted={(comment) => {
+                setComments((prev) => [
+                  {
+                    id: comment.id,
+                    text: comment.text,
+                    createdAt: (comment as any).createdAt ?? new Date().toISOString(),
+                    user: {
+                      id: (comment.user as any)?.id ?? '',
+                      name: (comment.user as any)?.name ?? '',
+                      username: comment.user?.username ?? '',
+                      avatarUrl: (comment.user as any)?.avatarUrl ?? null,
+                    },
+                    replies: [],
+                  },
+                  ...prev,
+                ]);
+                setCommentsTotal((n) => n + 1);
+                setPost((p: any) =>
+                  p ? { ...p, commentCount: (p.commentCount ?? 0) + 1 } : p,
+                );
+              }}
+            />
+          </>
+        ) : null}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
