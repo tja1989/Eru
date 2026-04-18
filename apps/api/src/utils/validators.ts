@@ -87,3 +87,10 @@ export const reportContentSchema = z.object({
   reason: z.enum(['spam', 'harassment', 'nudity', 'hate', 'violence', 'misinformation', 'other']),
   notes: z.string().max(500).optional(),
 });
+
+export const offersQuerySchema = z.object({
+  type: z.enum(['local', 'giftcard', 'recharge', 'donate', 'premium', 'all']).default('all'),
+  pincode: z.string().length(6).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
