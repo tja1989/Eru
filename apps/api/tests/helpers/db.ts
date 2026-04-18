@@ -34,6 +34,11 @@ export async function seedContent(userId: string, overrides: Partial<{
 }
 
 export async function cleanupTestData() {
+  await prisma.message.deleteMany({ where: { sender: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.conversation.deleteMany({ where: { OR: [
+    { userA: { firebaseUid: { startsWith: 'dev-test-' } } },
+    { userB: { firebaseUid: { startsWith: 'dev-test-' } } },
+  ] } });
   await prisma.comment.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.interaction.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.follow.deleteMany({ where: { OR: [
