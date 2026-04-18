@@ -15,6 +15,7 @@ import { userService } from '../../services/userService';
 import { contentService } from '../../services/contentService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, radius } from '../../constants/theme';
+import { MyContentStatsBar } from '../../components/MyContentStatsBar';
 
 type StatusFilter = 'all' | 'published' | 'pending' | 'declined';
 
@@ -161,6 +162,8 @@ export default function MyContentScreen() {
         <Text style={styles.headerTitle}>My Content</Text>
         <View style={styles.headerSpacer} />
       </View>
+
+      <MyContentStatsBar />
 
       {/* Filter pills */}
       <ScrollView
