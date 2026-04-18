@@ -96,6 +96,23 @@ describe('Highlight endpoints', () => {
       });
       expect(res.statusCode).toBe(400);
     });
+
+    it('rejects creating a 21st highlight (cap at 20)', async () => {
+      await seedUser({ firebaseUid: 'dev-test-hlcap1', phone: '+912800000020', username: 'thlcap1' });
+      for (let i = 0; i < 20; i++) {
+        await getTestApp().inject({
+          method: 'POST', url: '/api/v1/highlights',
+          headers: { Authorization: devToken('dev-test-hlcap1'), 'content-type': 'application/json' },
+          payload: { title: `H${i}`, emoji: '🔥' },
+        });
+      }
+      const res = await getTestApp().inject({
+        method: 'POST', url: '/api/v1/highlights',
+        headers: { Authorization: devToken('dev-test-hlcap1'), 'content-type': 'application/json' },
+        payload: { title: 'H20', emoji: '🔥' },
+      });
+      expect(res.statusCode).toBe(400);
+    });
   });
 
   // ── PUT /highlights/:id ──────────────────────────────────────────────────────
@@ -271,6 +288,23 @@ describe('Highlight endpoints', () => {
       });
       expect(r3.statusCode).toBe(201);
       expect(r3.json().item.sortOrder).toBe(2);
+    });
+
+    it('rejects adding the same content to the same highlight twice', async () => {
+      const u = await seedUser({ firebaseUid: 'dev-test-hldup1', phone: '+912800000021', username: 'thldup1' });
+      const c = await seedContent(u.id);
+      const hl = await prisma.highlight.create({ data: { userId: u.id, title: 'Mine', emoji: '✨' } });
+      await getTestApp().inject({
+        method: 'POST', url: `/api/v1/highlights/${hl.id}/items`,
+        headers: { Authorization: devToken('dev-test-hldup1'), 'content-type': 'application/json' },
+        payload: { contentId: c.id },
+      });
+      const res2 = await getTestApp().inject({
+        method: 'POST', url: `/api/v1/highlights/${hl.id}/items`,
+        headers: { Authorization: devToken('dev-test-hldup1'), 'content-type': 'application/json' },
+        payload: { contentId: c.id },
+      });
+      expect(res2.statusCode).toBe(400);
     });
 
     it('returns 403 when non-owner tries to add an item', async () => {

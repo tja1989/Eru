@@ -670,5 +670,6 @@ model HighlightItem {
   highlight Highlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
   content   Content   @relation(fields: [contentId], references: [id])
 
+  @@unique([highlightId, contentId])
   @@map("highlight_items")
 }

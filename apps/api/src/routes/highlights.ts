@@ -20,6 +20,8 @@ const addItemSchema = z.object({
   contentId: z.string().uuid(),
 });
 
+const MAX_HIGHLIGHTS_PER_USER = 20;
+
 export async function highlightRoutes(app: FastifyInstance) {
   // All routes require authentication
   app.addHook('preHandler', authMiddleware);
@@ -49,6 +51,11 @@ export async function highlightRoutes(app: FastifyInstance) {
   // POST /highlights — create a new highlight for the current user
   app.post('/highlights', async (request, reply) => {
     const currentUserId = request.userId;
+
+    const existingCount = await prisma.highlight.count({ where: { userId: currentUserId } });
+    if (existingCount >= MAX_HIGHLIGHTS_PER_USER) {
+      throw Errors.badRequest('Maximum of 20 highlights per user');
+    }
 
     const parsed = createHighlightSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -129,6 +136,12 @@ export async function highlightRoutes(app: FastifyInstance) {
     if (content.userId !== currentUserId) {
       throw Errors.badRequest('You can only highlight your own content');
     }
+
+    // Reject duplicate content in the same highlight
+    const existing = await prisma.highlightItem.findFirst({
+      where: { highlightId: id, contentId },
+    });
+    if (existing) throw Errors.badRequest('Content is already in this highlight');
 
     // sortOrder = max existing sortOrder + 1 (or 0 if no items yet)
     const maxItem = await prisma.highlightItem.findFirst({
