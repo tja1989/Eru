@@ -42,4 +42,5 @@ export const userService = {
     const res = await api.get('/users/me/content-summary');
     return res.data.summary as { published: number; pending: number; declined: number; totalLikes: number };
   },
+  deleteMe: () => api.delete('/users/me').then(() => undefined),
 };

@@ -66,7 +66,7 @@ function toISODateString(date: Date): string {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, reset } = useAuthStore();
 
   const [settings, setSettings] = useState<UserSettings>({
     ...DEFAULT_SETTINGS,
@@ -157,6 +157,29 @@ export default function SettingsScreen() {
           onPress: async () => {
             await logout();
             router.replace('/(auth)/login' as any);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This cannot be undone. Your posts will remain visible but anonymized.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await userService.deleteMe();
+              reset();
+              router.replace('/(auth)/welcome' as any);
+            } catch {
+              Alert.alert('Error', 'Could not delete account. Please try again.');
+            }
           },
         },
       ],
@@ -480,6 +503,16 @@ export default function SettingsScreen() {
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
+        {/* F10.6: Delete Account — destructive action at the very bottom */}
+        <TouchableOpacity
+          testID="delete-account-btn"
+          style={styles.deleteAccountBtn}
+          onPress={handleDeleteAccount}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteAccountText}>Delete Account</Text>
+        </TouchableOpacity>
+
         <View style={styles.bottomPad} />
       </ScrollView>
     </SafeAreaView>
@@ -581,6 +614,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoutText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+
+  // F10.6 — Delete Account (outlined destructive, less prominent than logout)
+  deleteAccountBtn: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.red,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  deleteAccountText: { fontSize: 16, fontWeight: '600', color: colors.red },
 
   bottomPad: { height: spacing.xxxl * 2 },
 
