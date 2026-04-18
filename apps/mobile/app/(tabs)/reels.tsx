@@ -15,6 +15,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { reelsService } from '../../services/reelsService';
 import { contentService } from '../../services/contentService';
 import { usePointsStore } from '../../stores/pointsStore';
+import { useAuthStore } from '../../stores/authStore';
+import { FollowButton } from '../../components/FollowButton';
 import { colors, spacing } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -23,7 +25,7 @@ const REEL_HEIGHT = SCREEN_HEIGHT - 90;
 
 interface Reel {
   id: string;
-  user?: { username: string; avatarUrl?: string; tier?: string };
+  user?: { id: string; username: string; avatarUrl?: string; tier?: string; isFollowing?: boolean };
   text?: string;
   media?: Array<{ originalUrl: string; thumbnailUrl?: string | null }>;
   likeCount: number;
@@ -35,9 +37,11 @@ interface Reel {
 function ReelItem({
   item,
   isActive,
+  currentUserId,
 }: {
   item: Reel;
   isActive: boolean;
+  currentUserId?: string;
 }) {
   const { earn } = usePointsStore();
   const [liked, setLiked] = useState(item.isLiked ?? false);
@@ -141,7 +145,16 @@ function ReelItem({
 
       {/* Bottom overlay: creator info + caption */}
       <View style={styles.bottomOverlay}>
-        <Text style={styles.creatorName}>@{item.user?.username ?? 'unknown'}</Text>
+        <View style={styles.creatorRow}>
+          <Text style={styles.creatorName}>@{item.user?.username ?? 'unknown'}</Text>
+          {item.user?.id && currentUserId && item.user.id !== currentUserId ? (
+            <FollowButton
+              targetUserId={item.user.id}
+              initiallyFollowing={item.user.isFollowing ?? false}
+              size="sm"
+            />
+          ) : null}
+        </View>
         {item.text ? (
           <Text style={styles.caption} numberOfLines={2}>
             {item.text}
@@ -154,6 +167,7 @@ function ReelItem({
 
 export default function ReelsScreen() {
   const { earn } = usePointsStore();
+  const currentUserId = useAuthStore((s) => s.user?.id);
   // reelId is set when the user taps a reel thumbnail from Explore. We fetch
   // that specific reel and prepend it so it's the first thing they see.
   const { reelId } = useLocalSearchParams<{ reelId?: string }>();
@@ -240,7 +254,11 @@ export default function ReelsScreen() {
         data={reels}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
-          <ReelItem item={item} isActive={index === activeIndex} />
+          <ReelItem
+            item={item}
+            isActive={index === activeIndex}
+            currentUserId={currentUserId}
+          />
         )}
         pagingEnabled
         snapToInterval={REEL_HEIGHT}
@@ -314,6 +332,12 @@ const styles = StyleSheet.create({
     bottom: 40,
     left: spacing.lg,
     right: 80,
+  },
+  creatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   creatorName: {
     color: '#fff',

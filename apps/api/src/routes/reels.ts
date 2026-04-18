@@ -85,9 +85,25 @@ export async function reelsRoutes(app: FastifyInstance) {
     });
     const likedSet = new Set(likedInteractions.map((i) => i.contentId));
 
+    // Check which creators the current user follows — batch lookup so the
+    // FollowButton on the reel card can render with the correct initial state.
+    const creatorIds = Array.from(new Set(reels.map((r) => r.user.id)));
+    const follows = await prisma.follow.findMany({
+      where: {
+        followerId: userId,
+        followingId: { in: creatorIds },
+      },
+      select: { followingId: true },
+    });
+    const followingSet = new Set(follows.map((f) => f.followingId));
+
     const reelsWithLiked = reels.map((reel) => ({
       ...reel,
       isLiked: likedSet.has(reel.id),
+      user: {
+        ...reel.user,
+        isFollowing: followingSet.has(reel.user.id),
+      },
     }));
 
     const total = await prisma.content.count({ where });
