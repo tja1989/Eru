@@ -1,0 +1,19 @@
+[
+  { "pincode": "682016", "area": "Ernakulam Central", "district": "Ernakulam", "state": "Kerala" },
+  { "pincode": "682017", "area": "Ernakulam South", "district": "Ernakulam", "state": "Kerala" },
+  { "pincode": "682018", "area": "Ernakulam North", "district": "Ernakulam", "state": "Kerala" },
+  { "pincode": "560001", "area": "Bangalore GPO", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560002", "area": "Bangalore City", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560003", "area": "Bangalore Fort", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560004", "area": "Bangalore Cantonment", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560005", "area": "Bangalore Shivajinagar", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560006", "area": "Bangalore Malleswaram", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560007", "area": "Bangalore Rajajinagar", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560008", "area": "Bangalore Sadashivanagar", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560009", "area": "Bangalore Basavanagudi", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "560010", "area": "Bangalore Jayanagar", "district": "Bengaluru Urban", "state": "Karnataka" },
+  { "pincode": "400001", "area": "Mumbai GPO", "district": "Mumbai", "state": "Maharashtra" },
+  { "pincode": "400002", "area": "Mumbai Kalbadevi", "district": "Mumbai", "state": "Maharashtra" },
+  { "pincode": "110001", "area": "Connaught Place", "district": "Central Delhi", "state": "Delhi" },
+  { "pincode": "110002", "area": "Darya Ganj", "district": "Central Delhi", "state": "Delhi" }
+]

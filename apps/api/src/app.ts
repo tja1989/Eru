@@ -26,6 +26,7 @@ import { messagesRoutes } from './routes/messages.js';
 import { sponsorshipRoutes } from './routes/sponsorship.js';
 import { storiesRoutes } from './routes/stories.js';
 import { pollRoutes } from './routes/polls.js';
+import { locationsRoutes } from './routes/locations.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -100,6 +101,7 @@ export function buildApp(): FastifyInstance {
   app.register(sponsorshipRoutes, { prefix: '/api/v1' });
   app.register(storiesRoutes, { prefix: '/api/v1' });
   app.register(pollRoutes, { prefix: '/api/v1' });
+  app.register(locationsRoutes, { prefix: '/api/v1' });
 
   app.register(fastifyStatic, {
     root: join(__dirname, 'admin-panel'),
