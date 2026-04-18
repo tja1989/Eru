@@ -365,6 +365,31 @@ export async function userRoutes(app: FastifyInstance) {
     return { settings: user };
   });
 
+  // DELETE /users/me — soft-delete the current user and anonymize their account data
+  // The user's posts/content remain in the DB but the display name becomes "Deleted User".
+  // The original phone/firebaseUid are replaced with unique sentinel values so the
+  // phone number can be re-registered and the original uid can no longer authenticate.
+  app.delete('/users/me', async (request, reply) => {
+    const userId = request.userId;
+    const uuid = crypto.randomUUID();
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: 'Deleted User',
+        username: `deleted_${uuid}`,
+        bio: null,
+        avatarUrl: null,
+        phone: `deleted_${uuid}_phone`,
+        email: null,
+        firebaseUid: `deleted_${uuid}`,
+        deletedAt: new Date(),
+      },
+    });
+
+    return reply.status(204).send();
+  });
+
   // PUT /users/me/settings — update settings
   app.put('/users/me/settings', async (request) => {
     const parsed = updateSettingsSchema.safeParse(request.body);

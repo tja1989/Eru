@@ -35,11 +35,15 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
 
     const user = await prisma.user.findUnique({
       where: { firebaseUid },
-      select: { id: true, role: true },
+      select: { id: true, role: true, deletedAt: true },
     });
 
     if (!user) {
       throw Errors.unauthorized('User not found. Please register first.');
+    }
+
+    if (user.deletedAt !== null) {
+      throw Errors.unauthorized('This account has been deleted.');
     }
 
     request.userId = user.id;

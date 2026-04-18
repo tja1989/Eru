@@ -111,6 +111,7 @@ model User {
   creatorScore        Decimal   @default(50) @db.Decimal(5, 2) @map("creator_score")
   createdAt           DateTime  @default(now()) @map("created_at")
   lastActive          DateTime  @default(now()) @map("last_active")
+  deletedAt           DateTime? @map("deleted_at")
 
   content           Content[]
   pointsLedger      PointsLedger[]
