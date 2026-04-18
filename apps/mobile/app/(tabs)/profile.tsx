@@ -16,11 +16,13 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { HighlightsRow } from '../../components/HighlightsRow';
 import { HighlightEditor } from '../../components/HighlightEditor';
 import { HighlightViewer } from '../../components/HighlightViewer';
+import { CreatorScoreCard } from '../../components/CreatorScoreCard';
 import { userService } from '../../services/userService';
 import { highlightsService, Highlight, HighlightItem } from '../../services/highlightsService';
 import { useAuthStore } from '../../stores/authStore';
 import { usePointsStore } from '../../stores/pointsStore';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
+import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
 
 const GRID_TABS = [
   { key: 'posts', icon: '⊞', label: 'Posts' },
@@ -57,6 +59,8 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // MVP: weekly score delta — swap for server-side snapshot table when DAU grows.
+  const [scoreDelta, setScoreDelta] = useState<number | undefined>(undefined);
 
   // Highlights state
   const [highlightsKey, setHighlightsKey] = useState(0);
@@ -109,6 +113,15 @@ export default function ProfileScreen() {
   useEffect(() => {
     loadContent(gridTab);
   }, [gridTab]);
+
+  // Compute weekly creator-score delta from local snapshot (MVP approach).
+  // Replace with a server-side snapshot table when DAU grows.
+  useEffect(() => {
+    const currentScore = Number(
+      (profile as any)?.creatorScore ?? user?.creatorScore ?? 50,
+    );
+    getOrCreateWeeklySnapshot(currentScore).then(setScoreDelta);
+  }, [(profile as any)?.creatorScore, user?.creatorScore]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -220,6 +233,12 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
+
+          {/* Creator Score card */}
+          <CreatorScoreCard
+            score={Number((profile as any)?.creatorScore ?? user?.creatorScore ?? 50)}
+            deltaThisWeek={scoreDelta}
+          />
 
           {/* Edit / Create buttons */}
           <View style={styles.actionRow}>
