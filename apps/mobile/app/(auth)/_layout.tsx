@@ -14,6 +14,11 @@ export default function AuthLayout() {
     );
   }
 
+  // Authenticated users who haven't finished onboarding (e.g. killed the app
+  // after login but before the tutorial) land on the tutorial page — they
+  // already have a token so the welcome/login flow would loop them.
+  if (isAuthenticated && !hasCompletedOnboarding) return <Redirect href="/(auth)/tutorial" />;
+
   if (isAuthenticated) return <Redirect href="/(tabs)" />;
 
   // First-time users who haven't completed onboarding go to the welcome screen.

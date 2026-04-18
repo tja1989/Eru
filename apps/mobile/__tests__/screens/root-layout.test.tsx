@@ -105,4 +105,12 @@ describe('<AuthLayout /> — onboarding gate', () => {
     expect(getByTestId('redirect').props.children).toBe('/(tabs)');
     expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
   });
+
+  it('authenticated + !hasCompletedOnboarding → redirects to /(auth)/tutorial, NOT /(tabs)', () => {
+    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: false });
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('redirect').props.children).toBe('/(auth)/tutorial');
+    expect(mockRedirect).not.toHaveBeenCalledWith('/(tabs)');
+    expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
+  });
 });
