@@ -10,6 +10,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +18,7 @@ import { contentService } from '../../services/contentService';
 import { mediaService } from '../../services/mediaService';
 import { PollForm } from '../../components/PollForm';
 import { ThreadComposer } from '../../components/ThreadComposer';
+import { LocationPicker } from '../../components/LocationPicker';
 import { colors, spacing, radius } from '../../constants/theme';
 
 const CONTENT_TYPES = ['photo', 'video', 'text', 'poll', 'thread'] as const;
@@ -42,6 +44,9 @@ export default function CreateScreen() {
   const [pollOptions, setPollOptions] = useState<string[]>([]);
   // Thread-specific state
   const [threadParts, setThreadParts] = useState<string[]>([]);
+  // Location state
+  const [showLocPicker, setShowLocPicker] = useState(false);
+  const [selectedPincode, setSelectedPincode] = useState<string | null>(null);
 
   const pickMedia = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -139,6 +144,7 @@ export default function CreateScreen() {
           text: text.trim() || undefined,
           mediaIds,
           hashtags: parsedHashtags,
+          locationPincode: selectedPincode ?? undefined,
         });
       }
 
@@ -304,12 +310,40 @@ export default function CreateScreen() {
             <Text style={styles.toolbarIcon}>📊</Text>
             <Text style={styles.toolbarLabel}>Poll</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.toolbarBtn}>
+          <TouchableOpacity
+            style={styles.toolbarBtn}
+            onPress={() => setShowLocPicker(true)}
+          >
             <Text style={styles.toolbarIcon}>📍</Text>
-            <Text style={styles.toolbarLabel}>Location</Text>
+            <Text style={styles.toolbarLabel}>
+              {selectedPincode ?? 'Location'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Location Picker Modal */}
+      <Modal
+        visible={showLocPicker}
+        animationType="slide"
+        onRequestClose={() => setShowLocPicker(false)}
+      >
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowLocPicker(false)}>
+              <Text style={styles.headerBtn}>✕</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Select Location</Text>
+            <View style={{ width: 36 }} />
+          </View>
+          <LocationPicker
+            onSelect={(pc) => {
+              setSelectedPincode(pc);
+              setShowLocPicker(false);
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -453,4 +487,13 @@ const styles = StyleSheet.create({
   toolbarBtn: { alignItems: 'center', gap: spacing.xs },
   toolbarIcon: { fontSize: 26 },
   toolbarLabel: { fontSize: 10, color: colors.g500, fontWeight: '600' },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g200,
+  },
 });
