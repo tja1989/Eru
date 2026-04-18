@@ -19,6 +19,8 @@ import { userService } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, radius } from '../../constants/theme';
 
+type Gender = 'male' | 'female' | 'other';
+
 interface UserSettings {
   name: string;
   bio: string;
@@ -27,6 +29,9 @@ interface UserSettings {
   privateAccount: boolean;
   shareDataWithBrands: boolean;
   dob: string | null;
+  gender: Gender | null;
+  secondaryPincodes: string[];
+  notificationEmail: boolean;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -37,6 +42,9 @@ const DEFAULT_SETTINGS: UserSettings = {
   privateAccount: false,
   shareDataWithBrands: true,
   dob: null,
+  gender: null,
+  secondaryPincodes: [],
+  notificationEmail: false,
 };
 
 /** Formats an ISO date string (YYYY-MM-DD) to a human-friendly form like "15 Jan 1990". */
@@ -68,6 +76,7 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showDobPicker, setShowDobPicker] = useState(false);
+  const [newPincode, setNewPincode] = useState('');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -81,6 +90,9 @@ export default function SettingsScreen() {
           privateAccount: data.privateAccount ?? false,
           shareDataWithBrands: data.shareDataWithBrands ?? true,
           dob: data.dob ?? null,
+          gender: data.gender ?? null,
+          secondaryPincodes: data.secondaryPincodes ?? [],
+          notificationEmail: data.notificationEmail ?? false,
         });
       } catch {
         setSettings((prev) => ({ ...prev, name: user?.name ?? '' }));
@@ -118,6 +130,19 @@ export default function SettingsScreen() {
     if (date !== undefined) {
       updateField('dob', toISODateString(date));
     }
+  };
+
+  const handleAddSecondaryPincode = () => {
+    const trimmed = newPincode.trim();
+    if (trimmed.length !== 6 || !/^\d{6}$/.test(trimmed)) return;
+    if (settings.secondaryPincodes.includes(trimmed)) return;
+    if (settings.secondaryPincodes.length >= 5) return;
+    updateField('secondaryPincodes', [...settings.secondaryPincodes, trimmed]);
+    setNewPincode('');
+  };
+
+  const handleRemoveSecondaryPincode = (code: string) => {
+    updateField('secondaryPincodes', settings.secondaryPincodes.filter((p) => p !== code));
   };
 
   const handleLogout = () => {
@@ -233,6 +258,65 @@ export default function SettingsScreen() {
               returnKeyType="done"
             />
           </View>
+          <View style={styles.divider} />
+          {/* F10.2: Gender radio */}
+          <View style={styles.fieldColRow}>
+            <Text style={styles.fieldLabel}>Gender</Text>
+            <View style={styles.genderRow}>
+              {(['male', 'female', 'other'] as Gender[]).map((option) => {
+                const selected = settings.gender === option;
+                const label = option.charAt(0).toUpperCase() + option.slice(1);
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    testID={`gender-option-${option}`}
+                    style={[styles.genderChip, selected && styles.genderChipSelected]}
+                    onPress={() => updateField('gender', option)}
+                    activeOpacity={0.7}
+                  >
+                    {selected && (
+                      <View testID={`gender-selected-${option}`} style={styles.genderDot} />
+                    )}
+                    <Text style={[styles.genderChipText, selected && styles.genderChipTextSelected]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+          <View style={styles.divider} />
+          {/* F10.3: Secondary pincodes */}
+          <View style={styles.fieldColRow}>
+            <Text style={styles.fieldLabel}>Other Areas</Text>
+            <View style={styles.chipWrap}>
+              {settings.secondaryPincodes.map((code) => (
+                <View key={code} style={styles.pincodeChip}>
+                  <Text style={styles.pincodeChipText}>{code}</Text>
+                  <TouchableOpacity
+                    testID={`remove-pincode-${code}`}
+                    onPress={() => handleRemoveSecondaryPincode(code)}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  >
+                    <Text style={styles.pincodeChipRemove}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            <TextInput
+              testID="secondary-pincode-input"
+              style={[styles.pincodeAddInput, settings.secondaryPincodes.length >= 5 && styles.pincodeAddInputDisabled]}
+              value={newPincode}
+              onChangeText={(v) => setNewPincode(v.replace(/\D/g, '').slice(0, 6))}
+              placeholder={settings.secondaryPincodes.length >= 5 ? 'Max 5 pincodes reached' : '+ Add Pincode'}
+              placeholderTextColor={settings.secondaryPincodes.length >= 5 ? colors.g300 : colors.g400}
+              keyboardType="number-pad"
+              maxLength={6}
+              returnKeyType="done"
+              editable={settings.secondaryPincodes.length < 5}
+              onSubmitEditing={handleAddSecondaryPincode}
+            />
+          </View>
         </View>
 
         {/* DOB picker — Android shows native dialog; iOS uses a modal sheet */}
@@ -292,6 +376,21 @@ export default function SettingsScreen() {
               thumbColor="#fff"
             />
           </View>
+          {/* F10.4: Email digest toggle */}
+          <View style={styles.divider} />
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <Text style={styles.toggleLabel}>Email Digest</Text>
+              <Text style={styles.toggleDesc}>Receive a weekly summary of your top content</Text>
+            </View>
+            <Switch
+              testID="email-digest-toggle"
+              value={settings.notificationEmail}
+              onValueChange={(v) => updateField('notificationEmail', v)}
+              trackColor={{ false: colors.g300, true: colors.navy }}
+              thumbColor="#fff"
+            />
+          </View>
         </View>
 
         {/* Privacy section */}
@@ -321,6 +420,44 @@ export default function SettingsScreen() {
               trackColor={{ false: colors.g300, true: colors.navy }}
               thumbColor="#fff"
             />
+          </View>
+        </View>
+
+        {/* F10.5: Linked Accounts section */}
+        <Text style={styles.sectionHeader}>Linked Accounts</Text>
+        <View style={styles.section}>
+          {/* Phone — always verified since auth is phone-based */}
+          <View style={styles.linkedRow}>
+            <View style={styles.linkedInfo}>
+              <Text style={styles.linkedLabel}>Phone</Text>
+              {user?.phone ? (
+                <Text style={styles.linkedVerified}>✓ Verified • {user.phone}</Text>
+              ) : (
+                <Text style={styles.linkedStatus}>Not linked</Text>
+              )}
+            </View>
+          </View>
+          <View style={styles.divider} />
+          {/* Google — placeholder, no OAuth wiring yet */}
+          <View style={styles.linkedRow}>
+            <View style={styles.linkedInfo}>
+              <Text style={styles.linkedLabel}>Google</Text>
+              <Text style={styles.linkedStatus}>Not linked</Text>
+            </View>
+            <TouchableOpacity style={styles.linkedBtn} activeOpacity={0.7}>
+              <Text style={styles.linkedBtnText}>Link with Google</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.divider} />
+          {/* Instagram — placeholder */}
+          <View style={styles.linkedRow}>
+            <View style={styles.linkedInfo}>
+              <Text style={styles.linkedLabel}>Instagram</Text>
+              <Text style={styles.linkedStatus}>Not linked</Text>
+            </View>
+            <TouchableOpacity style={styles.linkedBtn} activeOpacity={0.7}>
+              <Text style={styles.linkedBtnText}>Link with Instagram</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -448,6 +585,91 @@ const styles = StyleSheet.create({
   bottomPad: { height: spacing.xxxl * 2 },
 
   fieldValue: { textAlign: 'right', color: colors.g500 },
+
+  // F10.2 — Gender radio
+  genderRow: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  genderChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.g200,
+    backgroundColor: colors.bg,
+  },
+  genderChipSelected: {
+    borderColor: colors.navy,
+    backgroundColor: colors.navy + '12',
+  },
+  genderDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.navy,
+    marginRight: spacing.xs,
+  },
+  genderChipText: { fontSize: 14, color: colors.g600 },
+  genderChipTextSelected: { color: colors.navy, fontWeight: '600' },
+
+  // F10.3 — Secondary pincodes
+  chipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  pincodeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.navy + '15',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  pincodeChipText: { fontSize: 13, color: colors.navy, fontWeight: '600' },
+  pincodeChipRemove: { fontSize: 12, color: colors.navy, marginLeft: spacing.xs, opacity: 0.7 },
+  pincodeAddInput: {
+    marginTop: spacing.xs,
+    fontSize: 14,
+    color: colors.g700,
+    borderWidth: 1,
+    borderColor: colors.g200,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  pincodeAddInputDisabled: {
+    borderColor: colors.g100,
+    color: colors.g400,
+    backgroundColor: colors.g50,
+  },
+
+  // F10.5 — Linked accounts
+  linkedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    minHeight: 60,
+  },
+  linkedInfo: { flex: 1 },
+  linkedLabel: { fontSize: 15, color: colors.g900, fontWeight: '500' },
+  linkedVerified: { fontSize: 12, color: colors.green, marginTop: 2 },
+  linkedStatus: { fontSize: 12, color: colors.g400, marginTop: 2 },
+  linkedBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.navy,
+  },
+  linkedBtnText: { fontSize: 13, color: colors.navy, fontWeight: '600' },
 
   pickerModalOverlay: {
     flex: 1,
