@@ -157,7 +157,12 @@ model Content {
   createdAt        DateTime         @default(now()) @map("created_at")
   deletedAt        DateTime?        @map("deleted_at")
 
+  threadParentId   String?          @map("thread_parent_id")
+  threadPosition   Int?             @map("thread_position")
+
   user             User             @relation(fields: [userId], references: [id])
+  threadParent     Content?         @relation("ThreadChildren", fields: [threadParentId], references: [id], onDelete: Cascade)
+  threadChildren   Content[]        @relation("ThreadChildren")
   media            ContentMedia[]
   interactions     Interaction[]
   comments         Comment[]
@@ -173,6 +178,7 @@ model Content {
   @@index([publishedAt(sort: Desc)])
   @@index([isTrending])
   @@index([deletedAt])
+  @@index([threadParentId])
   @@map("content")
 }
 

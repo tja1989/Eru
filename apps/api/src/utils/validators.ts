@@ -14,6 +14,7 @@ export const createContentSchema = z.object({
   hashtags: z.array(z.string().max(50)).max(30).default([]),
   locationPincode: z.string().length(6).optional(),
   pollOptions: z.array(z.string().min(1).max(200)).optional(),
+  threadParts: z.array(z.string().min(1).max(2200)).optional(),
 }).refine((data) => {
   // poll type MUST have 2–4 options
   if (data.type === 'poll') {
@@ -23,9 +24,17 @@ export const createContentSchema = z.object({
   if (data.pollOptions !== undefined && data.pollOptions.length > 0) {
     return false;
   }
+  // thread type MUST have 2–10 parts
+  if (data.type === 'thread') {
+    return Array.isArray(data.threadParts) && data.threadParts.length >= 2 && data.threadParts.length <= 10;
+  }
+  // non-thread types MUST NOT supply threadParts
+  if (data.threadParts !== undefined && data.threadParts.length > 0) {
+    return false;
+  }
   return true;
 }, {
-  message: 'Poll type requires 2–4 options; non-poll types must not include pollOptions',
+  message: 'Poll type requires 2–4 options; thread type requires 2–10 parts; non-thread/poll types must not include those fields',
 });
 
 export const earnSchema = z.object({

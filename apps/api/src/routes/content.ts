@@ -18,19 +18,21 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.badRequest(parsed.error.issues[0].message);
     }
 
-    const { type, text, mediaIds, hashtags, locationPincode, pollOptions } = parsed.data;
+    const { type, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts } = parsed.data;
 
-    // Create the content row and any poll options atomically so we never
-    // end up with a poll content that has zero options (unvoteable broken state).
+    // Create the content row and any poll options / thread parts atomically so we
+    // never end up with a poll that has zero options or a thread that's missing parts.
     const content = await prisma.$transaction(async (tx) => {
       const created = await tx.content.create({
         data: {
           userId: request.userId,
           type,
-          text,
+          text: type === 'thread' && threadParts ? threadParts[0] : text,
           hashtags,
           locationPincode,
           moderationStatus: 'pending',
+          threadPosition: type === 'thread' ? 0 : null,
+          threadParentId: null,
         },
       });
 
@@ -42,6 +44,25 @@ export async function contentRoutes(app: FastifyInstance) {
                 contentId: created.id,
                 text: optText,
                 sortOrder: idx,
+              },
+            })
+          )
+        );
+      }
+
+      if (type === 'thread' && threadParts && threadParts.length > 1) {
+        await Promise.all(
+          threadParts.slice(1).map((partText, idx) =>
+            tx.content.create({
+              data: {
+                userId: request.userId,
+                type: 'thread',
+                text: partText,
+                hashtags,
+                locationPincode,
+                moderationStatus: 'pending',
+                threadParentId: created.id,
+                threadPosition: idx + 1,
               },
             })
           )
@@ -171,6 +192,43 @@ export async function contentRoutes(app: FastifyInstance) {
         ...(content.type === 'poll' && { pollOptions, userVote }),
       },
     };
+  });
+
+  // GET /content/:id/thread — fetch the full thread (parent + all parts in order)
+  // Accepts either the parent id or any child part id; always resolves to the parent first.
+  app.get('/content/:id/thread', async (request) => {
+    const { id } = request.params as { id: string };
+
+    // Look up the given id — could be the parent or a child
+    const target = await prisma.content.findUnique({ where: { id } });
+    if (!target || target.type !== 'thread') {
+      throw Errors.notFound('Thread');
+    }
+
+    // Resolve to the parent: if this row itself IS the parent, use it;
+    // otherwise walk up via threadParentId
+    let parentId: string;
+    if (target.threadParentId === null) {
+      parentId = target.id;
+    } else {
+      parentId = target.threadParentId;
+    }
+
+    // Fetch the parent row
+    const parent = await prisma.content.findUnique({ where: { id: parentId } });
+    if (!parent) {
+      throw Errors.notFound('Thread');
+    }
+
+    // Fetch all parts: the parent (position 0) + all children, sorted by threadPosition
+    const children = await prisma.content.findMany({
+      where: { threadParentId: parentId },
+      orderBy: { threadPosition: 'asc' },
+    });
+
+    const parts = [parent, ...children];
+
+    return { parent, parts };
   });
 
   // DELETE /content/:id — soft-delete own content (sets deletedAt; PointsLedger preserved)
