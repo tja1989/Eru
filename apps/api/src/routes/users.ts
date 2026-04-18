@@ -9,6 +9,39 @@ export async function userRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
   app.addHook('preHandler', authMiddleware);
 
+  // GET /users/me/content-summary — aggregate counts + total likes for current user
+  // NOTE: this route is registered BEFORE /users/:id/* so Fastify doesn't treat
+  // "me" as an :id param.
+  app.get('/users/me/content-summary', async (request) => {
+    const userId = request.userId;
+
+    const [grouped, likesAgg] = await Promise.all([
+      prisma.content.groupBy({
+        by: ['moderationStatus'],
+        where: { userId },
+        _count: { _all: true },
+      }),
+      prisma.content.aggregate({
+        where: { userId, moderationStatus: 'published' },
+        _sum: { likeCount: true },
+      }),
+    ]);
+
+    const statusMap: Record<string, number> = { published: 0, pending: 0, declined: 0 };
+    for (const row of grouped) {
+      statusMap[row.moderationStatus] = row._count._all;
+    }
+
+    return {
+      summary: {
+        published: statusMap.published,
+        pending: statusMap.pending,
+        declined: statusMap.declined,
+        totalLikes: likesAgg._sum.likeCount ?? 0,
+      },
+    };
+  });
+
   // GET /users/:id/profile — public profile with counts and follow status
   app.get('/users/:id/profile', async (request) => {
     const { id } = request.params as { id: string };
