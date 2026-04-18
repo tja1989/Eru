@@ -9,6 +9,7 @@ export function useAuth() {
     !useAuthStore.persist.hasHydrated(),
   );
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasCompletedOnboarding = useAuthStore((s) => s.hasCompletedOnboarding);
 
   useEffect(() => {
     if (useAuthStore.persist.hasHydrated()) {
@@ -21,5 +22,5 @@ export function useAuth() {
     return unsub;
   }, []);
 
-  return { initializing, isAuthenticated };
+  return { initializing, isAuthenticated, hasCompletedOnboarding };
 }

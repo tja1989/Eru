@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../constants/theme';
 
 export default function AuthLayout() {
-  const { initializing, isAuthenticated } = useAuth();
+  const { initializing, isAuthenticated, hasCompletedOnboarding } = useAuth();
 
   if (initializing) {
     return (
@@ -15,6 +15,9 @@ export default function AuthLayout() {
   }
 
   if (isAuthenticated) return <Redirect href="/(tabs)" />;
+
+  // First-time users who haven't completed onboarding go to the welcome screen.
+  if (!hasCompletedOnboarding) return <Redirect href="/(auth)/welcome" />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
