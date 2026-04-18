@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, FlatList, Text, StyleSheet } from 'react-native';
+import { View, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { PostCard } from '../../components/PostCard';
 import { StoryRow } from '../../components/StoryRow';
 import { PointsBadge } from '../../components/PointsBadge';
@@ -11,6 +12,7 @@ import { feedService } from '../../services/feedService';
 import { colors } from '../../constants/theme';
 
 export default function HomeFeedScreen() {
+  const router = useRouter();
   const { posts, loading, refreshing, refresh, loadMore, loadFeed } = useFeed();
   const { refreshSummary, earn } = usePointsStore();
   const [stories, setStories] = useState<any[]>([]);
@@ -42,6 +44,9 @@ export default function HomeFeedScreen() {
         <Text style={styles.logo}>Eru</Text>
         <View style={styles.headerActions}>
           <PointsBadge />
+          <TouchableOpacity onPress={() => router.push('/notifications')} accessibilityLabel="Open notifications">
+            <Text style={{ fontSize: 22 }}>🔔</Text>
+          </TouchableOpacity>
           <Text style={{ fontSize: 24 }}>💬</Text>
         </View>
       </View>
