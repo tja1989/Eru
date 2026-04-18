@@ -1,6 +1,7 @@
 import { prisma } from '../utils/prisma.js';
 import { Errors } from '../utils/errors.js';
 import { randomBytes } from 'node:crypto';
+import { badgesService } from './badgesService.js';
 
 function generateClaimCode(prefix = 'ERU') {
   const rand = randomBytes(4).toString('hex').toUpperCase();
@@ -9,7 +10,7 @@ function generateClaimCode(prefix = 'ERU') {
 
 export const rewardsService = {
   async claimOffer(userId: string, offerId: string) {
-    return await prisma.$transaction(async (tx) => {
+    const reward = await prisma.$transaction(async (tx) => {
       const offer = await tx.offer.findUnique({ where: { id: offerId } });
       if (!offer) throw Errors.notFound('Offer');
       if (!offer.isActive) throw Errors.badRequest('Offer is not available');
@@ -44,7 +45,7 @@ export const rewardsService = {
       }
 
       // Create the reward
-      const reward = await tx.userReward.create({
+      const created = await tx.userReward.create({
         data: {
           userId,
           offerId,
@@ -56,8 +57,13 @@ export const rewardsService = {
         include: { offer: true },
       });
 
-      return reward;
+      return created;
     });
+
+    // Fire-and-forget badge unlock check (outside the transaction)
+    badgesService.checkAndUnlock(userId).catch(() => {});
+
+    return reward;
   },
 
   async listUserRewards(userId: string, status?: 'active' | 'used' | 'expired') {

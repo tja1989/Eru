@@ -4,6 +4,7 @@ import { ACTION_CONFIGS, DAILY_POINTS_GOAL, POINTS_EXPIRY_MONTHS } from '@eru/sh
 import { getMultiplier, getTierForPoints } from '@eru/shared';
 import type { ActionType, EarnResult } from '@eru/shared';
 import { Errors } from '../utils/errors.js';
+import { badgesService } from './badgesService.js';
 
 export async function earnPoints(
   userId: string,
@@ -136,7 +137,10 @@ export async function earnPoints(
   // 11. Update streak tracking
   await updateStreak(userId, points);
 
-  // 12. Calculate daily progress for the response
+  // 12. Fire-and-forget badge unlock check (after streak update, before returning)
+  badgesService.checkAndUnlock(userId).catch(() => {});
+
+  // 13. Calculate daily progress for the response
   const dailyEarned = await prisma.pointsLedger.aggregate({
     where: { userId, createdAt: { gte: today, lt: tomorrow } },
     _sum: { points: true },
