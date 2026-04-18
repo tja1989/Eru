@@ -42,6 +42,10 @@ export async function cleanupTestData() {
   ] } });
   await prisma.notification.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.moderationQueue.deleteMany({ where: { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } } });
+  await prisma.contentReport.deleteMany({ where: { OR: [
+    { reporter: { firebaseUid: { startsWith: 'dev-test-' } } },
+    { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } },
+  ] } });
   await prisma.content.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.user.deleteMany({ where: { firebaseUid: { startsWith: 'dev-test-' } } });
 }

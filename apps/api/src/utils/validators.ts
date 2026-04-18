@@ -82,3 +82,8 @@ export const moderationDeclineSchema = z.object({
 export const markReadSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
 });
+
+export const reportContentSchema = z.object({
+  reason: z.enum(['spam', 'harassment', 'nudity', 'hate', 'violence', 'misinformation', 'other']),
+  notes: z.string().max(500).optional(),
+});

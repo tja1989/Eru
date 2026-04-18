@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
-import { createContentSchema, commentSchema, paginationSchema } from '../utils/validators.js';
+import { createContentSchema, commentSchema, paginationSchema, reportContentSchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
 
 export async function contentRoutes(app: FastifyInstance) {
@@ -336,5 +336,41 @@ export async function contentRoutes(app: FastifyInstance) {
     const total = await prisma.comment.count({ where: { contentId, parentId: null } });
 
     return { comments: topLevelComments, page, limit, total };
+  });
+
+  // POST /content/:id/report — flag content for moderation review
+  app.post('/content/:id/report', {
+    preHandler: [rateLimitByUser(10, '1 h')],
+  }, async (request, reply) => {
+    const { id: contentId } = request.params as { id: string };
+    const parsed = reportContentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      throw Errors.badRequest(parsed.error.issues[0].message);
+    }
+
+    const content = await prisma.content.findUnique({ where: { id: contentId } });
+    if (!content) throw Errors.notFound('Content');
+
+    try {
+      const report = await prisma.contentReport.create({
+        data: {
+          contentId,
+          reporterId: request.userId,
+          reason: parsed.data.reason,
+          notes: parsed.data.notes,
+        },
+      });
+      return reply.status(201).send({ report });
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
+        throw Errors.conflict('You have already reported this content');
+      }
+      throw error;
+    }
   });
 }
