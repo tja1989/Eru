@@ -17,6 +17,7 @@ import { contentService } from '../../services/contentService';
 import { usePointsStore } from '../../stores/pointsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { FollowButton } from '../../components/FollowButton';
+import { ShareButton } from '../../components/ShareButton';
 import { colors, spacing } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -134,13 +135,15 @@ function ReelItem({
           <Text style={styles.actionCount}>{item.commentCount ?? 0}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        <ShareButton
+          contentId={item.id}
+          creatorUsername={item.user?.username ?? ''}
+          caption={item.text ?? ''}
           style={styles.actionBtn}
-          onPress={() => earn('share', item.id)}
-        >
-          <Text style={styles.actionIcon}>📤</Text>
-          <Text style={styles.actionCount}>Share</Text>
-        </TouchableOpacity>
+          iconStyle={styles.actionIcon}
+          label="Share"
+          labelStyle={styles.actionCount}
+        />
       </View>
 
       {/* Bottom overlay: creator info + caption */}

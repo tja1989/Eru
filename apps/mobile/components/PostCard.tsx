@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'rea
 import { useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Avatar } from './Avatar';
+import { ShareButton } from './ShareButton';
 import { colors, spacing } from '../constants/theme';
 import { contentService } from '../services/contentService';
 import { usePointsStore } from '../stores/pointsStore';
@@ -130,7 +131,11 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
           <TouchableOpacity onPress={openDetail}>
             <Text style={{ fontSize: 26 }}>💬</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => earn('share', post.id)}><Text style={{ fontSize: 26 }}>📤</Text></TouchableOpacity>
+          <ShareButton
+            contentId={post.id}
+            creatorUsername={post.user?.username ?? ''}
+            caption={post.text ?? ''}
+          />
         </View>
         <TouchableOpacity onPress={() => { setSaved(!saved); earn('save', post.id); }}>
           <Text style={{ fontSize: 26 }}>{saved ? '🔖' : '🏷️'}</Text>
