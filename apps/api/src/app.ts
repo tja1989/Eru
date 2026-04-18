@@ -17,6 +17,7 @@ import { walletRoutes } from './routes/wallet.js';
 import { leaderboardRoutes } from './routes/leaderboard.js';
 import { notificationRoutes } from './routes/notifications.js';
 import { offerRoutes } from './routes/offers.js';
+import { rewardRoutes } from './routes/rewards.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -82,6 +83,7 @@ export function buildApp(): FastifyInstance {
   app.register(leaderboardRoutes, { prefix: '/api/v1' });
   app.register(notificationRoutes, { prefix: '/api/v1' });
   app.register(offerRoutes, { prefix: '/api/v1' });
+  app.register(rewardRoutes, { prefix: '/api/v1' });
 
   app.register(fastifyStatic, {
     root: join(__dirname, 'admin-panel'),
