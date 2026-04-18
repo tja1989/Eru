@@ -155,4 +155,17 @@ describe('Tagged users — POST /content/create + GET /users/:id/content?tab=tag
     expect(res.statusCode).toBe(200);
     expect(res.json().content).toHaveLength(0);
   });
+
+  it('deduplicates taggedUserIds so listing the same user twice stores one entry', async () => {
+    const author = await seedUser({ firebaseUid: 'dev-test-tagdup1', phone: '+912900000010', username: 'ttagdup1' });
+    const tagged = await seedUser({ firebaseUid: 'dev-test-tagdup2', phone: '+912900000011', username: 'ttagdup2' });
+    const res = await getTestApp().inject({
+      method: 'POST', url: '/api/v1/content/create',
+      headers: { Authorization: devToken('dev-test-tagdup1'), 'content-type': 'application/json' },
+      payload: { type: 'post', text: 'Hi', mediaIds: [], hashtags: [], taggedUserIds: [tagged.id, tagged.id] },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.content.taggedUserIds).toEqual([tagged.id]);  // one entry, not two
+  });
 });
