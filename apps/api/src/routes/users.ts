@@ -381,27 +381,37 @@ export async function userRoutes(app: FastifyInstance) {
       updateData.dob = new Date(dob);
     }
 
-    const user = await prisma.user.update({
-      where: { id: request.userId },
-      data: updateData,
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        bio: true,
-        gender: true,
-        dob: true,
-        primaryPincode: true,
-        secondaryPincodes: true,
-        interests: true,
-        contentLanguages: true,
-        appLanguage: true,
-        notificationPush: true,
-        notificationEmail: true,
-        isPrivate: true,
-        shareDataWithBrands: true,
-      },
-    });
+    let user;
+    try {
+      user = await prisma.user.update({
+        where: { id: request.userId },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          bio: true,
+          avatarUrl: true,
+          gender: true,
+          dob: true,
+          primaryPincode: true,
+          secondaryPincodes: true,
+          interests: true,
+          contentLanguages: true,
+          appLanguage: true,
+          notificationPush: true,
+          notificationEmail: true,
+          isPrivate: true,
+          shareDataWithBrands: true,
+        },
+      });
+    } catch (error: any) {
+      // P2002 = Prisma unique constraint violation (e.g. username already taken)
+      if (error?.code === 'P2002') {
+        throw Errors.conflict('Username already taken');
+      }
+      throw error;
+    }
 
     return { settings: user };
   });

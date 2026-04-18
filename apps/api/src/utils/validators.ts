@@ -59,7 +59,9 @@ export const earnSchema = z.object({
 
 export const updateSettingsSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores').optional(),
   bio: z.string().max(500).optional(),
+  avatarUrl: z.string().url().optional(),
   gender: z.enum(['male', 'female', 'other']).optional(),
   dob: z.string().date().optional(),
   primaryPincode: z.string().length(6).optional(),
