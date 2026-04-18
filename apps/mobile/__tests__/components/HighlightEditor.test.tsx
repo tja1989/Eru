@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 
 jest.mock('@/services/highlightsService', () => ({
@@ -115,6 +116,11 @@ describe('<HighlightEditor />', () => {
   });
 
   it('calls remove and onClose when delete is confirmed', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _msg, buttons) => {
+      // find the destructive button and fire it
+      const destroy = (buttons ?? []).find((b: any) => b.style === 'destructive');
+      destroy?.onPress?.();
+    });
     (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
     const existing = { id: 'h1', title: 'Old Title', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01', itemCount: 0 };
     (highlightsService.remove as jest.Mock).mockResolvedValue(undefined);
@@ -130,7 +136,37 @@ describe('<HighlightEditor />', () => {
     });
 
     expect(highlightsService.remove).toHaveBeenCalledWith('h1');
+    expect(onSaved).toHaveBeenCalledWith(null);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('tapping delete shows a confirmation alert (dismissable)', async () => {
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _msg, buttons) => {
+      // find the cancel button and fire it
+      const cancel = (buttons ?? []).find((b: any) => b.style === 'cancel');
+      cancel?.onPress?.();
+    });
+    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    const existing = { id: 'h1', title: 'Old Title', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01', itemCount: 0 };
+    (highlightsService.remove as jest.Mock).mockResolvedValue(undefined);
+    const onClose = jest.fn();
+    const onSaved = jest.fn();
+
+    const { getByText } = render(
+      <HighlightEditor visible={true} onClose={onClose} onSaved={onSaved} existing={existing} />
+    );
+
+    await act(async () => {
+      fireEvent.press(getByText('Delete'));
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Delete Highlight',
+      expect.stringContaining('Old Title'),
+      expect.any(Array),
+    );
+    expect(highlightsService.remove).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('renders user content grid for multi-select', async () => {

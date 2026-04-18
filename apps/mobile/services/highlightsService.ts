@@ -19,7 +19,6 @@ export type HighlightItem = {
     mediaUrl: string | null;
     type: string;
     caption?: string | null;
-    [key: string]: any;
   };
 };
 

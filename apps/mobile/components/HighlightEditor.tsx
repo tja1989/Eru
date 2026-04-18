@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Alert,
   FlatList,
+  Image,
 } from 'react-native';
 import { highlightsService, Highlight } from '@/services/highlightsService';
 import { userService } from '@/services/userService';
@@ -19,7 +20,7 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   existing?: Highlight;
-  onSaved: (highlight: Highlight) => void;
+  onSaved: (highlight: Highlight | null) => void;
 }
 
 export function HighlightEditor({ visible, onClose, existing, onSaved }: Props) {
@@ -83,14 +84,28 @@ export function HighlightEditor({ visible, onClose, existing, onSaved }: Props) 
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!existing) return;
-    try {
-      await highlightsService.remove(existing.id);
-      onClose();
-    } catch {
-      // swallow
-    }
+    Alert.alert(
+      'Delete Highlight',
+      `Delete "${existing.title}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await highlightsService.remove(existing.id);
+              onSaved(null);
+              onClose();
+            } catch {
+              // TODO: toast
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -145,6 +160,13 @@ export function HighlightEditor({ visible, onClose, existing, onSaved }: Props) 
                       style={[styles.contentThumb, selected && styles.contentThumbSelected]}
                       onPress={() => toggleContent(item.id)}
                     >
+                      {item.mediaUrl ? (
+                        <Image
+                          source={{ uri: item.mediaUrl }}
+                          style={styles.thumbImage}
+                          resizeMode="cover"
+                        />
+                      ) : null}
                       {selected && (
                         <View style={styles.checkBadge}>
                           <Text style={styles.checkText}>✓</Text>
@@ -234,6 +256,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     overflow: 'hidden',
     position: 'relative',
+  },
+  thumbImage: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   contentThumbSelected: {
     borderWidth: 2.5,

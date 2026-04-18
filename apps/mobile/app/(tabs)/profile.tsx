@@ -126,7 +126,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleHighlightSaved = (_saved: Highlight) => {
+  const handleHighlightSaved = (_saved: Highlight | null) => {
     setEditorOpen(false);
     setHighlightsKey((k) => k + 1); // force HighlightsRow re-fetch
   };
