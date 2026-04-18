@@ -24,4 +24,9 @@ describe('P1 schema sanity', () => {
     await expect(prisma.story.count()).resolves.toBeTypeOf('number');
     await expect(prisma.storyView.count()).resolves.toBeTypeOf('number');
   });
+
+  it('can count P3 tables', async () => {
+    await expect(prisma.pollOption.count()).resolves.toBeTypeOf('number');
+    await expect(prisma.pollVote.count()).resolves.toBeTypeOf('number');
+  });
 });

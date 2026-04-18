@@ -51,6 +51,11 @@ export async function cleanupTestData() {
     { reporter: { firebaseUid: { startsWith: 'dev-test-' } } },
     { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } },
   ] } });
+  await prisma.pollVote.deleteMany({ where: { OR: [
+    { user: { firebaseUid: { startsWith: 'dev-test-' } } },
+    { pollOption: { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } } },
+  ] } });
+  await prisma.pollOption.deleteMany({ where: { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } } });
   await prisma.content.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.userReward.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.spinResult.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
