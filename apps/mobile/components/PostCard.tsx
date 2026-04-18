@@ -4,9 +4,11 @@ import { useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Avatar } from './Avatar';
 import { ShareButton } from './ShareButton';
+import { PostActionSheet } from './PostActionSheet';
 import { colors, spacing } from '../constants/theme';
 import { contentService } from '../services/contentService';
 import { usePointsStore } from '../stores/pointsStore';
+import { useAuthStore } from '../stores/authStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -25,6 +27,8 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
   const [liked, setLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [saved, setSaved] = useState(post.isSaved);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const currentUserId = useAuthStore((s) => s.user?.id ?? '');
 
   // Detect whether this post's media is a video — either because the content
   // itself is a reel or because the first media attachment is a video.
@@ -83,7 +87,12 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
             </View>
           </View>
         </View>
-        <Text style={styles.more}>•••</Text>
+        <TouchableOpacity
+          onPress={() => setSheetOpen(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.more}>•••</Text>
+        </TouchableOpacity>
       </View>
 
       {mediaItem && (
@@ -151,6 +160,15 @@ export function PostCard({ post, isActive = true }: PostCardProps) {
           <Text style={styles.viewComments}>View all {post.commentCount} comments</Text>
         </TouchableOpacity>
       )}
+
+      <PostActionSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        contentId={post.id}
+        authorUserId={post.user?.id ?? ''}
+        currentUserId={currentUserId}
+        onDelete={() => { /* wired in P1 F8 */ }}
+      />
     </View>
   );
 }
