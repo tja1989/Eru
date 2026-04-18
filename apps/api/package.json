@@ -13,6 +13,7 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx src/scripts/seed.ts",
     "db:seed-reels": "tsx src/scripts/seed-reels.ts",
+    "db:seed-rewards": "tsx src/scripts/seed-rewards.ts",
     "db:backfill-media": "tsx src/scripts/backfill-media.ts",
     "db:fix-reel-urls": "tsx src/scripts/fix-reel-urls.ts"
   },
