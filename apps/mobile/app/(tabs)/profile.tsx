@@ -13,7 +13,11 @@ import { Avatar } from '../../components/Avatar';
 import { TierBadge } from '../../components/TierBadge';
 import { MediaGrid } from '../../components/MediaGrid';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { HighlightsRow } from '../../components/HighlightsRow';
+import { HighlightEditor } from '../../components/HighlightEditor';
+import { HighlightViewer } from '../../components/HighlightViewer';
 import { userService } from '../../services/userService';
+import { highlightsService, Highlight, HighlightItem } from '../../services/highlightsService';
 import { useAuthStore } from '../../stores/authStore';
 import { usePointsStore } from '../../stores/pointsStore';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
@@ -52,6 +56,13 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Highlights state
+  const [highlightsKey, setHighlightsKey] = useState(0);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorHighlight, setEditorHighlight] = useState<Highlight | undefined>(undefined);
+  const [viewerHighlight, setViewerHighlight] = useState<Highlight | null>(null);
+  const [viewerItems, setViewerItems] = useState<HighlightItem[]>([]);
 
   const userId = user?.id ?? '';
 
@@ -102,6 +113,22 @@ export default function ProfileScreen() {
     setRefreshing(true);
     await Promise.all([loadProfile(), loadContent(gridTab)]);
     setRefreshing(false);
+  };
+
+  const handleHighlightSelect = async (highlight: Highlight) => {
+    try {
+      const full = await highlightsService.getHighlight(highlight.id);
+      setViewerItems(full.items ?? []);
+      setViewerHighlight(highlight);
+    } catch {
+      setViewerItems([]);
+      setViewerHighlight(highlight);
+    }
+  };
+
+  const handleHighlightSaved = (_saved: Highlight) => {
+    setEditorOpen(false);
+    setHighlightsKey((k) => k + 1); // force HighlightsRow re-fetch
   };
 
   if (loading) return <LoadingSpinner />;
@@ -207,6 +234,15 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Highlights row */}
+        <HighlightsRow
+          key={highlightsKey}
+          userId={userId}
+          editable={true}
+          onSelect={handleHighlightSelect}
+          onAddNew={() => { setEditorHighlight(undefined); setEditorOpen(true); }}
+        />
+
         {/* Grid tabs */}
         <View style={styles.gridTabBar}>
           {GRID_TABS.map((tab) => (
@@ -234,6 +270,24 @@ export default function ProfileScreen() {
           <MediaGrid items={gridItems} />
         )}
       </ScrollView>
+
+      {/* Highlight Editor modal */}
+      <HighlightEditor
+        visible={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        existing={editorHighlight}
+        onSaved={handleHighlightSaved}
+      />
+
+      {/* Highlight Viewer modal */}
+      {viewerHighlight && (
+        <HighlightViewer
+          visible={viewerHighlight !== null}
+          onClose={() => setViewerHighlight(null)}
+          highlight={viewerHighlight}
+          items={viewerItems}
+        />
+      )}
     </SafeAreaView>
   );
 }
