@@ -371,7 +371,7 @@ export async function contentRoutes(app: FastifyInstance) {
   });
 
   // DELETE /posts/:id/unsave — remove a bookmark
-  app.delete('/posts/:id/unsave', async (request, reply) => {
+  app.delete('/posts/:id/unsave', async (request) => {
     const { id: contentId } = request.params as { id: string };
     const currentUserId = request.userId;
 
@@ -391,7 +391,7 @@ export async function contentRoutes(app: FastifyInstance) {
       },
     });
 
-    return reply.status(200).send({ success: true });
+    return { success: true };
   });
 
   // POST /posts/:id/comments — add a comment (top-level or threaded reply)
