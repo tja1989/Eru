@@ -58,4 +58,47 @@ describe('GET /api/v1/reels?tab=...', () => {
     expect(reels.find((r: any) => r.userId === local.id)).toBeDefined();
     expect(reels.find((r: any) => r.userId === distant.id)).toBeUndefined();
   });
+
+  it('tab=local includes content whose locationPincode matches the viewer\'s SECONDARY pincodes', async () => {
+    const me = await seedUser({ firebaseUid: 'dev-test-rt7', phone: '+911500000007', username: 'trt7' });
+    await prisma.user.update({
+      where: { id: me.id },
+      data: { primaryPincode: '600001', secondaryPincodes: ['682016'] },
+    });
+    const creator = await seedUser({ firebaseUid: 'dev-test-rt8', phone: '+911500000008', username: 'trt8' });
+    await prisma.content.create({
+      data: {
+        userId: creator.id, type: 'reel', moderationStatus: 'published',
+        publishedAt: new Date(), locationPincode: '682016',
+      },
+    });
+
+    const res = await getTestApp().inject({
+      method: 'GET', url: '/api/v1/reels?tab=local',
+      headers: { Authorization: devToken('dev-test-rt7') },
+    });
+    const reels = res.json().data ?? [];
+    expect(reels.find((r: any) => r.userId === creator.id)).toBeDefined();
+  });
+
+  it('tab=local matches on creator\'s primaryPincode even when content has no locationPincode', async () => {
+    const me = await seedUser({ firebaseUid: 'dev-test-rt9', phone: '+911500000009', username: 'trt9' });
+    await prisma.user.update({ where: { id: me.id }, data: { primaryPincode: '682016' } });
+    const creator = await seedUser({ firebaseUid: 'dev-test-rt10', phone: '+911500000010', username: 'trt10' });
+    await prisma.user.update({ where: { id: creator.id }, data: { primaryPincode: '682016' } });
+    await prisma.content.create({
+      data: {
+        userId: creator.id, type: 'reel', moderationStatus: 'published',
+        publishedAt: new Date(),
+        // NO locationPincode — the match has to come from the creator's primaryPincode
+      },
+    });
+
+    const res = await getTestApp().inject({
+      method: 'GET', url: '/api/v1/reels?tab=local',
+      headers: { Authorization: devToken('dev-test-rt9') },
+    });
+    const reels = res.json().data ?? [];
+    expect(reels.find((r: any) => r.userId === creator.id)).toBeDefined();
+  });
 });
