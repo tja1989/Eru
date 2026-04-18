@@ -12,4 +12,13 @@ export const contentService = {
     api.post(`/posts/${id}/comments`, { text, parentId }).then((r) => r.data),
   getComments: (id: string, page = 1) =>
     api.get(`/posts/${id}/comments`, { params: { page } }).then((r) => r.data),
+  async createComment(contentId: string, text: string, parentId?: string) {
+    if (!text.trim()) {
+      throw new Error('Comment cannot be empty');
+    }
+    const payload: { text: string; parentId?: string } = { text };
+    if (parentId) payload.parentId = parentId;
+    const res = await api.post(`/posts/${contentId}/comments`, payload);
+    return res.data.comment;
+  },
 };
