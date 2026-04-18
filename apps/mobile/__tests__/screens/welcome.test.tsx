@@ -27,4 +27,12 @@ describe('<Welcome />', () => {
     fireEvent.press(getByText(/get started/i));
     expect(push).toHaveBeenCalledWith('/(auth)/login');
   });
+
+  it('"I already have an account" navigates to /(auth)/login', () => {
+    const push = jest.fn();
+    jest.spyOn(require('expo-router'), 'useRouter').mockReturnValue({ push, replace: jest.fn() });
+    const { getByText } = render(<Welcome />);
+    fireEvent.press(getByText(/i already have an account/i));
+    expect(push).toHaveBeenCalledWith('/(auth)/login');
+  });
 });

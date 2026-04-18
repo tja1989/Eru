@@ -29,11 +29,20 @@ export default function Welcome() {
           </View>
         ))}
 
-        <TouchableOpacity style={styles.primary} onPress={() => router.push('/(auth)/login')}>
+        <TouchableOpacity
+          style={styles.primary}
+          onPress={() => router.push('/(auth)/login')}
+          accessibilityRole="button"
+          accessibilityLabel="Get Started"
+        >
           <Text style={styles.primaryText}>Get Started</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+        <TouchableOpacity
+          onPress={() => router.push('/(auth)/login')}
+          accessibilityRole="button"
+          accessibilityLabel="I already have an account"
+        >
           <Text style={styles.secondaryText}>I already have an account</Text>
         </TouchableOpacity>
       </ScrollView>
