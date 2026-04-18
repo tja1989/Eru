@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { leaderboardService } from '../../services/leaderboardService';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
 import { WeeklyQuestsCard } from '@/components/WeeklyQuestsCard';
+import { LeaderboardPodium } from '@/components/LeaderboardPodium';
+import { LeaderboardScopeTabs, type Scope } from '@/components/LeaderboardScopeTabs';
 
 interface Season {
   name: string;
@@ -56,26 +58,27 @@ export default function LeaderboardScreen() {
   const [leaders, setLeaders] = useState<LeaderUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [scope, setScope] = useState<Scope>('pincode');
 
   const loadAll = async () => {
     try {
       const [seasonData, rankData, leaderData] = await Promise.allSettled([
         leaderboardService.getCurrentSeason(),
         leaderboardService.getMyRank(),
-        leaderboardService.getLeaderboard(),
+        leaderboardService.getLeaderboard(scope),
       ]);
 
       if (seasonData.status === 'fulfilled') setSeason(seasonData.value?.season ?? seasonData.value);
       if (rankData.status === 'fulfilled') setMyRank(rankData.value?.rank ?? rankData.value);
       if (leaderData.status === 'fulfilled') {
-        setLeaders(leaderData.value?.users ?? leaderData.value?.leaders ?? []);
+        setLeaders(leaderData.value?.users ?? leaderData.value?.leaders ?? leaderData.value?.rankings ?? []);
       }
     } catch {}
   };
 
   useEffect(() => {
     loadAll().finally(() => setLoading(false));
-  }, []);
+  }, [scope]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -114,6 +117,9 @@ export default function LeaderboardScreen() {
         <Text style={styles.headerTitle}>Leaderboard</Text>
         <View style={styles.headerSpacer} />
       </View>
+
+      {/* Scope tabs */}
+      <LeaderboardScopeTabs scope={scope} onChange={setScope} />
 
       <ScrollView
         style={styles.scroll}
@@ -157,6 +163,16 @@ export default function LeaderboardScreen() {
             </View>
           </View>
         ) : null}
+
+        {/* Podium for top 3 */}
+        <LeaderboardPodium
+          top3={leaders.slice(0, 3).map((u, i) => ({
+            rank: u.rank ?? i + 1,
+            username: u.username,
+            avatarUrl: u.avatarUrl,
+            weeklyPoints: u.weeklyPoints,
+          }))}
+        />
 
         {/* Top users list */}
         <Text style={styles.sectionTitle}>Top Creators</Text>
