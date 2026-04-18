@@ -199,6 +199,7 @@ export async function getFeed(ctx: FeedContext, page: number, limit: number): Pr
   const candidates = await prisma.content.findMany({
     where: {
       moderationStatus: 'published',
+      deletedAt: null,
       createdAt: { gte: sevenDaysAgo },
     },
     take: 200,

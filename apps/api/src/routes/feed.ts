@@ -85,6 +85,7 @@ export async function feedRoutes(app: FastifyInstance) {
       where: {
         userId: { in: followingIds },
         moderationStatus: 'published',
+        deletedAt: null,
         createdAt: { gte: oneDayAgo },
       },
       take: 20,

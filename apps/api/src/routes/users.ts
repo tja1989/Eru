@@ -18,11 +18,11 @@ export async function userRoutes(app: FastifyInstance) {
     const [grouped, likesAgg] = await Promise.all([
       prisma.content.groupBy({
         by: ['moderationStatus'],
-        where: { userId },
+        where: { userId, deletedAt: null },
         _count: { _all: true },
       }),
       prisma.content.aggregate({
-        where: { userId, moderationStatus: 'published' },
+        where: { userId, moderationStatus: 'published', deletedAt: null },
         _sum: { likeCount: true },
       }),
     ]);
@@ -60,7 +60,7 @@ export async function userRoutes(app: FastifyInstance) {
         createdAt: true,
         _count: {
           select: {
-            content: { where: { moderationStatus: 'published' } },
+            content: { where: { moderationStatus: 'published', deletedAt: null } },
             followers: true,
             following: true,
           },
@@ -183,7 +183,7 @@ export async function userRoutes(app: FastifyInstance) {
     }
 
     const skip = (page - 1) * limit;
-    const baseWhere = { moderationStatus: 'published' as const };
+    const baseWhere = { moderationStatus: 'published' as const, deletedAt: null };
 
     if (tab === 'saved') {
       // Return content that the current user has saved via interactions

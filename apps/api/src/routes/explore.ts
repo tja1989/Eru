@@ -24,6 +24,7 @@ export async function exploreRoutes(app: FastifyInstance) {
 
     const where: Record<string, unknown> = {
       moderationStatus: 'published',
+      deletedAt: null,
     };
 
     // Filter by category via hashtags — if category is not 'all', use it as a hashtag filter
@@ -105,6 +106,7 @@ export async function exploreRoutes(app: FastifyInstance) {
       prisma.content.findMany({
         where: {
           moderationStatus: 'published',
+          deletedAt: null,
           text: { contains: q, mode: 'insensitive' },
         },
         take: 10,
@@ -127,6 +129,7 @@ export async function exploreRoutes(app: FastifyInstance) {
       prisma.content.findMany({
         where: {
           moderationStatus: 'published',
+          deletedAt: null,
           hashtags: { has: q.toLowerCase().replace(/^#/, '') },
         },
         take: 10,
@@ -159,6 +162,7 @@ export async function exploreRoutes(app: FastifyInstance) {
     const recentContent = await prisma.content.findMany({
       where: {
         moderationStatus: 'published',
+        deletedAt: null,
         publishedAt: { gte: twoDaysAgo },
       },
       select: {
@@ -187,6 +191,7 @@ export async function exploreRoutes(app: FastifyInstance) {
     const trendingContent = await prisma.content.findMany({
       where: {
         moderationStatus: 'published',
+        deletedAt: null,
         publishedAt: { gte: twoDaysAgo },
       },
       take: 20,

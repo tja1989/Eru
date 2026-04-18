@@ -17,7 +17,7 @@ async function meetsRule(userId: string, rule: UnlockRule): Promise<boolean> {
   }
   if (rule.type === 'posts_published') {
     const count = await prisma.content.count({
-      where: { userId, moderationStatus: 'published' },
+      where: { userId, moderationStatus: 'published', deletedAt: null },
     });
     return count >= rule.threshold;
   }

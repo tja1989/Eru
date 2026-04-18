@@ -27,6 +27,7 @@ export async function reelsRoutes(app: FastifyInstance) {
     let where: Record<string, unknown> = {
       type: 'reel',
       moderationStatus: 'published',
+      deletedAt: null,
     };
 
     if (tab === 'following') {

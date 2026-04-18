@@ -83,6 +83,11 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.notFound('Content');
     }
 
+    // Soft-deleted content is hidden from everyone except the author
+    if (content.deletedAt && content.userId !== currentUserId) {
+      throw Errors.notFound('Content');
+    }
+
     // Check if the current user has liked or saved this content
     const [likeInteraction, saveInteraction] = await Promise.all([
       prisma.interaction.findUnique({
@@ -117,6 +122,22 @@ export async function contentRoutes(app: FastifyInstance) {
         commentsPreview,
       },
     };
+  });
+
+  // DELETE /content/:id — soft-delete own content (sets deletedAt; PointsLedger preserved)
+  app.delete('/content/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const content = await prisma.content.findUnique({ where: { id } });
+    if (!content) throw Errors.notFound('Content');
+    if (content.userId !== request.userId) throw Errors.forbidden();
+    // Idempotent: if already soft-deleted, treat as success
+    if (content.deletedAt) return reply.status(200).send({ success: true });
+
+    await prisma.content.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    return reply.status(200).send({ success: true });
   });
 
   // POST /content/:id/resubmit — re-queue a declined post for moderation (max 4 queue entries)
