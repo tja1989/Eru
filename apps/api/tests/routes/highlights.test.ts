@@ -393,4 +393,46 @@ describe('Highlight endpoints', () => {
       expect(delRes.statusCode).toBe(404);
     });
   });
+
+  // ── GET /highlights/:id ──────────────────────────────────────────────────────
+
+  describe('GET /api/v1/highlights/:id', () => {
+    it('returns a single highlight with items and content inline', async () => {
+      const owner = await seedUser({ firebaseUid: 'dev-test-hl16a', phone: '+919200000150', username: 'thl16a' });
+      const viewer = await seedUser({ firebaseUid: 'dev-test-hl16b', phone: '+919200000151', username: 'thl16b' });
+
+      const createRes = await getTestApp().inject({
+        method: 'POST', url: '/api/v1/highlights',
+        headers: { Authorization: devToken('dev-test-hl16a'), 'content-type': 'application/json' },
+        body: JSON.stringify({ title: 'Trips', emoji: '✈️' }),
+      });
+      const { highlight } = createRes.json();
+
+      const content = await seedContent(owner.id);
+      await getTestApp().inject({
+        method: 'POST', url: `/api/v1/highlights/${highlight.id}/items`,
+        headers: { Authorization: devToken('dev-test-hl16a'), 'content-type': 'application/json' },
+        body: JSON.stringify({ contentId: content.id }),
+      });
+
+      const res = await getTestApp().inject({
+        method: 'GET', url: `/api/v1/highlights/${highlight.id}`,
+        headers: { Authorization: devToken('dev-test-hl16b') },
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.highlight.title).toBe('Trips');
+      expect(body.highlight.items).toHaveLength(1);
+      expect(body.highlight.items[0].content.id).toBe(content.id);
+    });
+
+    it('returns 404 for a non-existent highlight', async () => {
+      await seedUser({ firebaseUid: 'dev-test-hl17a', phone: '+919200000160', username: 'thl17a' });
+      const res = await getTestApp().inject({
+        method: 'GET', url: '/api/v1/highlights/00000000-0000-0000-0000-000000000000',
+        headers: { Authorization: devToken('dev-test-hl17a') },
+      });
+      expect(res.statusCode).toBe(404);
+    });
+  });
 });

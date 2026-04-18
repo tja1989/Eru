@@ -161,6 +161,25 @@ export async function highlightRoutes(app: FastifyInstance) {
     return reply.status(201).send({ item });
   });
 
+  // GET /highlights/:id — public single highlight with items + content inline
+  app.get('/highlights/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const highlight = await prisma.highlight.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: { content: true },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!highlight) throw Errors.notFound('Highlight');
+
+    return reply.status(200).send({ highlight });
+  });
+
   // DELETE /highlights/:id/items/:itemId — remove an item from a highlight (owner only)
   app.delete('/highlights/:id/items/:itemId', async (request, reply) => {
     const { id, itemId } = request.params as { id: string; itemId: string };
