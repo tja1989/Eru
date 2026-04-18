@@ -38,6 +38,12 @@
       "router": {},
       "eas": {
         "projectId": "5fb96f5e-8595-40ac-a854-07f89029aa07"
+      },
+      "firebase": {
+        "apiKey": "__REPLACE_ME__",
+        "authDomain": "__REPLACE_ME__.firebaseapp.com",
+        "projectId": "__REPLACE_ME__",
+        "appId": "__REPLACE_ME__"
       }
     },
     "owner": "eru_aflo"

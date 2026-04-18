@@ -30,6 +30,25 @@ jest.mock('@/services/api', () => ({
   setAuthToken: jest.fn(),
 }));
 
+// Firebase is only used via our thin wrapper at `@/services/firebase`. Mocking
+// the wrapper keeps tests deterministic — no real SDK init, no network calls.
+// Individual tests can override `signInWithCredential` / `getFirebaseAuth`
+// with `jest.mocked(...)` as needed.
+jest.mock('@/services/firebase', () => ({
+  __esModule: true,
+  getFirebaseAuth: jest.fn(() => ({})),
+  isFirebaseConfigured: jest.fn(() => false),
+  PhoneAuthProvider: {
+    credential: jest.fn((verificationId: string, code: string) => ({
+      verificationId,
+      code,
+    })),
+  },
+  signInWithCredential: jest.fn(async () => ({
+    user: { getIdToken: async () => 'firebase-id-token-abc' },
+  })),
+}));
+
 // expo-video pulls in a native module that fails to initialize in the jest
 // environment. Stub it so components that import it can render.
 jest.mock('expo-video', () => {
