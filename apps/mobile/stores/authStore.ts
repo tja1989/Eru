@@ -5,7 +5,7 @@ import { setAuthToken } from '../services/api';
 import { authService } from '../services/authService';
 
 interface AuthState {
-  user: { id: string; name: string; username: string; phone: string; tier: string; currentBalance: number } | null;
+  user: { id: string; name: string; username: string; phone: string; tier: string; currentBalance: number; creatorScore?: number } | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;

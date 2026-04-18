@@ -58,6 +58,7 @@ export async function userRoutes(app: FastifyInstance) {
         tier: true,
         isPrivate: true,
         createdAt: true,
+        creatorScore: true,
         _count: {
           select: {
             content: { where: { moderationStatus: 'published', deletedAt: null } },
