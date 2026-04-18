@@ -129,7 +129,7 @@ export function LocationPicker({ onSelect }: LocationPickerProps) {
       {/* Results list */}
       <FlatList
         data={results}
-        keyExtractor={(item) => item.pincode}
+        keyExtractor={(item) => item.pincode + item.area}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.resultRow}

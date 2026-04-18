@@ -10,6 +10,6 @@ export type PincodeResult = {
 export const locationsService = {
   async search(q: string): Promise<PincodeResult[]> {
     const res = await api.get('/locations', { params: { q } });
-    return res.data.results;
+    return (res.data.results ?? []) as PincodeResult[];
   },
 };

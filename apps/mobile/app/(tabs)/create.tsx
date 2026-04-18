@@ -130,6 +130,7 @@ export default function CreateScreen() {
           pollOptions: pollOptions.map((o) => o.trim()).filter(Boolean),
           mediaIds: [],
           hashtags: parsedHashtags,
+          locationPincode: selectedPincode ?? undefined,
         });
       } else if (contentType === 'thread') {
         await contentService.create({
@@ -137,6 +138,7 @@ export default function CreateScreen() {
           threadParts: threadParts.map((p) => p.trim()).filter(Boolean),
           mediaIds: [],
           hashtags: parsedHashtags,
+          locationPincode: selectedPincode ?? undefined,
         });
       } else {
         await contentService.create({

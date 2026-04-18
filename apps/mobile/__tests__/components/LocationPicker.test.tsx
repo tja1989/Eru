@@ -154,6 +154,14 @@ describe('<LocationPicker />', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('shows a search error when the search API rejects', async () => {
+    mockLocationsService.search.mockRejectedValue(new Error('Network error'));
+    const { getByPlaceholderText, findByText } = render(<LocationPicker onSelect={jest.fn()} />);
+    fireEvent.changeText(getByPlaceholderText(/search by area/i), 'koch');
+    act(() => { jest.advanceTimersByTime(350); });
+    expect(await findByText(/search failed/i)).toBeTruthy();
+  });
+
   it('GPS invalid postalCode: shows "could not detect pincode" error', async () => {
     mockLocation.requestForegroundPermissionsAsync.mockResolvedValue({
       status: 'granted',
