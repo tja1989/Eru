@@ -39,13 +39,19 @@ export async function reelsRoutes(app: FastifyInstance) {
       const followingIds = following.map((f) => f.followingId);
       where.userId = { in: followingIds };
     } else if (tab === 'local') {
-      // Only reels from users in the same pincode
-      const currentUser = await prisma.user.findUnique({
+      // Match reels where either the reel's locationPincode OR the
+      // creator's primaryPincode falls within the viewer's primary or
+      // secondary pincodes.
+      const me = await prisma.user.findUnique({
         where: { id: userId },
-        select: { primaryPincode: true },
+        select: { primaryPincode: true, secondaryPincodes: true },
       });
-      if (currentUser?.primaryPincode) {
-        where.locationPincode = currentUser.primaryPincode;
+      const pincodes = [me?.primaryPincode, ...(me?.secondaryPincodes ?? [])].filter(Boolean) as string[];
+      if (pincodes.length > 0) {
+        where.OR = [
+          { locationPincode: { in: pincodes } },
+          { user: { primaryPincode: { in: pincodes } } },
+        ];
       }
     }
     // 'foryou' uses no additional filter — returns all published reels
