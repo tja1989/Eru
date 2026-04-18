@@ -1,7 +1,7 @@
 import { buildApp } from '../../src/app.js';
 import type { FastifyInstance } from 'fastify';
 
-let app: FastifyInstance;
+let app: FastifyInstance | undefined;
 
 export function getTestApp(): FastifyInstance {
   if (!app) {
@@ -13,5 +13,6 @@ export function getTestApp(): FastifyInstance {
 export async function closeTestApp() {
   if (app) {
     await app.close();
+    app = undefined;
   }
 }
