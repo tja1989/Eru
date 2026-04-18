@@ -1,0 +1,51 @@
+import { prisma } from '../../src/utils/prisma.js';
+
+export async function seedUser(opts: {
+  firebaseUid: string;
+  phone: string;
+  username: string;
+  name?: string;
+}) {
+  return prisma.user.create({
+    data: {
+      firebaseUid: opts.firebaseUid,
+      phone: opts.phone,
+      username: opts.username,
+      name: opts.name ?? 'Test User',
+      primaryPincode: '000000',
+    },
+  });
+}
+
+export async function seedContent(userId: string, overrides: Partial<{
+  text: string;
+  type: 'post' | 'reel' | 'poll' | 'thread';
+  moderationStatus: 'pending' | 'published' | 'declined';
+}> = {}) {
+  return prisma.content.create({
+    data: {
+      userId,
+      type: overrides.type ?? 'post',
+      text: overrides.text ?? 'A post',
+      moderationStatus: overrides.moderationStatus ?? 'published',
+      publishedAt: overrides.moderationStatus === 'pending' ? null : new Date(),
+    },
+  });
+}
+
+export async function cleanupTestData() {
+  await prisma.comment.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.interaction.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.follow.deleteMany({ where: { OR: [
+    { follower: { firebaseUid: { startsWith: 'dev-test-' } } },
+    { following: { firebaseUid: { startsWith: 'dev-test-' } } },
+  ] } });
+  await prisma.notification.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.moderationQueue.deleteMany({ where: { content: { user: { firebaseUid: { startsWith: 'dev-test-' } } } } });
+  await prisma.content.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.user.deleteMany({ where: { firebaseUid: { startsWith: 'dev-test-' } } });
+}
+
+export function devToken(firebaseUid: string) {
+  return `Bearer ${firebaseUid}`;
+}
