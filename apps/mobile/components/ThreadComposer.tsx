@@ -1,6 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, radius } from '../constants/theme';
+
+interface ThreadPart {
+  id: string;
+  text: string;
+}
 
 interface ThreadComposerProps {
   parts: string[];
@@ -8,37 +13,78 @@ interface ThreadComposerProps {
   disabled?: boolean;
 }
 
+function makeId(): string {
+  return Math.random().toString(36).slice(2);
+}
+
+function stringsToInternal(strings: string[]): ThreadPart[] {
+  return strings.map((text) => ({ id: makeId(), text }));
+}
+
 export function ThreadComposer({ parts, onPartsChange, disabled }: ThreadComposerProps) {
-  // Seed with 2 empty parts if parent passes an empty array
+  // Internal representation uses stable IDs so React never reuses the wrong
+  // TextInput node when a middle part is removed.
+  const [internalParts, setInternalParts] = useState<ThreadPart[]>(() =>
+    stringsToInternal(parts),
+  );
+
+  // Track whether we're the ones who triggered an onPartsChange call so we
+  // don't needlessly re-seed from props (which would regenerate all IDs).
+  const skipNextSync = useRef(false);
+
+  // Seed with 2 empty parts if parent passes an empty array (on mount only).
   useEffect(() => {
     if (parts.length === 0) {
+      const seeded: ThreadPart[] = [
+        { id: makeId(), text: '' },
+        { id: makeId(), text: '' },
+      ];
+      setInternalParts(seeded);
+      skipNextSync.current = true;
       onPartsChange(['', '']);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sync when the parent replaces the parts array from outside (e.g. reset).
+  // Skip the sync we triggered ourselves to avoid needless ID churn.
+  useEffect(() => {
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
+    setInternalParts(stringsToInternal(parts));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parts]);
+
+  // Propagate internal changes up, keeping the external API as string[].
+  const propagate = (next: ThreadPart[]) => {
+    setInternalParts(next);
+    skipNextSync.current = true;
+    onPartsChange(next.map((p) => p.text));
+  };
+
   const addPart = () => {
-    if (parts.length >= 10) return;
-    onPartsChange([...parts, '']);
+    if (internalParts.length >= 10) return;
+    propagate([...internalParts, { id: makeId(), text: '' }]);
   };
 
-  const removePart = (index: number) => {
-    if (parts.length <= 2) return;
-    onPartsChange(parts.filter((_, i) => i !== index));
+  const removePart = (id: string) => {
+    if (internalParts.length <= 2) return;
+    propagate(internalParts.filter((p) => p.id !== id));
   };
 
-  const updatePart = (index: number, value: string) => {
-    const next = parts.map((p, i) => (i === index ? value : p));
-    onPartsChange(next);
+  const updatePart = (id: string, value: string) => {
+    propagate(internalParts.map((p) => (p.id === id ? { ...p, text: value } : p)));
   };
 
-  const canAdd = parts.length < 10;
-  const canRemove = parts.length > 2;
+  const canAdd = internalParts.length < 10;
+  const canRemove = internalParts.length > 2;
 
   return (
     <View style={styles.container}>
-      {parts.map((part, idx) => (
-        <View key={idx} style={styles.partWrapper}>
+      {internalParts.map((part, idx) => (
+        <View key={part.id} style={styles.partWrapper}>
           {/* Thread connector line — shown above every part except the first */}
           {idx > 0 && <View style={styles.connectorLine} />}
 
@@ -54,8 +100,8 @@ export function ThreadComposer({ parts, onPartsChange, disabled }: ThreadCompose
                 style={styles.partInput}
                 placeholder={`Part ${idx + 1}…`}
                 placeholderTextColor={colors.g400}
-                value={part}
-                onChangeText={(v) => updatePart(idx, v)}
+                value={part.text}
+                onChangeText={(v) => updatePart(part.id, v)}
                 editable={!disabled}
                 multiline
                 maxLength={500}
@@ -64,7 +110,7 @@ export function ThreadComposer({ parts, onPartsChange, disabled }: ThreadCompose
             </View>
 
             <TouchableOpacity
-              onPress={() => removePart(idx)}
+              onPress={() => removePart(part.id)}
               disabled={!canRemove || disabled}
               accessibilityLabel="Remove part"
               accessibilityState={{ disabled: !canRemove || !!disabled }}

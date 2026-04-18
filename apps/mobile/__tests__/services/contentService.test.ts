@@ -75,3 +75,13 @@ describe('contentService.delete', () => {
     expect(api.delete).toHaveBeenCalledWith('/content/post-1');
   });
 });
+
+describe('contentService.getThread', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('calls GET /content/:id/thread', async () => {
+    (api.get as jest.Mock).mockResolvedValue({ data: { parent: {}, parts: [] } });
+    await contentService.getThread('c1');
+    expect(api.get).toHaveBeenCalledWith('/content/c1/thread');
+  });
+});

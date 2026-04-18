@@ -225,7 +225,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
         post.parts && post.parts.length > 0 ? (
           <ThreadView parts={post.parts} />
         ) : (
-          <TouchableOpacity onPress={openDetail} style={styles.viewThreadBtn}>
+          <TouchableOpacity onPress={(e) => { e.stopPropagation?.(); openDetail(); }} style={styles.viewThreadBtn}>
             <Text style={styles.viewThreadText}>View thread →</Text>
           </TouchableOpacity>
         )
