@@ -4,6 +4,13 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 
+// Tells expo-router which tab is the cold-boot focus target. Combined with
+// `lazy: true` below, only `index` runs its initial fetch on cold start;
+// the other tabs mount on first navigation.
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function TabLayout() {
   const { initializing, isAuthenticated } = useAuth();
 
@@ -25,6 +32,7 @@ export default function TabLayout() {
       tabBarInactiveTintColor: colors.g400,
       tabBarShowLabel: true,
       tabBarLabelStyle: styles.label,
+      lazy: true,
     }}>
       <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🏠</Text> }} />
       <Tabs.Screen name="explore" options={{ title: 'Explore', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🔍</Text> }} />

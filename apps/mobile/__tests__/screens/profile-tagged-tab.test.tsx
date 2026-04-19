@@ -48,6 +48,10 @@ jest.mock('@/stores/pointsStore', () => ({
 }));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    const React = require('react');
+    React.useEffect(() => cb(), []);
+  },
 }));
 
 const MOCK_TAGGED = [

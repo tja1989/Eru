@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Avatar } from '../../components/Avatar';
 import { TierBadge } from '../../components/TierBadge';
 import { MediaGrid } from '../../components/MediaGrid';
@@ -93,12 +93,18 @@ export default function ProfileScreen() {
     }
   };
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([loadProfile(), loadContent(gridTab)]).finally(() =>
-      setLoading(false),
-    );
-  }, []);
+  // Defer initial profile + content fetch until the tab is focused. With
+  // `lazy: true` on the Tabs root the screen isn't even mounted on cold
+  // boot, but useFocusEffect is the safer pattern in case lazy ever drops.
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      Promise.all([loadProfile(), loadContent(gridTab)]).finally(() =>
+        setLoading(false),
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
   useEffect(() => {
     loadContent(gridTab);

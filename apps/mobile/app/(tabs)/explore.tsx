@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View,
   Text,
@@ -41,10 +42,15 @@ export default function ExploreScreen() {
     }
   }, [category]);
 
-  useEffect(() => {
-    setLoading(true);
-    loadExplore(category).finally(() => setLoading(false));
-  }, [category]);
+  // Fetch only when the tab is focused (not on app cold-boot). useFocusEffect
+  // reruns when category changes IFF the screen is currently focused; if the
+  // user changes category from a different tab somehow, the next focus reloads.
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      loadExplore(category).finally(() => setLoading(false));
+    }, [category, loadExplore]),
+  );
 
   const handleSearch = async () => {
     if (!query.trim()) return;
