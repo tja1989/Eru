@@ -1,10 +1,19 @@
-import { Stack, Redirect } from 'expo-router';
+import { Stack, Redirect, useSegments } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../constants/theme';
 
+// Routes that ARE the onboarding experience itself — rendering them must not
+// trigger another redirect to welcome/tutorial, otherwise the gate loops.
+const ONBOARDING_ROUTES = new Set(['welcome', 'personalize', 'tutorial']);
+
 export default function AuthLayout() {
   const { initializing, isAuthenticated, hasCompletedOnboarding } = useAuth();
+  const segments = useSegments();
+  // Within the (auth) group, the last segment is the current screen name
+  // (e.g. 'welcome', 'login'). Group segments like '(auth)' are filtered out.
+  const currentRoute = segments[segments.length - 1];
+  const onOnboardingRoute = ONBOARDING_ROUTES.has(currentRoute);
 
   if (initializing) {
     return (
@@ -17,17 +26,26 @@ export default function AuthLayout() {
   // Authenticated users who haven't finished onboarding (e.g. killed the app
   // after login but before the tutorial) land on the tutorial page — they
   // already have a token so the welcome/login flow would loop them.
-  if (isAuthenticated && !hasCompletedOnboarding) return <Redirect href="/(auth)/tutorial" />;
+  // Skip the redirect if they're already on an onboarding route.
+  if (isAuthenticated && !hasCompletedOnboarding && !onOnboardingRoute) {
+    return <Redirect href="/(auth)/tutorial" />;
+  }
 
-  if (isAuthenticated) return <Redirect href="/(tabs)" />;
+  if (isAuthenticated && hasCompletedOnboarding) return <Redirect href="/(tabs)" />;
 
-  // First-time users who haven't completed onboarding go to the welcome screen.
-  if (!hasCompletedOnboarding) return <Redirect href="/(auth)/welcome" />;
+  // First-time users who haven't completed onboarding go to the welcome screen,
+  // unless they're already somewhere in the onboarding flow.
+  if (!hasCompletedOnboarding && !onOnboardingRoute) {
+    return <Redirect href="/(auth)/welcome" />;
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
       <Stack.Screen name="onboarding" />
+      <Stack.Screen name="welcome" />
+      <Stack.Screen name="personalize" />
+      <Stack.Screen name="tutorial" />
     </Stack>
   );
 }

@@ -16,8 +16,11 @@ import AuthLayout from '@/app/(auth)/_layout';
 // ---------------------------------------------------------------------------
 // Mock expo-router — Redirect just renders a plain text node so we can assert
 // which route it points to, and Stack renders its children transparently.
+// useSegments is mocked per-test so we can simulate "currently on /welcome"
+// vs "currently on /login" to catch redirect-loop regressions.
 // ---------------------------------------------------------------------------
 const mockRedirect = jest.fn();
+let mockSegments: string[] = [];
 jest.mock('expo-router', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
@@ -34,7 +37,11 @@ jest.mock('expo-router', () => {
     return null;
   };
 
-  return { Redirect, Stack };
+  return {
+    Redirect,
+    Stack,
+    useSegments: () => mockSegments,
+  };
 });
 
 // ---------------------------------------------------------------------------
@@ -63,8 +70,9 @@ type AuthState = {
   hasCompletedOnboarding: boolean;
 };
 
-function setup(state: AuthState) {
+function setup(state: AuthState, segments: string[] = ['(auth)', 'login']) {
   mockedUseAuth.mockReturnValue(state);
+  mockSegments = segments;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,40 +85,66 @@ describe('<AuthLayout /> — onboarding gate', () => {
 
   it('shows a loading spinner while the store is hydrating', () => {
     setup({ initializing: true, isAuthenticated: false, hasCompletedOnboarding: false });
-    const { getByTestId, queryByTestId } = render(<AuthLayout />);
-    // Spinner is present, neither redirect nor stack is shown
+    const { queryByTestId } = render(<AuthLayout />);
     expect(queryByTestId('redirect')).toBeNull();
     expect(queryByTestId('stack')).toBeNull();
   });
 
-  it('unauthenticated + !hasCompletedOnboarding → redirects to /(auth)/welcome', () => {
-    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false });
+  it('unauthenticated + !hasCompletedOnboarding on /login → redirects to /(auth)/welcome', () => {
+    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false }, ['(auth)', 'login']);
     const { getByTestId } = render(<AuthLayout />);
     expect(getByTestId('redirect').props.children).toBe('/(auth)/welcome');
     expect(mockRedirect).toHaveBeenCalledWith('/(auth)/welcome');
   });
 
-  it('unauthenticated + hasCompletedOnboarding → does NOT redirect to /(auth)/welcome (shows Stack)', () => {
-    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: true });
+  it('unauthenticated + !hasCompletedOnboarding already on /welcome → renders Stack (no redirect loop)', () => {
+    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false }, ['(auth)', 'welcome']);
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('stack')).toBeTruthy();
+    expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
+  });
+
+  it('unauthenticated + !hasCompletedOnboarding on /personalize → renders Stack (no redirect)', () => {
+    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false }, ['(auth)', 'personalize']);
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('stack')).toBeTruthy();
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it('unauthenticated + !hasCompletedOnboarding on /tutorial → renders Stack (no redirect)', () => {
+    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false }, ['(auth)', 'tutorial']);
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('stack')).toBeTruthy();
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it('unauthenticated + hasCompletedOnboarding on /login → renders Stack (no redirect)', () => {
+    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: true }, ['(auth)', 'login']);
     const { getByTestId, queryByText } = render(<AuthLayout />);
-    // Should render the Stack (login flow), not redirect to welcome
     expect(getByTestId('stack')).toBeTruthy();
     expect(queryByText('/(auth)/welcome')).toBeNull();
     expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
   });
 
-  it('authenticated → redirects to /(tabs), NOT to /(auth)/welcome', () => {
-    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: true });
+  it('authenticated + hasCompletedOnboarding → redirects to /(tabs)', () => {
+    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: true }, ['(auth)', 'login']);
     const { getByTestId } = render(<AuthLayout />);
     expect(getByTestId('redirect').props.children).toBe('/(tabs)');
     expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
   });
 
-  it('authenticated + !hasCompletedOnboarding → redirects to /(auth)/tutorial, NOT /(tabs)', () => {
-    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: false });
+  it('authenticated + !hasCompletedOnboarding on /login → redirects to /(auth)/tutorial', () => {
+    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: false }, ['(auth)', 'login']);
     const { getByTestId } = render(<AuthLayout />);
     expect(getByTestId('redirect').props.children).toBe('/(auth)/tutorial');
     expect(mockRedirect).not.toHaveBeenCalledWith('/(tabs)');
     expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
+  });
+
+  it('authenticated + !hasCompletedOnboarding already on /tutorial → renders Stack (no redirect loop)', () => {
+    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: false }, ['(auth)', 'tutorial']);
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('stack')).toBeTruthy();
+    expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/tutorial');
   });
 });
