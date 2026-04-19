@@ -1,0 +1,48 @@
+{
+  "_comment": "Reference CloudWatch dashboard JSON for the Eru-Perf board. Apply with `aws cloudwatch put-dashboard --dashboard-name Eru-Perf --dashboard-body file://apps/api/docs/cloudwatch-dashboard.json --region ap-south-1`.",
+  "widgets": [
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [["AWS/MediaConvert", "JobsQueued"]],
+        "period": 300,
+        "stat": "Maximum",
+        "region": "ap-south-1",
+        "title": "MediaConvert queue depth"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          ["AWS/MediaConvert", "JobsCompletedCount"],
+          ["AWS/MediaConvert", "JobsErroredCount"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": "ap-south-1",
+        "title": "MediaConvert completions vs errors"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [["AWS/CloudFront", "CacheHitRate"]],
+        "period": 300,
+        "stat": "Average",
+        "region": "us-east-1",
+        "title": "CloudFront cache hit ratio (%)"
+      }
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [["AWS/CloudFront", "Requests"]],
+        "period": 300,
+        "stat": "Sum",
+        "region": "us-east-1",
+        "title": "CloudFront requests / 5min"
+      }
+    }
+  ]
+}

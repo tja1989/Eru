@@ -16,7 +16,13 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 jest.mock('expo-video', () => ({
-  useVideoPlayer: () => ({ play: jest.fn(), pause: jest.fn(), loop: false, muted: false }),
+  useVideoPlayer: () => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    loop: false,
+    muted: false,
+    addListener: () => () => {},
+  }),
   VideoView: () => null,
 }));
 

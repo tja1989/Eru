@@ -1,0 +1,53 @@
+{
+  "_comment": "Reference CloudWatch alarms for the Eru pipeline. Apply via the AWS console or `aws cloudwatch put-metric-alarm`. See DeferredWork/DWSet7-M5.md for the runbook.",
+  "Alarms": [
+    {
+      "AlarmName": "eru-mediaconvert-queue-depth",
+      "MetricName": "JobsQueued",
+      "Namespace": "AWS/MediaConvert",
+      "Statistic": "Maximum",
+      "Period": 60,
+      "EvaluationPeriods": 5,
+      "Threshold": 50,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "TreatMissingData": "notBreaching",
+      "_comment": "Warn when MediaConvert queue holds >50 jobs for 5 consecutive minutes."
+    },
+    {
+      "AlarmName": "eru-mediaconvert-queue-depth-critical",
+      "MetricName": "JobsQueued",
+      "Namespace": "AWS/MediaConvert",
+      "Statistic": "Maximum",
+      "Period": 60,
+      "EvaluationPeriods": 5,
+      "Threshold": 200,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "TreatMissingData": "notBreaching",
+      "_comment": "Page engineering when queue spikes — backfill probably running too aggressively."
+    },
+    {
+      "AlarmName": "eru-mediaconvert-job-failure-rate",
+      "MetricName": "JobsErroredCount",
+      "Namespace": "AWS/MediaConvert",
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 1,
+      "Threshold": 5,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "TreatMissingData": "notBreaching",
+      "_comment": "5 transcode failures in 5 minutes = something systemic (S3 perms, codec, etc.)."
+    },
+    {
+      "AlarmName": "eru-cloudfront-cache-hit-ratio-low",
+      "MetricName": "CacheHitRate",
+      "Namespace": "AWS/CloudFront",
+      "Statistic": "Average",
+      "Period": 300,
+      "EvaluationPeriods": 3,
+      "Threshold": 85,
+      "ComparisonOperator": "LessThanThreshold",
+      "TreatMissingData": "notBreaching",
+      "_comment": "Sub-85% hit ratio for 15 minutes means cache policies need re-tuning or pre-warming is off."
+    }
+  ]
+}

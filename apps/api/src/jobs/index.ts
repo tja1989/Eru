@@ -6,6 +6,7 @@ import { runLeaderboardReset } from './leaderboardReset.js';
 import { runModerationSLA } from './moderationSLA.js';
 import { runCreatorScoreRecalc } from './creatorScoreRecalc.js';
 import { registerPrewarmCron } from './prewarmCron.js';
+import { registerMetricsCron } from './metricsCron.js';
 
 /**
  * Wraps a job function so that any unhandled error is caught and logged
@@ -58,6 +59,13 @@ export function startCronJobs(): void {
   if (process.env.ENABLE_PREWARM_CRON === 'true') {
     registerPrewarmCron();
     console.log('[cron] prewarm-trending registered (every 5 min)');
+  }
+
+  // Metrics cron is wired only when Sentry is configured — emitting metrics
+  // to nowhere just spends DB queries.
+  if (process.env.SENTRY_DSN) {
+    registerMetricsCron();
+    console.log('[cron] metrics registered (every 1 min)');
   }
 
   console.log('[cron] core cron jobs scheduled.');

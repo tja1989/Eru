@@ -21,6 +21,7 @@ import { ShareButton } from '../../components/ShareButton';
 import { colors, spacing } from '../../constants/theme';
 import { pickVideoUrl } from '@eru/shared';
 import { useReelPreloader } from '../../hooks/useReelPreloader';
+import { usePlayerMetrics, type PlayerLike } from '../../hooks/usePlayerMetrics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Leave room for the tab bar (~56px) + safe-area insets (~34px on iPhone)
@@ -91,6 +92,15 @@ function ReelItem({
       player.pause();
     }
   }, [isActive, videoUrl, player]);
+
+  // Meter only the active reel — preloaded neighbours haven't actually
+  // played anything yet, so their stats would skew TTFF / rebuffer numbers.
+  // Cast through unknown because expo-video's addListener is event-typed
+  // and our PlayerLike is the loosened structural shape.
+  usePlayerMetrics(
+    isActive && videoUrl ? (player as unknown as PlayerLike) : null,
+    item.id,
+  );
 
   const handleLike = async () => {
     if (liked) {

@@ -7,7 +7,10 @@ import { useNotifications } from '../hooks/useNotifications';
 import {
   startColdStartMeter,
   completeColdStartMeter,
+  getColdStartDuration,
 } from '../lib/coldStartMeter';
+import { initSentry } from '../lib/sentryInit';
+import { analytics } from '../lib/analytics';
 
 // Capture the moment the JS bundle began running. The matching
 // completeColdStartMeter() in the layout's first useEffect closes the
@@ -24,6 +27,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     completeColdStartMeter();
+    // Sentry init is deferred too — its native module is heavy and we don't
+    // want to block first interactive paint just to register an empty error
+    // queue. analytics.emit is a safe no-op until init() runs.
+    initSentry();
+    const cold = getColdStartDuration();
+    if (cold !== undefined) {
+      analytics.emit('cold_start', { durationMs: cold });
+    }
     const handle = setTimeout(() => setNotificationsReady(true), NOTIFICATION_DEFER_MS);
     return () => clearTimeout(handle);
   }, []);

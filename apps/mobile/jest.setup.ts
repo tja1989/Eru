@@ -55,7 +55,14 @@ jest.mock('expo-video', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    useVideoPlayer: () => ({ play: jest.fn(), pause: jest.fn(), replace: jest.fn() }),
+    useVideoPlayer: () => ({
+      play: jest.fn(),
+      pause: jest.fn(),
+      replace: jest.fn(),
+      // usePlayerMetrics subscribes via addListener — return a no-op
+      // unsubscribe so tests that don't care about metrics still mount.
+      addListener: () => () => {},
+    }),
     VideoView: (props: any) => React.createElement(View, props),
   };
 });

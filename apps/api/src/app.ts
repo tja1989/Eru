@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance, type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
+import * as Sentry from '@sentry/node';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { AppError } from './utils/errors.js';
@@ -40,6 +41,12 @@ export function buildApp(): FastifyInstance {
   });
 
   app.register(cors, { origin: true, credentials: true });
+
+  // Wire Sentry's Fastify error capture only when init() actually ran. Calling
+  // setupFastifyErrorHandler without an init is harmless but adds noise.
+  if (process.env.SENTRY_DSN) {
+    Sentry.setupFastifyErrorHandler(app);
+  }
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
