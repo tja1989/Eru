@@ -4,6 +4,8 @@ import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
 import { createContentSchema, commentSchema, paginationSchema, reportContentSchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
+import { triggerTranscode } from '../services/transcodeService.js';
+import { extractS3Key } from '../utils/s3.js';
 
 export async function contentRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
@@ -89,6 +91,19 @@ export async function contentRoutes(app: FastifyInstance) {
         },
         data: { contentId: content.id },
       });
+
+      const linkedVideos = await prisma.contentMedia.findMany({
+        where: { id: { in: mediaIds }, contentId: content.id, type: 'video' },
+      });
+
+      for (const m of linkedVideos) {
+        const s3Key = extractS3Key(m.originalUrl);
+        if (!s3Key) continue;
+        // Fire-and-forget: a MediaConvert outage must not block content creation.
+        triggerTranscode(m.id, s3Key).catch((err) => {
+          request.log.error({ mediaId: m.id, err }, 'triggerTranscode failed');
+        });
+      }
     }
 
     // Also create the moderation queue entry for human review

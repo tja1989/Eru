@@ -19,6 +19,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { FollowButton } from '../../components/FollowButton';
 import { ShareButton } from '../../components/ShareButton';
 import { colors, spacing } from '../../constants/theme';
+import { pickVideoUrl } from '@eru/shared';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Leave room for the tab bar (~56px) + safe-area insets (~34px on iPhone)
@@ -28,7 +29,15 @@ interface Reel {
   id: string;
   user?: { id: string; username: string; avatarUrl?: string; tier?: string; isFollowing?: boolean };
   text?: string;
-  media?: Array<{ originalUrl: string; thumbnailUrl?: string | null }>;
+  media?: Array<{
+    originalUrl: string;
+    thumbnailUrl?: string | null;
+    video360pUrl?: string | null;
+    video540pUrl?: string | null;
+    video720pUrl?: string | null;
+    video1080pUrl?: string | null;
+    hlsManifestUrl?: string | null;
+  }>;
   likeCount: number;
   commentCount: number;
   isLiked?: boolean;
@@ -52,7 +61,7 @@ function ReelItem({
   const [disliked, setDisliked] = useState(item.isDisliked ?? false);
   const [saved, setSaved] = useState(item.isSaved ?? false);
 
-  const videoUrl = item.media?.[0]?.originalUrl;
+  const videoUrl = pickVideoUrl(item.media?.[0]);
   const posterUrl = item.media?.[0]?.thumbnailUrl;
 
   // expo-video's player hook must run unconditionally (Rules of Hooks).

@@ -6,6 +6,7 @@ module.exports = {
     'node_modules/(?!((jest-)?react-native|@react-native|expo(nent)?|@expo(nent)?/.*|expo-modules-core|expo-router|@react-navigation/.*|@unimodules/.*|sentry-expo|native-base|react-native-svg))',
   ],
   moduleNameMapper: {
+    '^@eru/shared$': '<rootDir>/../../packages/shared/dist/index.js',
     '^@/(.*)$': '<rootDir>/$1',
     '^react$': '<rootDir>/node_modules/react',
     '^react/(.*)$': '<rootDir>/node_modules/react/$1',

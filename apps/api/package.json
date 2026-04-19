@@ -16,6 +16,7 @@
     "db:seed-rewards": "tsx src/scripts/seed-rewards.ts",
     "db:backfill-media": "tsx src/scripts/backfill-media.ts",
     "db:fix-reel-urls": "tsx src/scripts/fix-reel-urls.ts",
+    "db:backfill-transcodes": "tsx src/scripts/backfill-transcodes.ts",
     "db:pincodes": "tsx src/scripts/download-pincodes.ts"
   },
   "dependencies": {

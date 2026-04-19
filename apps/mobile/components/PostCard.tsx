@@ -11,6 +11,7 @@ import { usePointsStore } from '../stores/pointsStore';
 import { useAuthStore } from '../stores/authStore';
 import { PollCard } from './PollCard';
 import { ThreadView } from './ThreadView';
+import { pickVideoUrl } from '@eru/shared';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -41,7 +42,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   // itself is a reel or because the first media attachment is a video.
   const mediaItem = post.media?.[0];
   const isVideo = post.type === 'reel' || mediaItem?.type === 'video';
-  const videoUrl = isVideo ? mediaItem?.originalUrl : null;
+  const videoUrl = isVideo ? pickVideoUrl(mediaItem) ?? null : null;
   const imageUrl = mediaItem?.thumbnailUrl || mediaItem?.originalUrl;
 
   // Always call useVideoPlayer (Rules of Hooks). Pass null source when there
