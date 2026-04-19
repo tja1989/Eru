@@ -1,0 +1,40 @@
+{
+  "_comment": "Reference cache policies for the Eru CloudFront distribution. Apply via the AWS console or `aws cloudfront create-cache-policy`. See DeferredWork/DWSet4-M2.md for the runbook.",
+  "M3U8ManifestPolicy": {
+    "CachePolicyConfig": {
+      "Name": "eru-m3u8-manifest",
+      "Comment": "Short TTL for HLS manifest files — re-transcodes propagate within a minute.",
+      "DefaultTTL": 10,
+      "MinTTL": 5,
+      "MaxTTL": 60,
+      "ParametersInCacheKeyAndForwardedToOrigin": {
+        "EnableAcceptEncodingBrotli": true,
+        "EnableAcceptEncodingGzip": true,
+        "HeadersConfig": { "HeaderBehavior": "none" },
+        "CookiesConfig": { "CookieBehavior": "none" },
+        "QueryStringsConfig": { "QueryStringBehavior": "none" }
+      }
+    }
+  },
+  "TSSegmentPolicy": {
+    "CachePolicyConfig": {
+      "Name": "eru-ts-segment",
+      "Comment": "Long TTL for immutable HLS segments. Brotli/gzip off — already binary.",
+      "DefaultTTL": 604800,
+      "MinTTL": 86400,
+      "MaxTTL": 31536000,
+      "ParametersInCacheKeyAndForwardedToOrigin": {
+        "EnableAcceptEncodingBrotli": false,
+        "EnableAcceptEncodingGzip": false,
+        "HeadersConfig": { "HeaderBehavior": "none" },
+        "CookiesConfig": { "CookieBehavior": "none" },
+        "QueryStringsConfig": { "QueryStringBehavior": "none" }
+      }
+    }
+  },
+  "OriginShield": {
+    "Enabled": true,
+    "OriginShieldRegion": "ap-south-1",
+    "_note": "S3 bucket lives in ap-south-1; same-region shield = minimum miss-path latency."
+  }
+}

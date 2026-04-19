@@ -5,6 +5,7 @@ import { runPointsExpiry } from './pointsExpiry.js';
 import { runLeaderboardReset } from './leaderboardReset.js';
 import { runModerationSLA } from './moderationSLA.js';
 import { runCreatorScoreRecalc } from './creatorScoreRecalc.js';
+import { registerPrewarmCron } from './prewarmCron.js';
 
 /**
  * Wraps a job function so that any unhandled error is caught and logged
@@ -51,5 +52,13 @@ export function startCronJobs(): void {
     timezone: 'UTC',
   });
 
-  console.log('[cron] All 6 cron jobs scheduled.');
+  // CDN edge pre-warming — opt-in. Only register when CloudFront cache
+  // behaviors + Origin Shield are wired in production (see DWSet4-M2.md).
+  // Otherwise the HEAD requests hit a misconfigured edge and just spam logs.
+  if (process.env.ENABLE_PREWARM_CRON === 'true') {
+    registerPrewarmCron();
+    console.log('[cron] prewarm-trending registered (every 5 min)');
+  }
+
+  console.log('[cron] core cron jobs scheduled.');
 }
