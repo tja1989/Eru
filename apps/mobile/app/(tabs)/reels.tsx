@@ -20,6 +20,7 @@ import { FollowButton } from '../../components/FollowButton';
 import { ShareButton } from '../../components/ShareButton';
 import { colors, spacing } from '../../constants/theme';
 import { pickVideoUrl } from '@eru/shared';
+import { useReelPreloader } from '../../hooks/useReelPreloader';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Leave room for the tab bar (~56px) + safe-area insets (~34px on iPhone)
@@ -49,10 +50,12 @@ interface Reel {
 function ReelItem({
   item,
   isActive,
+  isWarmed,
   currentUserId,
 }: {
   item: Reel;
   isActive: boolean;
+  isWarmed: boolean;
   currentUserId?: string;
 }) {
   const { earn } = usePointsStore();
@@ -61,19 +64,22 @@ function ReelItem({
   const [disliked, setDisliked] = useState(item.isDisliked ?? false);
   const [saved, setSaved] = useState(item.isSaved ?? false);
 
-  const videoUrl = pickVideoUrl(item.media?.[0]);
+  // Only allocate a player for the active reel and any neighbours the
+  // preloader says we should warm. Off-window items pass null source so
+  // expo-video disposes the player and frees the segment cache.
+  const shouldRender = isActive || isWarmed;
+  const videoUrl = shouldRender ? pickVideoUrl(item.media?.[0]) : undefined;
   const posterUrl = item.media?.[0]?.thumbnailUrl;
 
-  // expo-video's player hook must run unconditionally (Rules of Hooks).
-  // We pass the source as an object `{ uri }` (more reliable on Android than
-  // a bare string) and kick off playback inside the setup callback — this
-  // runs the moment the player is ready, which avoids a useEffect race.
+  // useVideoPlayer must run on every render (Rules of Hooks). The setup
+  // callback only configures the player — we deliberately don't auto-play
+  // here, otherwise a freshly-warmed neighbour would emit sound for one
+  // frame before the isActive effect pauses it.
   const player = useVideoPlayer(
     videoUrl ? { uri: videoUrl } : null,
     (p) => {
       p.loop = true;
       p.muted = false;
-      p.play();
     },
   );
 
@@ -227,6 +233,7 @@ export default function ReelsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [tab, setTab] = useState<'foryou' | 'following' | 'local'>('foryou');
+  const { indicesToPreload } = useReelPreloader({ activeIndex });
 
   useEffect(() => {
     let cancelled = false;
@@ -336,6 +343,7 @@ export default function ReelsScreen() {
           <ReelItem
             item={item}
             isActive={index === activeIndex}
+            isWarmed={indicesToPreload.includes(index)}
             currentUserId={currentUserId}
           />
         )}

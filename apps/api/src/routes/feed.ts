@@ -5,6 +5,7 @@ import { feedQuerySchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
 import { getFeed } from '../services/feedAlgorithm.js';
 import { getRedis } from '../utils/redis.js';
+import { feedCache } from '../utils/feedCache.js';
 
 export async function feedRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
@@ -40,19 +41,22 @@ export async function feedRoutes(app: FastifyInstance) {
 
     const followingIds = user.following.map((f) => f.followingId);
 
-    const feedPage = await getFeed(
-      {
-        userId,
-        pincode: user.primaryPincode,
-        interests: user.interests,
-        followingIds,
-      },
-      page,
-      limit,
+    // Cache the heavy 200-candidate scoring per (user, page) for 60s. Likes
+    // / follows the user makes will visibly update on the next 60s window.
+    const cacheKey = feedCache.userFeedKey(userId, page);
+    const feedPage = await feedCache.getOrCompute(cacheKey, 60, () =>
+      getFeed(
+        {
+          userId,
+          pincode: user.primaryPincode,
+          interests: user.interests,
+          followingIds,
+        },
+        page,
+        limit,
+      ),
     );
 
-    // Normalise to the standard PaginatedResponse shape {data, nextPage, total}
-    // that the mobile app and all other routes use.
     return {
       data: feedPage.items,
       nextPage: feedPage.page * feedPage.limit < feedPage.total ? feedPage.page + 1 : null,

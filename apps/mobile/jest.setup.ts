@@ -59,3 +59,16 @@ jest.mock('expo-video', () => {
     VideoView: (props: any) => React.createElement(View, props),
   };
 });
+
+// NetInfo native module is unavailable in jest. Default to a wifi state so
+// hooks that call useNetInfo() resolve to "online + plenty of bandwidth".
+// Tests that need a different network shape override this with their own
+// jest.mock('@react-native-community/netinfo', ...) at the top of the file.
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  default: {
+    fetch: jest.fn().mockResolvedValue({ type: 'wifi', isConnected: true, isInternetReachable: true }),
+    addEventListener: jest.fn().mockReturnValue(() => {}),
+  },
+  useNetInfo: () => ({ type: 'wifi', isConnected: true, isInternetReachable: true }),
+}));
