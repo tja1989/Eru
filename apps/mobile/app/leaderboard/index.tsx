@@ -153,13 +153,13 @@ export default function LeaderboardScreen() {
             </View>
             <View style={styles.myRankDivider} />
             <View style={styles.myRankStat}>
-              <Text style={styles.myRankStatVal}>{myRank.weeklyPoints.toLocaleString()}</Text>
+              <Text style={styles.myRankStatVal}>{(myRank.weeklyPoints ?? 0).toLocaleString()}</Text>
               <Text style={styles.myRankStatLabel}>This week</Text>
             </View>
             <View style={styles.myRankDivider} />
             <View style={styles.myRankStat}>
               <Text style={styles.myRankStatVal}>
-                {TIER_EMOJI[myRank.tier] ?? '🌱'} {myRank.tier}
+                {TIER_EMOJI[myRank.tier ?? 'explorer'] ?? '🌱'} {myRank.tier ?? 'explorer'}
               </Text>
               <Text style={styles.myRankStatLabel}>Tier</Text>
             </View>
@@ -216,9 +216,9 @@ export default function LeaderboardScreen() {
                   </Text>
                   <View style={styles.userMeta}>
                     <Text style={[styles.userTier, { color: tierColor }]}>
-                      {TIER_EMOJI[user.tier] ?? '🌱'} {user.tier}
+                      {TIER_EMOJI[user.tier ?? 'explorer'] ?? '🌱'} {user.tier ?? 'explorer'}
                     </Text>
-                    {user.streak > 0 && (
+                    {(user.streak ?? 0) > 0 && (
                       <Text style={styles.userStreak}>🔥 {user.streak}d</Text>
                     )}
                   </View>
@@ -227,7 +227,7 @@ export default function LeaderboardScreen() {
                 {/* Weekly points + creator score (compact) */}
                 <View style={styles.rightCol}>
                   <Text style={styles.weeklyPts}>
-                    {user.weeklyPoints.toLocaleString()} pts
+                    {(user.weeklyPoints ?? 0).toLocaleString()} pts
                   </Text>
                   {user.creatorScore !== undefined && (
                     <CreatorScoreCard
