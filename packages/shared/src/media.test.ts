@@ -48,3 +48,38 @@ describe('pickVideoUrl', () => {
     )).toBe('https://cdn/1080.mp4');
   });
 });
+
+describe('pickVideoUrl — extended ladder (M1)', () => {
+  it('prefers 540p over 360p', () => {
+    expect(pickVideoUrl({
+      video360pUrl: 'https://cdn/360.mp4',
+      video540pUrl: 'https://cdn/540.mp4',
+    })).toBe('https://cdn/540.mp4');
+  });
+
+  it('prefers 720p over 540p', () => {
+    expect(pickVideoUrl({
+      video540pUrl: 'https://cdn/540.mp4',
+      video720pUrl: 'https://cdn/720.mp4',
+    })).toBe('https://cdn/720.mp4');
+  });
+
+  it('uses 240p when nothing higher is present', () => {
+    expect(pickVideoUrl({ video240pUrl: 'https://cdn/240.mp4' })).toBe('https://cdn/240.mp4');
+  });
+
+  it('prefers 360p over 240p', () => {
+    expect(pickVideoUrl({
+      video240pUrl: 'https://cdn/240.mp4',
+      video360pUrl: 'https://cdn/360.mp4',
+    })).toBe('https://cdn/360.mp4');
+  });
+
+  it('still prefers HLS manifest when both HLS and MP4 rungs present', () => {
+    expect(pickVideoUrl({
+      hlsManifestUrl: 'https://cdn/master.m3u8',
+      video240pUrl: 'https://cdn/240.mp4',
+      video540pUrl: 'https://cdn/540.mp4',
+    })).toBe('https://cdn/master.m3u8');
+  });
+});

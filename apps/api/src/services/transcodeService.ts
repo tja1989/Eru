@@ -18,8 +18,6 @@ function getClient(): MediaConvertClient {
 }
 
 export async function triggerTranscode(mediaId: string, s3Key: string): Promise<void> {
-  // Transcoding is optional. If MEDIACONVERT_ROLE_ARN is not set, skip it —
-  // the original video stays in S3 and is served directly (no adaptive bitrate).
   if (!process.env.MEDIACONVERT_ROLE_ARN) {
     await prisma.contentMedia.update({
       where: { id: mediaId },
@@ -29,8 +27,8 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
   }
 
   const bucket = process.env.S3_BUCKET!;
-  const baseName = s3Key.replace(/\.[^/.]+$/, '');
-  const outputPrefix = baseName.replace('originals/', 'transcoded/');
+  const baseName = s3Key.replace(/^originals\//, '').replace(/\.[^/.]+$/, '');
+  const outputPrefix = `transcoded/${baseName}/`;
 
   const command = new CreateJobCommand({
     Role: process.env.MEDIACONVERT_ROLE_ARN,
@@ -40,15 +38,27 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
         AudioSelectors: { 'Audio Selector 1': { DefaultSelection: 'DEFAULT' } },
       }],
       OutputGroups: [{
-        Name: 'File Group',
+        Name: 'HLS',
         OutputGroupSettings: {
-          Type: 'FILE_GROUP_SETTINGS',
-          FileGroupSettings: { Destination: `s3://${bucket}/${outputPrefix}` },
+          Type: 'HLS_GROUP_SETTINGS',
+          HlsGroupSettings: {
+            Destination: `s3://${bucket}/${outputPrefix}`,
+            SegmentLength: 4,
+            MinSegmentLength: 0,
+            ManifestCompression: 'NONE',
+            ManifestDurationFormat: 'INTEGER',
+            StreamInfResolution: 'INCLUDE',
+            DirectoryStructure: 'SINGLE_DIRECTORY',
+            CodecSpecification: 'RFC_4281',
+            ProgramDateTime: 'EXCLUDE',
+          },
         },
         Outputs: [
-          createOutput('_360p', 640, 360, 800000),
-          createOutput('_720p', 1280, 720, 2500000),
-          createOutput('_1080p', 1920, 1080, 5000000),
+          createHlsOutput('_240p', 426, 240, 400_000),
+          createHlsOutput('_360p', 640, 360, 800_000),
+          createHlsOutput('_540p', 960, 540, 1_400_000),
+          createHlsOutput('_720p', 1280, 720, 2_500_000),
+          createHlsOutput('_1080p', 1920, 1080, 5_000_000),
         ],
       }],
     },
@@ -62,7 +72,6 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
       data: { transcodeStatus: 'processing' },
     });
   } catch (err) {
-    // MediaConvert unavailable (e.g. account not subscribed). Fall back to serving the original.
     console.warn('MediaConvert unavailable, skipping transcode for media', mediaId, err instanceof Error ? err.message : err);
     await prisma.contentMedia.update({
       where: { id: mediaId },
@@ -71,10 +80,17 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
   }
 }
 
-function createOutput(suffix: string, width: number, height: number, bitrate: number) {
+function createHlsOutput(suffix: string, width: number, height: number, bitrate: number) {
   return {
     NameModifier: suffix,
-    ContainerSettings: { Container: 'MP4' as const },
+    ContainerSettings: {
+      Container: 'M3U8' as const,
+      M3u8Settings: {
+        AudioFramesPerPes: 4,
+        Scte35Source: 'NONE' as const,
+        PcrControl: 'PCR_EVERY_PES_PACKET' as const,
+      },
+    },
     VideoDescription: {
       Width: width,
       Height: height,
@@ -84,6 +100,8 @@ function createOutput(suffix: string, width: number, height: number, bitrate: nu
           RateControlMode: 'CBR' as const,
           Bitrate: bitrate,
           MaxBitrate: bitrate,
+          GopSize: 96,
+          GopSizeUnits: 'FRAMES' as const,
         },
       },
     },
@@ -94,21 +112,36 @@ function createOutput(suffix: string, width: number, height: number, bitrate: nu
         AacSettings: { Bitrate: 128000, CodingMode: 'CODING_MODE_2_0' as const, SampleRate: 48000 },
       },
     }],
+    OutputSettings: {
+      HlsSettings: { SegmentModifier: '' },
+    },
   };
 }
 
 export async function handleTranscodeComplete(
   mediaId: string,
-  outputKeys: { p360: string; p720: string; p1080: string },
+  outputKeys: {
+    hlsManifest: string;
+    p240?: string;
+    p360: string;
+    p540?: string;
+    p720: string;
+    p1080: string;
+  },
 ): Promise<void> {
   const cdnDomain = process.env.CLOUDFRONT_DOMAIN;
+  const toUrl = (k?: string) => (k ? `https://${cdnDomain}/${k}` : undefined);
+
   await prisma.contentMedia.update({
     where: { id: mediaId },
     data: {
       transcodeStatus: 'complete',
-      video360pUrl: `https://${cdnDomain}/${outputKeys.p360}`,
-      video720pUrl: `https://${cdnDomain}/${outputKeys.p720}`,
-      video1080pUrl: `https://${cdnDomain}/${outputKeys.p1080}`,
+      hlsManifestUrl: toUrl(outputKeys.hlsManifest),
+      video240pUrl: toUrl(outputKeys.p240),
+      video360pUrl: toUrl(outputKeys.p360),
+      video540pUrl: toUrl(outputKeys.p540),
+      video720pUrl: toUrl(outputKeys.p720),
+      video1080pUrl: toUrl(outputKeys.p1080),
     },
   });
 }

@@ -1,5 +1,6 @@
 export interface PickableMedia {
   originalUrl?: string | null;
+  video240pUrl?: string | null;
   video360pUrl?: string | null;
   video540pUrl?: string | null;
   video720pUrl?: string | null;
@@ -21,5 +22,6 @@ export function pickVideoUrl(
   if (media.video720pUrl) return media.video720pUrl;
   if (media.video540pUrl) return media.video540pUrl;
   if (media.video360pUrl) return media.video360pUrl;
+  if (media.video240pUrl) return media.video240pUrl;
   return media.originalUrl ?? undefined;
 }

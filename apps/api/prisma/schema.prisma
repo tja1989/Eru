@@ -194,9 +194,12 @@ model ContentMedia {
   type            MediaType
   originalUrl     String          @map("original_url")
   thumbnailUrl    String?         @map("thumbnail_url")
+  video240pUrl    String?         @map("video_240p_url")
   video360pUrl    String?         @map("video_360p_url")
+  video540pUrl    String?         @map("video_540p_url")
   video720pUrl    String?         @map("video_720p_url")
   video1080pUrl   String?         @map("video_1080p_url")
+  hlsManifestUrl  String?         @map("hls_manifest_url")
   durationSeconds Int?            @map("duration_seconds")
   width           Int
   height          Int
