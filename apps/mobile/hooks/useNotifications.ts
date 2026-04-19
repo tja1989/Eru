@@ -1,19 +1,23 @@
 import { useEffect, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useAuthStore } from '../stores/authStore';
 import { useNotificationStore } from '../stores/notificationStore';
 import api from '../services/api';
 
-// Expo Go removed remote push support in SDK 53. Touching the push APIs in
-// that environment emits a fatal-looking error overlay in dev. Detect it once
-// and skip the native side entirely — everything except push will still work.
-// Compared against the literal string so the test env doesn't need to stub
-// the `ExecutionEnvironment` enum from expo-constants.
+// Expo Go removed remote push support in SDK 53 — just IMPORTING the module
+// triggers a fatal-looking "push notifications removed" console.error. Gate
+// the import itself (Metro bundles the code either way; `require` defers the
+// module's init side effects until we actually want them).
+// Compared against the literal string so jest's expo-constants mock doesn't
+// need to stub the `ExecutionEnvironment` enum.
 const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 
+type NotificationsModule = typeof import('expo-notifications');
+let Notifications: NotificationsModule | null = null;
 if (!IS_EXPO_GO) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Notifications = require('expo-notifications') as NotificationsModule;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: false,
@@ -30,7 +34,7 @@ export function useNotifications() {
   const responseListener = useRef<any>();
 
   useEffect(() => {
-    if (IS_EXPO_GO) return;
+    if (!Notifications) return;
     if (!isAuthenticated) return;
     registerForPushNotifications();
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -51,6 +55,7 @@ export function useNotifications() {
 }
 
 async function registerForPushNotifications() {
+  if (!Notifications) return;
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') return;
   const tokenData = await Notifications.getExpoPushTokenAsync();
