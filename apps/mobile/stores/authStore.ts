@@ -45,6 +45,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'eru-auth',
+      // Bump the version when the persisted shape changes so existing blobs
+      // can be migrated instead of silently mismerging.
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
@@ -52,6 +55,19 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),
+      migrate: (persistedState, version) => {
+        // v2 added `hasCompletedOnboarding`. Pre-v2 blobs default to false so
+        // existing authenticated users are routed through the new onboarding
+        // flow once, rather than dropped at a gate with an undefined flag.
+        if (version < 2) {
+          const s = (persistedState ?? {}) as Partial<AuthState>;
+          if (typeof s.hasCompletedOnboarding !== 'boolean') {
+            s.hasCompletedOnboarding = false;
+          }
+          return s;
+        }
+        return persistedState as Partial<AuthState>;
+      },
       onRehydrateStorage: () => (state) => {
         // Re-attach the token to the axios client after the store is restored
         // from AsyncStorage, otherwise requests go out without Authorization.

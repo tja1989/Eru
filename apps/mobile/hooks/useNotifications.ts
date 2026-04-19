@@ -29,7 +29,10 @@ export function useNotifications() {
       }
     });
     return () => {
-      if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
+      // expo-notifications 0.30+ removed `removeNotificationSubscription`.
+      // Subscriptions returned by addNotificationResponseReceivedListener now
+      // expose a `.remove()` method instead.
+      if (responseListener.current) responseListener.current.remove();
     };
   }, [isAuthenticated]);
 
