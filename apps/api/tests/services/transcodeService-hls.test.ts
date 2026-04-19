@@ -63,6 +63,17 @@ describe('triggerTranscode — HLS output', () => {
     expect(bitrates).toEqual([400_000, 800_000, 1_400_000, 2_500_000, 5_000_000]);
   });
 
+  it('uses BASELINE profile on low rungs (240/360) and HIGH on the rest', async () => {
+    await triggerTranscode('media-prof', 'originals/dev-test-hls-prof.mov');
+
+    const sdk = await import('@aws-sdk/client-mediaconvert') as unknown as { __send: ReturnType<typeof vi.fn> };
+    const call = sdk.__send.mock.calls[0][0];
+    const outputs = call.input.Settings.OutputGroups[0].Outputs;
+    const profiles = outputs.map((o: { VideoDescription: { CodecSettings: { H264Settings: { CodecProfile: string } } } }) =>
+      o.VideoDescription.CodecSettings.H264Settings.CodecProfile);
+    expect(profiles).toEqual(['BASELINE', 'BASELINE', 'HIGH', 'HIGH', 'HIGH']);
+  });
+
   it('destination is under transcoded/<baseName>/ prefix', async () => {
     await triggerTranscode('media-jkl', 'originals/dev-test-hls4.mov');
 

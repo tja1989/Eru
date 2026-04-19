@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance, type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
+import compress from '@fastify/compress';
 import fastifyStatic from '@fastify/static';
 import * as Sentry from '@sentry/node';
 import { fileURLToPath } from 'url';
@@ -41,6 +42,14 @@ export function buildApp(): FastifyInstance {
   });
 
   app.register(cors, { origin: true, credentials: true });
+
+  // Negotiate brotli/gzip on every JSON response. Feed payloads (~30-100 KB)
+  // typically compress to 6-20 KB on the wire — biggest single per-request
+  // speed win for users on metered 4G.
+  app.register(compress, {
+    encodings: ['br', 'gzip', 'deflate'],
+    threshold: 1024, // skip tiny responses (compression overhead > savings)
+  });
 
   // Wire Sentry's Fastify error capture only when init() actually ran. Calling
   // setupFastifyErrorHandler without an init is harmless but adds noise.

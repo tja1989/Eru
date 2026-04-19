@@ -1,6 +1,17 @@
 import vision from '@google-cloud/vision';
 import { prisma } from '../utils/prisma.js';
 import { earnPoints } from './pointsEngine.js';
+import { feedCache } from '../utils/feedCache.js';
+
+/**
+ * Invalidate the author's feed-cache page-1 entry. Best-effort — feedCache
+ * already swallows Redis outages, so any error here is non-fatal. Followers'
+ * caches are NOT invalidated (TTL handles them within 60s — see DWSet5-M3
+ * §2 for the planned fanout).
+ */
+function invalidateAuthorFeed(userId: string): void {
+  feedCache.invalidate(feedCache.userFeedKey(userId, 1)).catch(() => {});
+}
 
 // Map Google Vision likelihood strings to numeric risk scores (0 = safe, 1 = dangerous)
 const likelihoodToScore: Record<string, number> = {
@@ -162,6 +173,9 @@ export async function queueForModeration(contentId: string): Promise<void> {
 
     // Credit creator with +30 pts for publishing content (fire-and-forget on error)
     earnPoints(content.userId, 'create_content', contentId).catch(() => {});
+    // The author's feed cache (if any) was scored without this newly-approved
+    // post — bust it so the next /feed request shows it.
+    invalidateAuthorFeed(content.userId);
   } else {
     // ROUTE TO HUMAN: store the AI scores so the reviewer can see them
     await prisma.moderationQueue.update({
@@ -207,6 +221,7 @@ export async function approveContent(queueId: string, reviewerId: string): Promi
 
   // Credit creator +30 pts
   earnPoints(queueEntry.content.userId, 'create_content', queueEntry.contentId).catch(() => {});
+  invalidateAuthorFeed(queueEntry.content.userId);
 }
 
 /**
@@ -243,4 +258,12 @@ export async function declineContent(
       },
     }),
   ]);
+
+  // Look up the author so we can bust their feed cache. Cheap query, run
+  // outside the transaction so it doesn't block the decline write.
+  const declined = await prisma.content.findUnique({
+    where: { id: queueEntry.contentId },
+    select: { userId: true },
+  });
+  if (declined?.userId) invalidateAuthorFeed(declined.userId);
 }

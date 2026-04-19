@@ -16,8 +16,8 @@ function makeMockPlayer() {
       listeners.set(event, cb);
       return () => listeners.delete(event);
     },
-    fireEvent(event: string, value?: unknown) {
-      listeners.get(event)?.(value);
+    fireStatus(status: 'idle' | 'loading' | 'readyToPlay' | 'error') {
+      listeners.get('statusChange')?.({ status });
     },
   };
 }
@@ -28,11 +28,11 @@ describe('usePlayerMetrics', () => {
     _resetMetricsForTest();
   });
 
-  it('emits ttff after first readyForDisplay event', () => {
+  it('emits ttff on first statusChange→readyToPlay', () => {
     const player = makeMockPlayer();
     renderHook(() => usePlayerMetrics(player, 'reel-1'));
 
-    act(() => player.fireEvent('readyForDisplay'));
+    act(() => player.fireStatus('readyToPlay'));
 
     const ttff = emitMock.mock.calls.find((c) => c[0] === 'ttff');
     expect(ttff).toBeDefined();
@@ -42,12 +42,13 @@ describe('usePlayerMetrics', () => {
     }));
   });
 
-  it('emits rebuffer_start then rebuffer_end with measured duration', () => {
+  it('emits rebuffer_start when status flips to loading after first ready, and rebuffer_end on next ready', () => {
     const player = makeMockPlayer();
     renderHook(() => usePlayerMetrics(player, 'reel-2'));
 
-    act(() => player.fireEvent('playbackStalled'));
-    act(() => player.fireEvent('playbackStarted'));
+    act(() => player.fireStatus('readyToPlay')); // initial ready → TTFF
+    act(() => player.fireStatus('loading'));      // mid-play stall → rebuffer_start
+    act(() => player.fireStatus('readyToPlay')); // resume → rebuffer_end
 
     const events = emitMock.mock.calls.map((c) => c[0]);
     expect(events).toContain('rebuffer_start');
@@ -60,33 +61,30 @@ describe('usePlayerMetrics', () => {
     }));
   });
 
-  it('emits bitrate_switch with old + new bitrates', () => {
+  it('does NOT count the initial loading→readyToPlay as a rebuffer', () => {
     const player = makeMockPlayer();
     renderHook(() => usePlayerMetrics(player, 'reel-3'));
 
-    act(() => player.fireEvent('bitrateChange', { oldBitrate: 800_000, newBitrate: 2_500_000 }));
+    act(() => player.fireStatus('loading'));      // initial buffer (pre-ready) — must NOT emit rebuffer_start
+    act(() => player.fireStatus('readyToPlay'));
 
-    const switchCall = emitMock.mock.calls.find((c) => c[0] === 'bitrate_switch');
-    expect(switchCall).toBeDefined();
-    expect(switchCall![1]).toEqual(expect.objectContaining({
-      reelId: 'reel-3',
-      oldBitrate: 800_000,
-      newBitrate: 2_500_000,
-    }));
+    const events = emitMock.mock.calls.map((c) => c[0]);
+    expect(events).not.toContain('rebuffer_start');
+    expect(events).toContain('ttff');
   });
 
   it('does not double-emit ttff for the same reelId', () => {
     const player = makeMockPlayer();
     renderHook(() => usePlayerMetrics(player, 'reel-4'));
 
-    act(() => player.fireEvent('readyForDisplay'));
-    act(() => player.fireEvent('readyForDisplay'));
+    act(() => player.fireStatus('readyToPlay'));
+    act(() => player.fireStatus('readyToPlay'));
 
     const ttffEvents = emitMock.mock.calls.filter((c) => c[0] === 'ttff');
     expect(ttffEvents).toHaveLength(1);
   });
 
-  it('null player attaches no listeners (off-active reels)', () => {
+  it('null player attaches no listeners', () => {
     const { result } = renderHook(() => usePlayerMetrics(null, 'reel-5'));
     expect(result.current).toBeUndefined();
     expect(emitMock).not.toHaveBeenCalled();

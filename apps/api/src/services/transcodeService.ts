@@ -54,11 +54,15 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
           },
         },
         Outputs: [
-          createHlsOutput('_240p', 426, 240, 400_000),
-          createHlsOutput('_360p', 640, 360, 800_000),
-          createHlsOutput('_540p', 960, 540, 1_400_000),
-          createHlsOutput('_720p', 1280, 720, 2_500_000),
-          createHlsOutput('_1080p', 1920, 1080, 5_000_000),
+          // BASELINE profile on the low rungs so cheap / older Androids
+          // (the devices most likely to ABR down to these) can decode them
+          // without falling back to the original. HIGH profile on 540p+ for
+          // better compression on modern devices.
+          createHlsOutput('_240p', 426, 240, 400_000, 'BASELINE'),
+          createHlsOutput('_360p', 640, 360, 800_000, 'BASELINE'),
+          createHlsOutput('_540p', 960, 540, 1_400_000, 'HIGH'),
+          createHlsOutput('_720p', 1280, 720, 2_500_000, 'HIGH'),
+          createHlsOutput('_1080p', 1920, 1080, 5_000_000, 'HIGH'),
         ],
       }],
     },
@@ -80,7 +84,15 @@ export async function triggerTranscode(mediaId: string, s3Key: string): Promise<
   }
 }
 
-function createHlsOutput(suffix: string, width: number, height: number, bitrate: number) {
+type H264Profile = 'BASELINE' | 'MAIN' | 'HIGH';
+
+function createHlsOutput(
+  suffix: string,
+  width: number,
+  height: number,
+  bitrate: number,
+  profile: H264Profile = 'MAIN',
+) {
   return {
     NameModifier: suffix,
     ContainerSettings: {
@@ -102,6 +114,7 @@ function createHlsOutput(suffix: string, width: number, height: number, bitrate:
           MaxBitrate: bitrate,
           GopSize: 96,
           GopSizeUnits: 'FRAMES' as const,
+          CodecProfile: profile,
         },
       },
     },

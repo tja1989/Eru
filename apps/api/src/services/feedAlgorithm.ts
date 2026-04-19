@@ -205,7 +205,28 @@ export async function getFeed(ctx: FeedContext, page: number, limit: number): Pr
     take: 200,
     orderBy: { createdAt: 'desc' },
     include: {
-      media: true,
+      // Explicit select — protects the wire format from silent bloat when
+      // future migrations add columns to content_media that mobile doesn't use.
+      media: {
+        select: {
+          id: true,
+          contentId: true,
+          type: true,
+          originalUrl: true,
+          thumbnailUrl: true,
+          video240pUrl: true,
+          video360pUrl: true,
+          video540pUrl: true,
+          video720pUrl: true,
+          video1080pUrl: true,
+          hlsManifestUrl: true,
+          width: true,
+          height: true,
+          durationSeconds: true,
+          sortOrder: true,
+          transcodeStatus: true,
+        },
+      },
       user: {
         select: {
           id: true,
