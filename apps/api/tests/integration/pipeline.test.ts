@@ -58,7 +58,7 @@ describe('End-to-end pipeline: upload → create → trigger → webhook → var
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-e2e') },
-      payload: { type: 'reel', text: '', mediaIds: [media.id], hashtags: [] },
+      payload: { type: 'reel', subtype: 'vlog', text: '', mediaIds: [media.id], hashtags: [] },
     });
     expect(createRes.statusCode).toBe(201);
     expect(transcodeService.triggerTranscode).toHaveBeenCalledTimes(1);

@@ -24,6 +24,7 @@ interface ScoredContent {
   id: string;
   userId: string;
   type: string;
+  subtype: string | null;
   text: string | null;
   hashtags: string[];
   locationPincode: string | null;
@@ -139,10 +140,29 @@ const WEIGHTS = {
   following: 0.1,
 } as const;
 
+// Reach multiplier applied to the final score based on content subtype.
+// Keys must match the ContentSubtype enum in schema.prisma.
+// Sole source of truth for the "Reviews get 3x more reach" promise in the UI.
+export const SUBTYPE_REACH_MULTIPLIER: Record<string, number> = {
+  review: 3.0,
+  local_guide: 2.0,
+  recommendation: 1.5,
+  tutorial: 1.3,
+  event_coverage: 1.3,
+  recipe: 1.2,
+  vlog: 1.0,
+  photo_story: 1.0,
+  comparison: 1.0,
+  unboxing: 1.0,
+  hot_take: 1.0,
+  meme: 1.0,
+};
+
 /**
- * scoreContent — combines the five factor scores into one final number.
+ * scoreContent — combines the five factor scores into one final number,
+ * then multiplies by a subtype-specific reach factor.
  */
-function scoreContent(
+export function scoreContent(
   content: {
     publishedAt: Date | null;
     createdAt: Date;
@@ -152,6 +172,7 @@ function scoreContent(
     hashtags: string[];
     locationPincode: string | null;
     userId: string;
+    subtype?: string | null;
   },
   ctx: FeedContext,
 ): number {
@@ -161,13 +182,15 @@ function scoreContent(
   const p = pincodeProximityScore(content.locationPincode, ctx.pincode);
   const f = followingScore(content.userId, ctx.followingIds);
 
-  return (
+  const base =
     r * WEIGHTS.recency +
     e * WEIGHTS.engagement +
     i * WEIGHTS.interestMatch +
     p * WEIGHTS.pincodeProximity +
-    f * WEIGHTS.following
-  );
+    f * WEIGHTS.following;
+
+  const multiplier = content.subtype ? SUBTYPE_REACH_MULTIPLIER[content.subtype] ?? 1.0 : 1.0;
+  return base * multiplier;
 }
 
 // ---------------------------------------------------------------------------

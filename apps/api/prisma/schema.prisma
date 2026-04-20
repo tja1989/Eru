@@ -33,6 +33,21 @@ enum ContentType {
   thread
 }
 
+enum ContentSubtype {
+  review
+  recommendation
+  vlog
+  photo_story
+  tutorial
+  comparison
+  unboxing
+  event_coverage
+  hot_take
+  meme
+  recipe
+  local_guide
+}
+
 enum ModerationStatus {
   pending
   published
@@ -144,6 +159,8 @@ model Content {
   id               String           @id @default(uuid())
   userId           String           @map("user_id")
   type             ContentType
+  subtype          ContentSubtype?
+  commissionPctEarned Int           @default(0) @map("commission_pct_earned")
   text             String?
   hashtags         String[]         @default([])
   locationPincode  String?          @map("location_pincode") @db.VarChar(6)
@@ -185,6 +202,7 @@ model Content {
   @@index([isTrending])
   @@index([deletedAt])
   @@index([threadParentId])
+  @@index([subtype])
   @@map("content")
 }
 

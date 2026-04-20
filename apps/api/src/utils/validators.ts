@@ -9,6 +9,20 @@ export const registerSchema = z.object({
 
 export const createContentSchema = z.object({
   type: z.enum(['post', 'reel', 'poll', 'thread']),
+  subtype: z.enum([
+    'review',
+    'recommendation',
+    'vlog',
+    'photo_story',
+    'tutorial',
+    'comparison',
+    'unboxing',
+    'event_coverage',
+    'hot_take',
+    'meme',
+    'recipe',
+    'local_guide',
+  ]),
   text: z.string().max(2200).optional(),
   mediaIds: z.array(z.string().uuid()).default([]),
   hashtags: z.array(z.string().max(50)).max(30).default([]),

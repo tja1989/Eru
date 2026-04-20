@@ -132,7 +132,7 @@ describe('<CreateScreen /> — Tag Users picker', () => {
 
   it('submit includes taggedUserIds in contentService.create (text branch)', async () => {
     jest.useFakeTimers();
-    const { getByLabelText, getByPlaceholderText, findByText, getByText } = render(<CreateScreen />);
+    const { getByLabelText, getByPlaceholderText, getByTestId, findByText, getByText } = render(<CreateScreen />);
 
     // Open tag picker and select alice
     fireEvent.press(getByLabelText('Tag users'));
@@ -148,6 +148,9 @@ describe('<CreateScreen /> — Tag Users picker', () => {
     fireEvent.press(getByText('✍️ Text'));
     const textInput = getByPlaceholderText("What's on your mind?");
     fireEvent.changeText(textInput, 'Hello world');
+
+    // Pick a content subtype (required since the subtype selector was added)
+    fireEvent.press(getByTestId('subtype-card-vlog'));
 
     jest.useRealTimers();
     fireEvent.press(getByText('Share'));

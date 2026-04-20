@@ -17,7 +17,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr1a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           threadParts: ['First part of the thread', 'Second part of the thread', 'Third part of the thread'],
         }),
       });
@@ -64,7 +64,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr2a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           threadParts: ['Only one part'],
         }),
       });
@@ -79,7 +79,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr3a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           threadParts: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
         }),
       });
@@ -94,7 +94,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr4a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'post',
+          type: 'post', subtype: 'hot_take',
           text: 'Just a post',
           threadParts: ['Part A', 'Part B'],
         }),
@@ -110,7 +110,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr5a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           text: 'Just a text field, no threadParts',
         }),
       });
@@ -125,7 +125,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thrpoll1'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'poll',
+          type: 'poll', subtype: 'hot_take',
           pollOptions: ['A', 'B'],
           threadParts: ['X', 'Y'],
           mediaIds: [],
@@ -143,7 +143,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thrpoll2'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           threadParts: ['X', 'Y'],
           pollOptions: ['A', 'B'],
           mediaIds: [],
@@ -165,7 +165,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr6a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           threadParts: ['Alpha', 'Beta', 'Gamma'],
         }),
       });
@@ -197,7 +197,7 @@ describe('Thread endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-thr7a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'thread',
+          type: 'thread', subtype: 'tutorial',
           threadParts: ['First', 'Second', 'Third'],
         }),
       });

@@ -20,7 +20,7 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.badRequest(parsed.error.issues[0].message);
     }
 
-    const { type, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts, taggedUserIds } = parsed.data;
+    const { type, subtype, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts, taggedUserIds } = parsed.data;
 
     // Validate that every tagged user actually exists
     if (taggedUserIds && taggedUserIds.length > 0) {
@@ -35,6 +35,8 @@ export async function contentRoutes(app: FastifyInstance) {
         data: {
           userId: request.userId,
           type,
+          subtype,
+          commissionPctEarned: 0,
           text: type === 'thread' && threadParts ? threadParts[0] : text,
           hashtags,
           locationPincode,
@@ -66,6 +68,8 @@ export async function contentRoutes(app: FastifyInstance) {
               data: {
                 userId: request.userId,
                 type: 'thread',
+                subtype,
+                commissionPctEarned: 0,
                 text: partText,
                 hashtags,
                 locationPincode,

@@ -20,7 +20,7 @@ describe('Tagged users — POST /content/create + GET /users/:id/content?tab=tag
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tag1a'), 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'post', text: 'Check this out!', taggedUserIds: [tagged.id] }),
+      body: JSON.stringify({ type: 'post', subtype: 'review', text: 'Check this out!', taggedUserIds: [tagged.id] }),
     });
 
     expect(res.statusCode).toBe(201);
@@ -40,7 +40,7 @@ describe('Tagged users — POST /content/create + GET /users/:id/content?tab=tag
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tag2'), 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'post', text: 'Hello', taggedUserIds: [fakeId] }),
+      body: JSON.stringify({ type: 'post', subtype: 'review', text: 'Hello', taggedUserIds: [fakeId] }),
     });
 
     expect(res.statusCode).toBe(400);
@@ -57,7 +57,7 @@ describe('Tagged users — POST /content/create + GET /users/:id/content?tab=tag
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tag3'), 'content-type': 'application/json' },
-      body: JSON.stringify({ type: 'post', text: 'Hello', taggedUserIds: tooMany }),
+      body: JSON.stringify({ type: 'post', subtype: 'review', text: 'Hello', taggedUserIds: tooMany }),
     });
 
     expect(res.statusCode).toBe(400);
@@ -162,7 +162,7 @@ describe('Tagged users — POST /content/create + GET /users/:id/content?tab=tag
     const res = await getTestApp().inject({
       method: 'POST', url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tagdup1'), 'content-type': 'application/json' },
-      payload: { type: 'post', text: 'Hi', mediaIds: [], hashtags: [], taggedUserIds: [tagged.id, tagged.id] },
+      payload: { type: 'post', subtype: 'review', text: 'Hi', mediaIds: [], hashtags: [], taggedUserIds: [tagged.id, tagged.id] },
     });
     expect(res.statusCode).toBe(201);
     const body = res.json();

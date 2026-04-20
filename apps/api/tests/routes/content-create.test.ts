@@ -58,7 +58,7 @@ describe('POST /api/v1/content/create — transcode triggering', () => {
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tt1') },
-      payload: { type: 'reel', text: 'Video post', mediaIds: [m1.id, m2.id], hashtags: [] },
+      payload: { type: 'reel', subtype: 'vlog', text: 'Video post', mediaIds: [m1.id, m2.id], hashtags: [] },
     });
 
     expect(res.statusCode).toBe(201);
@@ -83,7 +83,7 @@ describe('POST /api/v1/content/create — transcode triggering', () => {
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tt2') },
-      payload: { type: 'post', text: 'Image post', mediaIds: [img.id], hashtags: [] },
+      payload: { type: 'post', subtype: 'photo_story', text: 'Image post', mediaIds: [img.id], hashtags: [] },
     });
 
     expect(res.statusCode).toBe(201);
@@ -108,7 +108,7 @@ describe('POST /api/v1/content/create — transcode triggering', () => {
       method: 'POST',
       url: '/api/v1/content/create',
       headers: { Authorization: devToken('dev-test-tt3') },
-      payload: { type: 'reel', text: 'Video post', mediaIds: [vid.id], hashtags: [] },
+      payload: { type: 'reel', subtype: 'vlog', text: 'Video post', mediaIds: [vid.id], hashtags: [] },
     });
 
     expect(res.statusCode).toBe(201);

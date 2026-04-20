@@ -20,6 +20,8 @@ import { PollForm } from '../../components/PollForm';
 import { ThreadComposer } from '../../components/ThreadComposer';
 import { LocationPicker } from '../../components/LocationPicker';
 import { UserTagPicker, TagUser } from '../../components/UserTagPicker';
+import { ContentSubtypeSelector } from '../../components/ContentSubtypeSelector';
+import type { ContentSubtype } from '@eru/shared';
 import { colors, spacing, radius } from '../../constants/theme';
 
 const CONTENT_TYPES = ['photo', 'video', 'text', 'poll', 'thread'] as const;
@@ -36,6 +38,7 @@ const TYPE_LABELS: Record<ContentType, string> = {
 export default function CreateScreen() {
   const router = useRouter();
   const [contentType, setContentType] = useState<ContentType>('photo');
+  const [subtype, setSubtype] = useState<ContentSubtype | null>(null);
   const [text, setText] = useState('');
   const [hashtags, setHashtags] = useState('');
   const [media, setMedia] = useState<ImagePicker.ImagePickerAsset[]>([]);
@@ -83,6 +86,7 @@ export default function CreateScreen() {
 
   const isShareDisabled =
     submitting ||
+    !subtype ||
     (contentType === 'poll'
       ? !isPollValid
       : contentType === 'thread'
@@ -90,6 +94,10 @@ export default function CreateScreen() {
       : !text.trim() && media.length === 0);
 
   const handleSubmit = async () => {
+    if (!subtype) {
+      Alert.alert('Pick a type', 'Choose what kind of content this is so the feed can route it to the right audience.');
+      return;
+    }
     if (contentType === 'poll') {
       if (!isPollValid) {
         Alert.alert('Incomplete poll', 'Add a question and at least 2 options.');
@@ -132,6 +140,7 @@ export default function CreateScreen() {
       if (contentType === 'poll') {
         await contentService.create({
           type: 'poll',
+          subtype,
           text: pollQuestion.trim(),
           pollOptions: pollOptions.map((o) => o.trim()).filter(Boolean),
           mediaIds: [],
@@ -142,6 +151,7 @@ export default function CreateScreen() {
       } else if (contentType === 'thread') {
         await contentService.create({
           type: 'thread',
+          subtype,
           threadParts: threadParts.map((p) => p.trim()).filter(Boolean),
           mediaIds: [],
           hashtags: parsedHashtags,
@@ -151,6 +161,7 @@ export default function CreateScreen() {
       } else {
         await contentService.create({
           type: contentType,
+          subtype,
           text: text.trim() || undefined,
           mediaIds,
           hashtags: parsedHashtags,
@@ -208,6 +219,9 @@ export default function CreateScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Content subtype selector — 12-card grid + contextual banner */}
+        <ContentSubtypeSelector value={subtype} onChange={setSubtype} />
 
         {/* Poll form — shown only when contentType is 'poll' */}
         {contentType === 'poll' && (

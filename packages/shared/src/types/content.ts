@@ -1,4 +1,17 @@
 export type ContentType = 'post' | 'reel' | 'poll' | 'thread';
+export type ContentSubtype =
+  | 'review'
+  | 'recommendation'
+  | 'vlog'
+  | 'photo_story'
+  | 'tutorial'
+  | 'comparison'
+  | 'unboxing'
+  | 'event_coverage'
+  | 'hot_take'
+  | 'meme'
+  | 'recipe'
+  | 'local_guide';
 export type ModerationStatus = 'pending' | 'published' | 'declined';
 export type TranscodeStatus = 'pending' | 'processing' | 'complete' | 'failed';
 export type MediaType = 'image' | 'video';
@@ -7,6 +20,8 @@ export interface Content {
   id: string;
   userId: string;
   type: ContentType;
+  subtype: ContentSubtype | null;
+  commissionPctEarned: number;
   text: string | null;
   hashtags: string[];
   locationPincode: string | null;

@@ -16,7 +16,7 @@ describe('Poll endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll1a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'poll',
+          type: 'poll', subtype: 'hot_take',
           text: 'Which do you prefer?',
           pollOptions: ['Option A', 'Option B', 'Option C'],
         }),
@@ -44,7 +44,7 @@ describe('Poll endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll2a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'poll',
+          type: 'poll', subtype: 'hot_take',
           text: 'Just one option?',
           pollOptions: ['Only One'],
         }),
@@ -58,7 +58,7 @@ describe('Poll endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll3a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'poll',
+          type: 'poll', subtype: 'hot_take',
           text: 'Too many options',
           pollOptions: ['A', 'B', 'C', 'D', 'E'],
         }),
@@ -72,7 +72,7 @@ describe('Poll endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll4a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'post',
+          type: 'post', subtype: 'hot_take',
           text: 'Just a post',
           pollOptions: ['A', 'B'],
         }),
@@ -91,7 +91,7 @@ describe('Poll endpoints', () => {
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll5a'), 'content-type': 'application/json' },
         body: JSON.stringify({
-          type: 'poll',
+          type: 'poll', subtype: 'hot_take',
           text: 'Pick one',
           pollOptions: ['Yes', 'No'],
         }),
@@ -127,7 +127,7 @@ describe('Poll endpoints', () => {
       const createRes = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll6a'), 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'poll', text: 'Idempotent?', pollOptions: ['Yes', 'No'] }),
+        body: JSON.stringify({ type: 'poll', subtype: 'hot_take', text: 'Idempotent?', pollOptions: ['Yes', 'No'] }),
       });
       const { content } = createRes.json();
       const options = await prisma.pollOption.findMany({ where: { contentId: content.id }, orderBy: { sortOrder: 'asc' } });
@@ -156,7 +156,7 @@ describe('Poll endpoints', () => {
       const createRes = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll7a'), 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'poll', text: 'Change vote?', pollOptions: ['First', 'Second'] }),
+        body: JSON.stringify({ type: 'poll', subtype: 'hot_take', text: 'Change vote?', pollOptions: ['First', 'Second'] }),
       });
       const { content } = createRes.json();
       const options = await prisma.pollOption.findMany({ where: { contentId: content.id }, orderBy: { sortOrder: 'asc' } });
@@ -205,7 +205,7 @@ describe('Poll endpoints', () => {
       const createResA = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-pollxa'), 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'poll', text: 'Poll A question?', pollOptions: ['A1', 'A2'] }),
+        body: JSON.stringify({ type: 'poll', subtype: 'hot_take', text: 'Poll A question?', pollOptions: ['A1', 'A2'] }),
       });
       expect(createResA.statusCode).toBe(201);
       const { content: pollA } = createResA.json();
@@ -214,7 +214,7 @@ describe('Poll endpoints', () => {
       const createResB = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-pollxa'), 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'poll', text: 'Poll B question?', pollOptions: ['B1', 'B2'] }),
+        body: JSON.stringify({ type: 'poll', subtype: 'hot_take', text: 'Poll B question?', pollOptions: ['B1', 'B2'] }),
       });
       expect(createResB.statusCode).toBe(201);
       const { content: pollB } = createResB.json();
@@ -248,7 +248,7 @@ describe('Poll endpoints', () => {
       const createRes = await getTestApp().inject({
         method: 'POST', url: '/api/v1/content/create',
         headers: { Authorization: devToken('dev-test-poll9a'), 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'poll', text: 'Fave color?', pollOptions: ['Red', 'Blue', 'Green'] }),
+        body: JSON.stringify({ type: 'poll', subtype: 'hot_take', text: 'Fave color?', pollOptions: ['Red', 'Blue', 'Green'] }),
       });
       const { content: created } = createRes.json();
 
