@@ -1,5 +1,7 @@
 import api from '@/services/api';
+import type { WeeklyQuest } from '@eru/shared';
 
 export const questsService = {
-  getWeekly: () => api.get('/quests/weekly').then((r) => r.data.quests),
+  getWeekly: (): Promise<WeeklyQuest[]> =>
+    api.get('/quests/weekly').then((r) => r.data.quests),
 };

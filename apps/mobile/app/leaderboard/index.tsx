@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { leaderboardService } from '../../services/leaderboardService';
+import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
 import { WeeklyQuestsCard } from '@/components/WeeklyQuestsCard';
 import { LeaderboardPodium } from '@/components/LeaderboardPodium';
@@ -19,28 +20,25 @@ import { CreatorScoreCard } from '@/components/CreatorScoreCard';
 
 interface Season {
   name: string;
-  endsAt: string;
+  daysRemaining: number;
   theme?: string;
 }
 
 interface RankData {
   rank: number;
-  weeklyPoints: number;
-  totalPoints: number;
-  tier: string;
-  username: string;
+  pointsThisWeek: number;
 }
 
 interface LeaderUser {
   id: string;
   rank: number;
   username: string;
-  name: string;
-  avatarUrl?: string;
+  name: string | null;
+  avatarUrl?: string | null;
   tier: string;
-  streak: number;
-  weeklyPoints: number;
-  creatorScore?: number;
+  streakDays: number;
+  pointsThisWeek: number;
+  creatorScore?: number | null;
 }
 
 const TIER_EMOJI: Record<string, string> = {
@@ -54,6 +52,7 @@ const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function LeaderboardScreen() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
 
   const [season, setSeason] = useState<Season | null>(null);
   const [myRank, setMyRank] = useState<RankData | null>(null);
@@ -70,10 +69,17 @@ export default function LeaderboardScreen() {
         leaderboardService.getLeaderboard(scope),
       ]);
 
-      if (seasonData.status === 'fulfilled') setSeason(seasonData.value?.season ?? seasonData.value);
-      if (rankData.status === 'fulfilled') setMyRank(rankData.value?.rank ?? rankData.value);
+      if (seasonData.status === 'fulfilled') setSeason(seasonData.value);
+      if (rankData.status === 'fulfilled') {
+        const r = rankData.value;
+        setMyRank(
+          r && r.rank !== null
+            ? { rank: r.rank, pointsThisWeek: r.pointsThisWeek ?? 0 }
+            : null,
+        );
+      }
       if (leaderData.status === 'fulfilled') {
-        setLeaders(leaderData.value?.users ?? leaderData.value?.leaders ?? leaderData.value?.rankings ?? []);
+        setLeaders((leaderData.value?.rankings ?? []) as LeaderUser[]);
       }
     } catch {}
   };
@@ -88,9 +94,7 @@ export default function LeaderboardScreen() {
     setRefreshing(false);
   };
 
-  const daysLeft = season?.endsAt
-    ? Math.max(0, Math.ceil((new Date(season.endsAt).getTime() - Date.now()) / 86_400_000))
-    : null;
+  const daysLeft = season?.daysRemaining ?? null;
 
   if (loading) {
     return (
@@ -153,13 +157,13 @@ export default function LeaderboardScreen() {
             </View>
             <View style={styles.myRankDivider} />
             <View style={styles.myRankStat}>
-              <Text style={styles.myRankStatVal}>{(myRank.weeklyPoints ?? 0).toLocaleString()}</Text>
+              <Text style={styles.myRankStatVal}>{myRank.pointsThisWeek.toLocaleString()}</Text>
               <Text style={styles.myRankStatLabel}>This week</Text>
             </View>
             <View style={styles.myRankDivider} />
             <View style={styles.myRankStat}>
               <Text style={styles.myRankStatVal}>
-                {TIER_EMOJI[myRank.tier ?? 'explorer'] ?? '🌱'} {myRank.tier ?? 'explorer'}
+                {TIER_EMOJI[user?.tier ?? 'explorer'] ?? '🌱'} {user?.tier ?? 'explorer'}
               </Text>
               <Text style={styles.myRankStatLabel}>Tier</Text>
             </View>
@@ -172,7 +176,7 @@ export default function LeaderboardScreen() {
             rank: u.rank ?? i + 1,
             username: u.username,
             avatarUrl: u.avatarUrl,
-            weeklyPoints: u.weeklyPoints,
+            pointsThisWeek: u.pointsThisWeek,
           }))}
         />
 
@@ -218,8 +222,8 @@ export default function LeaderboardScreen() {
                     <Text style={[styles.userTier, { color: tierColor }]}>
                       {TIER_EMOJI[user.tier ?? 'explorer'] ?? '🌱'} {user.tier ?? 'explorer'}
                     </Text>
-                    {(user.streak ?? 0) > 0 && (
-                      <Text style={styles.userStreak}>🔥 {user.streak}d</Text>
+                    {(user.streakDays ?? 0) > 0 && (
+                      <Text style={styles.userStreak}>🔥 {user.streakDays}d</Text>
                     )}
                   </View>
                 </View>
@@ -227,9 +231,9 @@ export default function LeaderboardScreen() {
                 {/* Weekly points + creator score (compact) */}
                 <View style={styles.rightCol}>
                   <Text style={styles.weeklyPts}>
-                    {(user.weeklyPoints ?? 0).toLocaleString()} pts
+                    {(user.pointsThisWeek ?? 0).toLocaleString()} pts
                   </Text>
-                  {user.creatorScore !== undefined && (
+                  {user.creatorScore != null && (
                     <CreatorScoreCard
                       score={user.creatorScore}
                       compact

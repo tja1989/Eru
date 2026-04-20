@@ -4,9 +4,9 @@ import { LeaderboardPodium } from '@/components/LeaderboardPodium';
 
 describe('<LeaderboardPodium />', () => {
   const threeUsers = [
-    { rank: 1, username: 'alpha', avatarUrl: null, weeklyPoints: 1200 },
-    { rank: 2, username: 'beta', avatarUrl: null, weeklyPoints: 900 },
-    { rank: 3, username: 'gamma', avatarUrl: null, weeklyPoints: 700 },
+    { rank: 1, username: 'alpha', avatarUrl: null, pointsThisWeek: 1200 },
+    { rank: 2, username: 'beta', avatarUrl: null, pointsThisWeek: 900 },
+    { rank: 3, username: 'gamma', avatarUrl: null, pointsThisWeek: 700 },
   ];
 
   it('renders rank-1 taller than rank-2 and rank-3', () => {

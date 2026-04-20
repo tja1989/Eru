@@ -1,35 +1,14 @@
 import api from './api';
+import type { UserProfile, GetUserProfileResponse } from '@eru/shared';
 
-export interface UserProfile {
-  id: string;
-  name: string;
-  username: string;
-  bio?: string;
-  avatarUrl?: string;
-  tier: string;
-  isVerified?: boolean;
-  isPrivate?: boolean;
-  currentBalance?: number;
-  streak?: number;
-  streakDays?: number;
-  postCount?: number;
-  followerCount?: number;
-  followingCount?: number;
-  postsCount?: number;
-  followersCount?: number;
-  followingCountProfile?: number;
-  creatorScore?: number | null;
-  createdAt?: string;
-}
-
-export interface GetProfileResponse {
-  user: UserProfile;
-}
+export type { UserProfile, GetUserProfileResponse };
+export type GetProfileResponse = GetUserProfileResponse;
 
 export const userService = {
   search: (q: string) =>
     api.get('/search', { params: { q } }).then((r) => (r.data.users ?? []) as Array<{ id: string; name: string; username: string; avatarUrl?: string }>),
-  getProfile: (id: string) => api.get(`/users/${id}/profile`).then((r) => r.data as GetProfileResponse),
+  getProfile: (id: string) =>
+    api.get(`/users/${id}/profile`).then((r) => r.data as GetUserProfileResponse),
   follow: (id: string) => api.post(`/users/${id}/follow`).then((r) => r.data),
   unfollow: (id: string) => api.delete(`/users/${id}/unfollow`).then((r) => r.data),
   getContent: (id: string, tab = 'posts', page = 1) =>

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { GetUserProfileResponse, GetUserContentResponse } from '@eru/shared';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
@@ -43,7 +44,7 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   // GET /users/:id/profile — public profile with counts and follow status
-  app.get('/users/:id/profile', async (request) => {
+  app.get('/users/:id/profile', async (request): Promise<GetUserProfileResponse> => {
     const { id } = request.params as { id: string };
 
     const user = await prisma.user.findUnique({
@@ -83,15 +84,16 @@ export async function userRoutes(app: FastifyInstance) {
       },
     });
 
+    const { _count, creatorScore, ...rest } = user;
     return {
       user: {
-        ...user,
-        creatorScore: user.creatorScore != null ? Number(user.creatorScore) : null,
-        postCount: user._count.content,
-        followerCount: user._count.followers,
-        followingCount: user._count.following,
+        ...rest,
+        createdAt: rest.createdAt.toISOString(),
+        creatorScore: creatorScore != null ? Number(creatorScore) : null,
+        postCount: _count.content,
+        followerCount: _count.followers,
+        followingCount: _count.following,
         isFollowing: isFollowing !== null,
-        _count: undefined,
       },
     };
   });
@@ -167,7 +169,7 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   // GET /users/:id/content — paginated content grid
-  app.get('/users/:id/content', async (request) => {
+  app.get('/users/:id/content', async (request): Promise<GetUserContentResponse> => {
     const { id } = request.params as { id: string };
     const rawQuery = request.query as Record<string, string>;
 

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { LeaderboardResponse, MyRankResponse, SeasonResponse } from '@eru/shared';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { leaderboardQuerySchema } from '../utils/validators.js';
@@ -22,7 +23,7 @@ export async function leaderboardRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /leaderboard — top N users for a given scope and pincode
   // -------------------------------------------------------------------------
-  app.get('/leaderboard', async (request) => {
+  app.get('/leaderboard', async (request): Promise<LeaderboardResponse> => {
     const rawQuery = request.query as Record<string, string>;
 
     const parsed = leaderboardQuerySchema.safeParse(rawQuery);
@@ -91,7 +92,7 @@ export async function leaderboardRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /leaderboard/me — the current user's rank and score
   // -------------------------------------------------------------------------
-  app.get('/leaderboard/me', async (request) => {
+  app.get('/leaderboard/me', async (request): Promise<MyRankResponse> => {
     const userId = request.userId;
 
     const user = await prisma.user.findUnique({
@@ -111,7 +112,7 @@ export async function leaderboardRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /season/current — current season (quarterly) with countdown
   // -------------------------------------------------------------------------
-  app.get('/season/current', async () => {
+  app.get('/season/current', async (): Promise<SeasonResponse> => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth(); // 0-indexed

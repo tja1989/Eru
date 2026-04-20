@@ -45,7 +45,7 @@ export function HighlightEditor({ visible, onClose, existing, onSaved }: Props) 
     if (visible && user?.id) {
       userService
         .getContent(user.id, 'post')
-        .then((data: any) => setContentItems(data.items ?? data.posts ?? []))
+        .then((data: any) => setContentItems(data.content ?? []))
         .catch(() => setContentItems([]));
     }
   }, [visible, user?.id]);

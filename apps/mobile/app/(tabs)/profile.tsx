@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Avatar } from '../../components/Avatar';
 import { TierBadge } from '../../components/TierBadge';
@@ -67,16 +67,9 @@ export default function ProfileScreen() {
       const data = await userService.getProfile(userId);
       setProfile(data.user);
     } catch {
-      // fall back to auth store snapshot
-      if (user) {
-        setProfile({
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          tier: user.tier,
-          currentBalance: user.currentBalance,
-        });
-      }
+      // API failed — leave profile null and let the render fall back to
+      // authStore values for name/username/tier.
+      setProfile(null);
     }
   };
 
@@ -85,7 +78,7 @@ export default function ProfileScreen() {
     setContentLoading(true);
     try {
       const data = await userService.getContent(userId, tab);
-      setGridItems(data.items ?? data.posts ?? []);
+      setGridItems(data.content ?? []);
     } catch {
       setGridItems([]);
     } finally {
@@ -144,12 +137,12 @@ export default function ProfileScreen() {
   if (loading) return <LoadingSpinner />;
 
   const displayTier = profile?.tier ?? storeTier ?? 'explorer';
-  const displayBalance = balance > 0 ? balance : (profile?.currentBalance ?? 0);
-  const displayStreak = streak > 0 ? streak : (profile?.streak ?? 0);
+  const displayBalance = balance;
+  const displayStreak = streak;
   const ringColor = tierColors[displayTier] ?? colors.g400;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       {/* App header */}
       <View style={styles.appHeader}>
         <Text style={styles.logo}>Eru</Text>
@@ -197,14 +190,14 @@ export default function ProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {(profile?.postsCount ?? 0).toLocaleString()}
+                {(profile?.postCount ?? 0).toLocaleString()}
               </Text>
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {(profile?.followersCount ?? 0).toLocaleString()}
+                {(profile?.followerCount ?? 0).toLocaleString()}
               </Text>
               <Text style={styles.statLabel}>Followers</Text>
             </View>

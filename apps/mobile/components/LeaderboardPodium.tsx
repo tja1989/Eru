@@ -5,7 +5,7 @@ type PodiumEntry = {
   rank: number;
   username: string;
   avatarUrl?: string | null;
-  weeklyPoints: number;
+  pointsThisWeek: number;
 };
 
 export function LeaderboardPodium({ top3 }: { top3: PodiumEntry[] }) {
@@ -49,7 +49,7 @@ function PodiumBar({
         @{entry.username}
       </Text>
       <View style={[styles.bar, { height }]} testID={`${testID}-bar`}>
-        <Text style={styles.points}>{entry.weeklyPoints.toLocaleString('en-IN')}</Text>
+        <Text style={styles.points}>{entry.pointsThisWeek.toLocaleString('en-IN')}</Text>
       </View>
     </View>
   );

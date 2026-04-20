@@ -22,7 +22,7 @@ interface WalletData {
   dailyEarned: number;
   dailyGoal: number;
   expiringPoints?: number;
-  expiringDays?: number;
+  expiringDays?: number | null;
   currentTier?: string;
   nextTier?: string | null;
   pointsToNext?: number;
@@ -89,7 +89,7 @@ export default function WalletScreen() {
     setHistoryLoading(true);
     try {
       const data = await walletService.getHistory(pageNum);
-      const items: HistoryItem[] = data.data ?? data.items ?? data.history ?? [];
+      const items: HistoryItem[] = (data.data ?? []) as HistoryItem[];
       if (pageNum === 1) {
         setHistory(items);
       } else {

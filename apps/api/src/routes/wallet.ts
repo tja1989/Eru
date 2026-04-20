@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { paginationSchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
 import { DAILY_POINTS_GOAL, POINTS_EXPIRY_WARNING_DAYS, getNextTier, TIER_CONFIGS } from '@eru/shared';
+import type { WalletResponse, WalletHistoryResponse, WalletExpiringResponse } from '@eru/shared';
 
 export async function walletRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
@@ -12,7 +13,7 @@ export async function walletRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /wallet — full wallet overview with balance, streak, tier progress
   // -------------------------------------------------------------------------
-  app.get('/wallet', async (request) => {
+  app.get('/wallet', async (request): Promise<WalletResponse> => {
     const userId = request.userId;
 
     const user = await prisma.user.findUnique({
@@ -108,7 +109,7 @@ export async function walletRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /wallet/history — paginated points ledger
   // -------------------------------------------------------------------------
-  app.get('/wallet/history', async (request) => {
+  app.get('/wallet/history', async (request): Promise<WalletHistoryResponse> => {
     const rawQuery = request.query as Record<string, string>;
 
     const parsed = paginationSchema.safeParse(rawQuery);
@@ -147,7 +148,7 @@ export async function walletRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /wallet/expiring — points expiring within 30 days
   // -------------------------------------------------------------------------
-  app.get('/wallet/expiring', async (request) => {
+  app.get('/wallet/expiring', async (request): Promise<WalletExpiringResponse> => {
     const userId = request.userId;
     const now = new Date();
     const expiryWarningDate = new Date(Date.now() + POINTS_EXPIRY_WARNING_DAYS * 24 * 60 * 60 * 1000);

@@ -19,20 +19,11 @@ import { MyContentStatsBar } from '../../components/MyContentStatsBar';
 import { CreatorEarningsCard } from '../../components/CreatorEarningsCard';
 import { CreatorScoreCard } from '../../components/CreatorScoreCard';
 import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
+import type { UserContentItem, GetUserContentResponse } from '@eru/shared';
 
 type StatusFilter = 'all' | 'published' | 'pending' | 'declined';
 
-interface ContentItem {
-  id: string;
-  title?: string;
-  type: string;
-  status: 'published' | 'pending' | 'declined' | 'under_review';
-  createdAt: string;
-  likesCount?: number;
-  commentsCount?: number;
-  viewsCount?: number;
-  declineReason?: string;
-}
+type ContentItem = UserContentItem & { title?: string };
 
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -44,7 +35,6 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 const STATUS_CONFIG: Record<string, { dot: string; label: string; textColor: string }> = {
   published: { dot: colors.green, label: 'Published', textColor: colors.green },
   pending: { dot: colors.gold, label: 'Pending Review', textColor: colors.gold },
-  under_review: { dot: colors.gold, label: 'Under Review', textColor: colors.gold },
   declined: { dot: colors.red, label: 'Declined', textColor: colors.red },
 };
 
@@ -63,8 +53,8 @@ export default function MyContentScreen() {
   const loadContent = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const data = await userService.getContent(user.id, 'created');
-      setAllItems(data.items ?? data.posts ?? []);
+      const data = (await userService.getContent(user.id, 'created')) as GetUserContentResponse;
+      setAllItems((data.content ?? []) as ContentItem[]);
     } catch {
       setAllItems([]);
     }
@@ -98,7 +88,7 @@ export default function MyContentScreen() {
             try {
               await contentService.resubmit(item.id);
               setAllItems((prev) =>
-                prev.map((i) => (i.id === item.id ? { ...i, status: 'pending' } : i)),
+                prev.map((i) => (i.id === item.id ? { ...i, moderationStatus: 'pending' } : i)),
               );
             } catch {
               Alert.alert('Error', 'Could not resubmit. Please try again.');
@@ -137,10 +127,7 @@ export default function MyContentScreen() {
 
   const filteredItems = filter === 'all'
     ? allItems
-    : allItems.filter((item) => {
-        if (filter === 'pending') return item.status === 'pending' || item.status === 'under_review';
-        return item.status === filter;
-      });
+    : allItems.filter((item) => item.moderationStatus === filter);
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -190,11 +177,7 @@ export default function MyContentScreen() {
         {FILTERS.map((f) => {
           const count = f.key === 'all'
             ? allItems.length
-            : allItems.filter((i) =>
-                f.key === 'pending'
-                  ? i.status === 'pending' || i.status === 'under_review'
-                  : i.status === f.key,
-              ).length;
+            : allItems.filter((i) => i.moderationStatus === f.key).length;
 
           return (
             <TouchableOpacity
@@ -228,9 +211,9 @@ export default function MyContentScreen() {
           </View>
         ) : (
           filteredItems.map((item) => {
-            const statusCfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.pending;
-            const isDeclined = item.status === 'declined';
-            const isPublished = item.status === 'published';
+            const statusCfg = STATUS_CONFIG[item.moderationStatus] ?? STATUS_CONFIG.pending;
+            const isDeclined = item.moderationStatus === 'declined';
+            const isPublished = item.moderationStatus === 'published';
             const isActioning = actionLoading === item.id;
 
             return (
@@ -252,24 +235,18 @@ export default function MyContentScreen() {
 
                 {/* Title */}
                 <Text style={styles.cardTitle} numberOfLines={2}>
-                  {item.title ?? `${item.type} · ${formatDate(item.createdAt)}`}
+                  {item.title ?? `${item.type} · ${formatDate(String(item.createdAt))}`}
                 </Text>
 
                 {/* Meta */}
-                <Text style={styles.cardDate}>{formatDate(item.createdAt)}</Text>
+                <Text style={styles.cardDate}>{formatDate(String(item.createdAt))}</Text>
 
                 {/* Stats for published content */}
                 {isPublished && (
                   <View style={styles.statsRow}>
-                    {item.viewsCount !== undefined && (
-                      <Text style={styles.statItem}>👁 {item.viewsCount.toLocaleString()}</Text>
-                    )}
-                    {item.likesCount !== undefined && (
-                      <Text style={styles.statItem}>❤️ {item.likesCount.toLocaleString()}</Text>
-                    )}
-                    {item.commentsCount !== undefined && (
-                      <Text style={styles.statItem}>💬 {item.commentsCount.toLocaleString()}</Text>
-                    )}
+                    <Text style={styles.statItem}>👁 {(item.viewCount ?? 0).toLocaleString()}</Text>
+                    <Text style={styles.statItem}>❤️ {(item.likeCount ?? 0).toLocaleString()}</Text>
+                    <Text style={styles.statItem}>💬 {(item.commentCount ?? 0).toLocaleString()}</Text>
                   </View>
                 )}
 

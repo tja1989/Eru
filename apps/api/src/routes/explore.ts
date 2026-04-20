@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { PaginatedResponse, SearchResponse, TrendingResponse } from '@eru/shared';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { exploreQuerySchema, searchQuerySchema, paginationSchema } from '../utils/validators.js';
@@ -11,7 +12,7 @@ export async function exploreRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /explore — paginated content filtered by category, ordered by trending
   // -------------------------------------------------------------------------
-  app.get('/explore', async (request) => {
+  app.get('/explore', async (request): Promise<PaginatedResponse<unknown>> => {
     const rawQuery = request.query as Record<string, string>;
 
     const parsed = exploreQuerySchema.safeParse(rawQuery);
@@ -70,7 +71,7 @@ export async function exploreRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /search — search users, posts, and hashtags
   // -------------------------------------------------------------------------
-  app.get('/search', async (request) => {
+  app.get('/search', async (request): Promise<SearchResponse> => {
     const rawQuery = request.query as Record<string, string>;
 
     const parsed = searchQuerySchema.safeParse(rawQuery);
@@ -155,7 +156,7 @@ export async function exploreRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /trending — top 20 hashtags from last 48h + trending content
   // -------------------------------------------------------------------------
-  app.get('/trending', async (request) => {
+  app.get('/trending', async (request): Promise<TrendingResponse> => {
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
     // Fetch recently published content to extract trending hashtags

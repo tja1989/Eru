@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { exploreService } from '../../services/exploreService';
 import { MediaGrid } from '../../components/MediaGrid';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
@@ -36,7 +36,7 @@ export default function ExploreScreen() {
   const loadExplore = useCallback(async (cat = category) => {
     try {
       const data = await exploreService.getExplore(cat);
-      setItems(data.data ?? data.content ?? data.items ?? data.posts ?? []);
+      setItems(data.data ?? []);
     } catch {
       setItems([]);
     }
@@ -57,7 +57,7 @@ export default function ExploreScreen() {
     setLoading(true);
     try {
       const data = await exploreService.search(query.trim());
-      setItems(data.data ?? data.content ?? data.items ?? data.posts ?? []);
+      setItems(data.posts ?? []);
     } catch {
       setItems([]);
     } finally {
@@ -77,7 +77,7 @@ export default function ExploreScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Search bar */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>

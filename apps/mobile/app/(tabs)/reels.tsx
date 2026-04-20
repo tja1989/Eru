@@ -268,9 +268,9 @@ export default function ReelsScreen() {
       }
 
       try {
-        const data = await reelsService.getReels(tab, 1);
+        const data = await reelsService.getReels<Reel>(tab, 1);
         if (cancelled) return;
-        const list: Reel[] = data.data ?? data.reels ?? data.items ?? [];
+        const list: Reel[] = data.data ?? [];
         if (pinned) {
           const deduped = list.filter((r) => r.id !== pinned!.id);
           setReels([pinned, ...deduped]);

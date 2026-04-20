@@ -34,7 +34,7 @@ describe('<HighlightEditor />', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('renders title input', () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     const { getByPlaceholderText } = render(
       <HighlightEditor visible={true} onClose={jest.fn()} onSaved={jest.fn()} />
     );
@@ -42,7 +42,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('renders emoji input', () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     const { getByPlaceholderText } = render(
       <HighlightEditor visible={true} onClose={jest.fn()} onSaved={jest.fn()} />
     );
@@ -50,7 +50,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('title input accepts text and calls create on save', async () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     (highlightsService.create as jest.Mock).mockResolvedValue({
       id: 'h1', title: 'My Trip', emoji: '🏖️', sortOrder: 0, createdAt: '2026-01-01',
     });
@@ -74,7 +74,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('calls update (not create) when existing highlight is provided', async () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     const existing = { id: 'h1', title: 'Old Title', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01', itemCount: 0 };
     (highlightsService.update as jest.Mock).mockResolvedValue({
       ...existing, title: 'New Title',
@@ -97,7 +97,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('shows Delete button when editing an existing highlight', () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     const existing = { id: 'h1', title: 'Old Title', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01', itemCount: 0 };
 
     const { getByText } = render(
@@ -107,7 +107,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('does NOT show Delete button when creating a new highlight', () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
 
     const { queryByText } = render(
       <HighlightEditor visible={true} onClose={jest.fn()} onSaved={jest.fn()} />
@@ -121,7 +121,7 @@ describe('<HighlightEditor />', () => {
       const destroy = (buttons ?? []).find((b: any) => b.style === 'destructive');
       destroy?.onPress?.();
     });
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     const existing = { id: 'h1', title: 'Old Title', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01', itemCount: 0 };
     (highlightsService.remove as jest.Mock).mockResolvedValue(undefined);
     const onClose = jest.fn();
@@ -146,7 +146,7 @@ describe('<HighlightEditor />', () => {
       const cancel = (buttons ?? []).find((b: any) => b.style === 'cancel');
       cancel?.onPress?.();
     });
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: [] });
     const existing = { id: 'h1', title: 'Old Title', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01', itemCount: 0 };
     (highlightsService.remove as jest.Mock).mockResolvedValue(undefined);
     const onClose = jest.fn();
@@ -170,7 +170,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('renders user content grid for multi-select', async () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: mockContent });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: mockContent });
 
     const { getByTestId } = render(
       <HighlightEditor visible={true} onClose={jest.fn()} onSaved={jest.fn()} />
@@ -183,7 +183,7 @@ describe('<HighlightEditor />', () => {
   });
 
   it('toggling a content item adds it to selection', async () => {
-    (userService.getContent as jest.Mock).mockResolvedValue({ items: mockContent });
+    (userService.getContent as jest.Mock).mockResolvedValue({ content: mockContent });
     (highlightsService.create as jest.Mock).mockResolvedValue({
       id: 'h1', title: 'New', emoji: '⭐', sortOrder: 0, createdAt: '2026-01-01',
     });

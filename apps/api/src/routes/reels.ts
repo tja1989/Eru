@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { PaginatedResponse } from '@eru/shared';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
@@ -12,7 +13,7 @@ export async function reelsRoutes(app: FastifyInstance) {
   // -------------------------------------------------------------------------
   // GET /reels — paginated reels with tab filter (foryou/following/local)
   // -------------------------------------------------------------------------
-  app.get('/reels', async (request) => {
+  app.get('/reels', async (request): Promise<PaginatedResponse<unknown>> => {
     const rawQuery = request.query as Record<string, string>;
 
     const parsed = reelsQuerySchema.safeParse(rawQuery);

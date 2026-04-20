@@ -40,11 +40,19 @@ export interface UserProfile {
   username: string;
   avatarUrl: string | null;
   bio: string | null;
-  tier: Tier;
   isVerified: boolean;
-  postsCount: number;
-  followersCount: number;
+  tier: Tier;
+  isPrivate: boolean;
+  createdAt: string;
+  creatorScore: number | null;
+  postCount: number;
+  followerCount: number;
   followingCount: number;
+  isFollowing: boolean;
+}
+
+export interface GetUserProfileResponse {
+  user: UserProfile;
 }
 
 export interface UserSettings {
