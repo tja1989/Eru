@@ -173,13 +173,6 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
             <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
           )}
 
-          {/* Play badge — shown only for video/reel so users know it's tappable */}
-          {isVideo ? (
-            <View style={styles.playBadge} pointerEvents="none">
-              <Text style={styles.playBadgeText}>▶</Text>
-            </View>
-          ) : null}
-
           {/* Transparent tap-catching overlay — sits ABOVE VideoView (which
               swallows touches as a native view). Works reliably under the
               new React Native architecture where child-level pointerEvents
@@ -284,22 +277,6 @@ const styles = StyleSheet.create({
     zIndex: 5,
     elevation: 5,
   },
-  playBadge: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 64,
-    height: 64,
-    marginLeft: -32,
-    marginTop: -32,
-    borderRadius: 32,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 3,
-    elevation: 3,
-  },
-  playBadgeText: { color: '#fff', fontSize: 28, marginLeft: 4 },
   actions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 6 },
   actionsLeft: { flexDirection: 'row', gap: 14 },
   likes: { paddingHorizontal: spacing.md, fontSize: 13, fontWeight: '600', color: colors.g800 },
