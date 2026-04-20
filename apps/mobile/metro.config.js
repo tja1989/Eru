@@ -23,4 +23,17 @@ config.resolver.nodeModulesPaths = [
 // 3. Disable hierarchical lookup — always resolve from the paths above
 config.resolver.disableHierarchicalLookup = true;
 
+// 4. Force @eru/shared to resolve to its compiled dist (which has the .js
+//    files Metro can actually follow). Resolving to src/index.ts breaks
+//    because src uses TypeScript NodeNext .js extensions on .ts source files.
+const sharedDist = path.resolve(monorepoRoot, 'packages/shared/dist/index.js');
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === '@eru/shared') {
+    return { type: 'sourceFile', filePath: sharedDist };
+  }
+  if (originalResolveRequest) return originalResolveRequest(context, moduleName, platform);
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = config;

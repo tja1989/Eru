@@ -8,10 +8,10 @@ import {
   Image,
   Alert,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { contentService } from '../../services/contentService';
@@ -33,6 +33,14 @@ const TYPE_LABELS: Record<ContentType, string> = {
   text: '✍️ Text',
   poll: '📊 Poll',
   thread: '🧵 Thread',
+};
+
+const TYPE_TO_API: Record<ContentType, 'post' | 'reel' | 'poll' | 'thread'> = {
+  photo: 'post',
+  video: 'reel',
+  text: 'post',
+  poll: 'poll',
+  thread: 'thread',
 };
 
 export default function CreateScreen() {
@@ -127,7 +135,7 @@ export default function CreateScreen() {
           uri: asset.uri,
           type: mimeType,
         });
-        mediaIds.push(uploadData.mediaId);
+        mediaIds.push(uploadData.media.id);
       }
 
       const parsedHashtags = hashtags
@@ -139,7 +147,7 @@ export default function CreateScreen() {
 
       if (contentType === 'poll') {
         await contentService.create({
-          type: 'poll',
+          type: TYPE_TO_API.poll,
           subtype,
           text: pollQuestion.trim(),
           pollOptions: pollOptions.map((o) => o.trim()).filter(Boolean),
@@ -150,7 +158,7 @@ export default function CreateScreen() {
         });
       } else if (contentType === 'thread') {
         await contentService.create({
-          type: 'thread',
+          type: TYPE_TO_API.thread,
           subtype,
           threadParts: threadParts.map((p) => p.trim()).filter(Boolean),
           mediaIds: [],
@@ -159,22 +167,25 @@ export default function CreateScreen() {
           taggedUserIds,
         });
       } else {
-        await contentService.create({
-          type: contentType,
+        const payload = {
+          type: TYPE_TO_API[contentType],
           subtype,
           text: text.trim() || undefined,
           mediaIds,
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
           taggedUserIds,
-        });
+        };
+        console.log('[create.tsx] POST /content/create payload:', JSON.stringify(payload, null, 2));
+        await contentService.create(payload);
       }
 
       Alert.alert('Submitted!', 'Your content is being reviewed.', [
         { text: 'OK', onPress: () => router.push('/my-content' as any) },
       ]);
-    } catch (err) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } catch (err: any) {
+      const apiMsg = err?.response?.data?.error ?? err?.message ?? 'Unknown error';
+      Alert.alert('Error', apiMsg);
     } finally {
       setSubmitting(false);
     }
@@ -184,7 +195,7 @@ export default function CreateScreen() {
     media.length > 0 ? (contentType === 'video' ? 30 : 20) : 10;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -206,7 +217,13 @@ export default function CreateScreen() {
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Content type tabs */}
-        <View style={styles.typeTabs}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.typeTabs}
+          contentContainerStyle={styles.typeTabsContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {CONTENT_TYPES.map((t) => (
             <TouchableOpacity
               key={t}
@@ -218,7 +235,7 @@ export default function CreateScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Content subtype selector — 12-card grid + contextual banner */}
         <ContentSubtypeSelector value={subtype} onChange={setSubtype} />
@@ -378,7 +395,7 @@ export default function CreateScreen() {
         animationType="slide"
         onRequestClose={() => setShowLocPicker(false)}
       >
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={styles.safe} edges={['top']}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowLocPicker(false)}>
               <Text style={styles.headerBtn}>✕</Text>
@@ -401,7 +418,7 @@ export default function CreateScreen() {
         animationType="slide"
         onRequestClose={() => setShowTagPicker(false)}
       >
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={styles.safe} edges={['top']}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowTagPicker(false)}>
               <Text style={styles.headerBtn}>✕</Text>
@@ -448,12 +465,16 @@ const styles = StyleSheet.create({
   shareBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   scroll: { flex: 1 },
   typeTabs: {
+    flexGrow: 0,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
+  },
+  typeTabsContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.g100,
   },
   typeTab: {
     paddingHorizontal: spacing.md,
