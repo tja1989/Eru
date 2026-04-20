@@ -1,5 +1,9 @@
 import api from './api';
-import * as FileSystem from 'expo-file-system';
+// expo-file-system v19 split the API: the new top-level module exports a
+// File class. The synchronous helpers (uploadAsync, EncodingType) live under
+// /legacy. We use the legacy uploadAsync because S3 presigned PUT needs a
+// raw-binary stream, which BINARY_CONTENT provides.
+import * as FileSystem from 'expo-file-system/legacy';
 
 export const mediaService = {
   upload: (data: { contentType: string; width: number; height: number }) =>
