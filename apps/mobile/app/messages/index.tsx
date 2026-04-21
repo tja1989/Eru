@@ -1,18 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Text, FlatList, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Text, FlatList, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { messagesService, ConversationSummary } from '@/services/messagesService';
 import { ConversationRow } from '@/components/ConversationRow';
 import { colors, spacing, radius } from '@/constants/theme';
 
-type Filter = 'all' | 'priority' | 'unread' | 'business';
+type Filter = 'all' | 'business' | 'creators' | 'friends';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'unread', label: 'Unread' },
   { key: 'business', label: 'Business' },
+  { key: 'creators', label: 'Creators' },
+  { key: 'friends', label: 'Friends' },
 ];
 
 export default function MessagesListScreen() {
@@ -33,9 +33,9 @@ export default function MessagesListScreen() {
 
   const filtered = useMemo(() => {
     if (filter === 'all') return conversations;
-    if (filter === 'unread') return conversations.filter((c: any) => (c.unreadCount ?? 0) > 0);
-    if (filter === 'priority') return conversations.filter((c: any) => c.isPriority === true);
     if (filter === 'business') return conversations.filter((c: any) => c.otherUser?.kind === 'business');
+    if (filter === 'creators') return conversations.filter((c: any) => c.otherUser?.isVerified === true);
+    if (filter === 'friends') return conversations.filter((c: any) => c.otherUser?.isFollowing === true);
     return conversations;
   }, [conversations, filter]);
 

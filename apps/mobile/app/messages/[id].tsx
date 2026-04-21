@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { messagesService, Message } from '@/services/messagesService';
 import { MessageBubble } from '@/components/MessageBubble';
+import { ProposalContextCard } from '@/components/ProposalContextCard';
+import { sponsorshipService, type Proposal } from '@/services/sponsorshipService';
 import { useAuthStore } from '@/stores/authStore';
 import { realtime } from '@/services/realtime';
 
@@ -22,11 +24,30 @@ const POLL_INTERVAL_MS = 15_000;
 
 export default function ChatDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; proposalId?: string }>();
+  const id = params.id;
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const token = useAuthStore((s) => s.token);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
+  const [proposal, setProposal] = useState<Proposal | null>(null);
+
+  // If the chat was opened from a boost-proposal notification, fetch the
+  // proposal so we can pin the context card at the top of the thread.
+  useEffect(() => {
+    if (!params.proposalId) return;
+    let cancelled = false;
+    sponsorshipService
+      .getDashboard()
+      .then((d) => {
+        if (cancelled) return;
+        const all = [...d.pending, ...d.active];
+        const match = all.find((p) => p.id === params.proposalId);
+        if (match) setProposal(match);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [params.proposalId]);
 
   const loadMessages = useCallback(async () => {
     if (!id) return;
@@ -86,6 +107,9 @@ export default function ChatDetailScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
+        {proposal ? (
+          <ProposalContextCard proposal={proposal} onUpdated={setProposal} />
+        ) : null}
         <FlatList
           data={messages}
           keyExtractor={(m) => m.id}

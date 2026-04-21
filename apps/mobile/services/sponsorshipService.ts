@@ -41,4 +41,8 @@ export const sponsorshipService = {
     const res = await api.post(`/sponsorship/${id}/decline`);
     return res.data.proposal;
   },
+  async negotiate(id: string, counterBoostAmount: number, note?: string): Promise<Proposal> {
+    const res = await api.post(`/sponsorship/${id}/negotiate`, { counterBoostAmount, note });
+    return res.data.proposal;
+  },
 };

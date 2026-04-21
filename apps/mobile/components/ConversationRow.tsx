@@ -33,13 +33,22 @@ export function ConversationRow({ conversation, onPress }: ConversationRowProps)
     otherUser != null &&
     lastMessage.senderId === otherUser.id;
 
+  const hasProposal = (conversation as any).proposalId != null;
+
   return (
     <TouchableOpacity onPress={onPress} style={styles.row} accessibilityRole="button">
       <Avatar uri={otherUser?.avatarUrl ?? null} size={48} />
       <View style={styles.middle}>
-        <Text style={styles.username} numberOfLines={1}>
-          {username}
-        </Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.username} numberOfLines={1}>
+            {username}
+          </Text>
+          {hasProposal ? (
+            <View style={styles.boostPill}>
+              <Text style={styles.boostPillText}>BOOST PROPOSAL</Text>
+            </View>
+          ) : null}
+        </View>
         <Text style={styles.preview} numberOfLines={1}>
           {preview}
         </Text>
@@ -63,7 +72,10 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
   middle: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   username: { fontSize: 15, fontWeight: '700', color: '#262626' },
+  boostPill: { backgroundColor: '#E8792B', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  boostPillText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   preview: { fontSize: 13, color: '#737373', marginTop: 2 },
   right: { alignItems: 'flex-end', gap: 6 },
   time: { fontSize: 12, color: '#737373' },

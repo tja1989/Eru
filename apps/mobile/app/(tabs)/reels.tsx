@@ -22,6 +22,7 @@ import { colors, spacing } from '../../constants/theme';
 import { pickVideoUrl } from '@eru/shared';
 import { useReelPreloader } from '../../hooks/useReelPreloader';
 import { usePlayerMetrics, type PlayerLike } from '../../hooks/usePlayerMetrics';
+import { useReelHeartbeat } from '../../hooks/useReelHeartbeat';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 // Leave room for the tab bar (~56px) + safe-area insets (~34px on iPhone)
@@ -101,6 +102,11 @@ function ReelItem({
     isActive && videoUrl ? (player as unknown as PlayerLike) : null,
     item.id,
   );
+
+  // Credit reel_watch every 30 seconds the reel is on-screen + app active.
+  // The server enforces the daily cap on the action so we can safely fire
+  // every interval — over-reports are silently capped.
+  useReelHeartbeat({ reelId: item.id, enabled: isActive });
 
   const handleLike = async () => {
     if (liked) {
