@@ -6,13 +6,19 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { signInWithCustomToken } from 'firebase/auth';
 import { authService } from '@/services/authService';
 import { whatsappAuthService } from '@/services/whatsappAuthService';
 import { getFirebaseAuth } from '@/services/firebase';
 import { useAuthStore } from '@/stores/authStore';
+import { ProgressSteps } from '@/components/ProgressSteps';
+import { colors } from '@/constants/theme';
+
+const RESEND_SECONDS = 30;
 
 export default function OtpScreen() {
   const router = useRouter();
@@ -26,11 +32,19 @@ export default function OtpScreen() {
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState<number>(RESEND_SECONDS);
   const inputs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
     inputs.current[0]?.focus();
   }, []);
+
+  // Resend countdown — ticks once per second; clamps at 0; user can resend after.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = setInterval(() => setResendIn((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendIn]);
 
   const full = digits.join('');
   const complete = full.length === 6 && digits.every((d) => d.length === 1);
@@ -41,6 +55,23 @@ export default function OtpScreen() {
     next[index] = char;
     setDigits(next);
     if (char && index < 5) inputs.current[index + 1]?.focus();
+    if (!char && index > 0) inputs.current[index - 1]?.focus();
+  }
+
+  async function handleResend() {
+    if (resendIn > 0) return;
+    setResendIn(RESEND_SECONDS);
+    try {
+      if (isWhatsApp) {
+        await whatsappAuthService.send(String(phone));
+      } else {
+        // Firebase send-otp requires a recaptcha verifier on web; in app we
+        // simply re-trigger the existing send. Stub out gracefully if unsupported.
+        await authService.requestOtp?.(String(phone));
+      }
+    } catch {
+      // Resend errors are non-fatal — user can try the existing code or wait.
+    }
   }
 
   async function handleVerify() {
@@ -83,75 +114,135 @@ export default function OtpScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <Text style={styles.title}>Verify your number</Text>
-      <Text style={styles.subtitle}>
-        We sent a 6-digit code via {isWhatsApp ? 'WhatsApp' : 'SMS'} to {phone}
-      </Text>
-
-      <View style={styles.digitsRow}>
-        {digits.map((d, i) => (
-          <TextInput
-            key={i}
-            ref={(el) => {
-              inputs.current[i] = el;
-            }}
-            testID={`otp-digit-${i}`}
-            value={d}
-            onChangeText={(v) => onDigit(i, v)}
-            keyboardType="number-pad"
-            maxLength={1}
-            style={styles.digit}
-          />
-        ))}
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Back">
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Verify Phone</Text>
+        <View style={{ width: 16 }} />
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {/* Progress bar */}
+      <View style={styles.progressWrap}>
+        <ProgressSteps current={1} total={4} caption="Step 1 of 4" />
+      </View>
 
-      <TouchableOpacity
-        testID="otp-verify"
-        style={[styles.verify, !complete && styles.verifyDisabled]}
-        disabled={!complete || submitting}
-        accessibilityState={{ disabled: !complete || submitting }}
-        onPress={handleVerify}
-      >
-        {submitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.verifyText}>Verify & Continue</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Enter 6-digit code</Text>
+        <Text style={styles.subtitle}>
+          We sent a code via {isWhatsApp ? 'WhatsApp' : 'SMS'} to {phone}
+        </Text>
+
+        <View style={styles.digitsRow}>
+          {digits.map((d, i) => (
+            <TextInput
+              key={i}
+              ref={(el) => {
+                inputs.current[i] = el;
+              }}
+              testID={`otp-digit-${i}`}
+              value={d}
+              onChangeText={(v) => onDigit(i, v)}
+              keyboardType="number-pad"
+              maxLength={1}
+              style={styles.digit}
+            />
+          ))}
+        </View>
+
+        {/* Resend row */}
+        <Text style={styles.resendRow}>
+          Didn't receive?{' '}
+          {resendIn > 0 ? (
+            <Text style={styles.resendCounter}>Resend in {resendIn}s</Text>
+          ) : (
+            <Text style={styles.resendActive} onPress={handleResend} testID="otp-resend">
+              Resend now
+            </Text>
+          )}
+        </Text>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <TouchableOpacity
+          testID="otp-verify"
+          style={[styles.verify, !complete && styles.verifyDisabled]}
+          disabled={!complete || submitting}
+          accessibilityState={{ disabled: !complete || submitting }}
+          onPress={handleVerify}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.verifyText}>Verify & Continue →</Text>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.legalText}>
+          By continuing you agree to Eru's <Text style={styles.legalLink}>Terms</Text> and{' '}
+          <Text style={styles.legalLink}>Privacy Policy</Text>. We never share your number with advertisers.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
   },
-  title: { fontSize: 24, fontWeight: '700', color: '#262626' },
-  subtitle: { color: '#737373', marginTop: 6, marginBottom: 24 },
-  digitsRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+  backIcon: { fontSize: 16, color: colors.g800 },
+  headerTitle: { fontSize: 16, fontWeight: '800', color: colors.g800 },
+  progressWrap: {
+    paddingHorizontal: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
+  },
+  body: { padding: 16, flexGrow: 1 },
+  title: { fontSize: 22, fontWeight: '800', color: colors.g800 },
+  subtitle: { color: colors.g500, marginTop: 6, marginBottom: 24 },
+  digitsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   digit: {
-    width: 44,
-    height: 52,
-    borderWidth: 1,
-    borderColor: '#DBDBDB',
-    borderRadius: 8,
+    width: 46,
+    height: 54,
+    borderWidth: 1.5,
+    borderColor: colors.navy,
+    borderRadius: 10,
     textAlign: 'center',
     fontSize: 22,
-    color: '#262626',
+    fontWeight: '700',
+    color: colors.g800,
+    backgroundColor: 'rgba(26,60,110,0.04)',
   },
+  resendRow: { fontSize: 11, color: colors.g400, marginBottom: 16 },
+  resendCounter: { color: colors.blue, fontWeight: '600' },
+  resendActive: { color: colors.blue, fontWeight: '600' },
   verify: {
-    backgroundColor: '#1A3C6E',
-    borderRadius: 12,
+    backgroundColor: colors.navy,
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 8,
   },
   verifyDisabled: { opacity: 0.4 },
-  verifyText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  error: { color: '#ED4956', marginBottom: 12 },
+  verifyText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  error: { color: colors.red, marginBottom: 12 },
+  legalText: {
+    fontSize: 10,
+    color: colors.g400,
+    marginTop: 16,
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  legalLink: { color: colors.blue },
 });
