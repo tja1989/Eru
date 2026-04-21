@@ -281,5 +281,45 @@ This matches the documented pattern in `CLAUDE.md`:
 
 **Production prod-blocker noted:** MediaConvert AWS subscription is failing (production logs: "AWS Access Key Id needs a subscription for the service"). Video uploads succeed but transcoding skips. Logged in `GapFix_Agent_Protocol.md §10`. Recommend resolving before any external user pilot. No fix attempted — out of dev-phase scope per your >\$20 rule.
 
+---
+
+## Session resume: 2026-04-21 afternoon — P6 F1 + F2 (SHIPPED)
+
+**Picked up from:** P5 wrap — started P6 F2 (home + PostCard 6 variants) per the handoff recommendation.
+
+**What shipped (5 commits on `main`, local only):**
+
+1. **P6 F1 — Feed derived fields** (turned out to need actual implementation, not just "verify": P4 F4 was scope-cut). Added `ugcBadge`, `moderationBadge`, `isSponsored`, `sponsorName/Avatar/BusinessId`, `offerUrl`, `pointsEarnedOnView`, `locationLabel`, `mediaKind`, `carouselCount`, `durationSeconds` to both the shared `FeedPost` type and the `feedAlgorithm.getFeed` projection. One extra Prisma include (`sponsorshipProposals where status=active, take: 1`) tells us if a post is sponsored; a pure `deriveDisplayFields(c)` helper computes the other 9 fields per row. New test file `feed-derived-fields.test.ts` (7 tests) asserts the shape + per-rule behavior. 7/7 green.
+
+2. **P6 F2.1 — 7 PostCard primitives** (TDD one by one): `UgcBadge`, `ModerationBadge`, `SponsoredCtaBar`, `CarouselDots`, `ReelTypeBadge`, `PostPointsBadge`, `RelativeTime`. All have a11y labels and render-null branches. 27 new tests across 7 files, all green.
+
+3. **P6 F2.2 — PostCard 6-variant rewrite.** Composes the primitives to render V1 creator photo, V2 creator video (play button + duration overlay), V3 sponsored (tappable sponsor row → storefront + Claim Offer CTA bar), V4 UGC+APPROVED with carousel dots, V5 poll (via existing PollCard), V6 reel (4:5 aspect + ReelTypeBadge). Kept all 15 existing dislike/save tests green; added 6 variant tests. Dislike button drops to 55% opacity when inactive (PWA line 539 parity). 21/21 PostCard tests green.
+
+4. **P6 F2.4 — StoryRow 3 ring variants.** unseen=orange, seen=gray, live=red + LIVE overlay. "Your story" now routes to `/(tabs)/create`. Verified ✓ next to username. 8/8 tests green (4 new + 4 existing).
+
+5. **Home header PWA parity.** `PointsBadge` now shows `🪙 4,820 🔥24` (was `4,820 24d`). New `NotificationBell` component renders the red unread pill (9+ when > 9, hidden at 0) with the exact 1.5px white border ring. Home screen kicks `notificationStore.refresh()` on mount so the count is fresh.
+
+**Decisions-of-note:**
+
+- **Kept legacy field names** in the mobile layer (`post.user`, `post.type`) rather than migrating to the plan-spec shape (`post.author`, `post.mediaKind`) because that rename cascades across ~5 screens and their tests — scope too large for this session. The derived fields are added *alongside* the legacy shape. Both work simultaneously.
+- **`isSponsored` rule:** a post is sponsored iff it has a `SponsorshipProposal` row with `status='active'`. A post with just `businessTagId` (tagged but not boosted) is NOT sponsored — matches the PWA split between V3 (sponsored label) and V4 (user-created, just happens to mention a business).
+- **`pointsEarnedOnView` rule:** hard-coded ladder matching PWA numbers — sponsored=15, poll=25, reel=5, video=12, UGC approved photo=30, creator photo=8, default=4. Later P7 refactor can move these into a shared constant if we want a single source of truth.
+- **`locationLabel`:** returns the raw pincode for now. Later pass can resolve `'682016'` → `'Fort Kochi, 682001'` via the pincodes dataset. Cosmetic polish, not feature-critical.
+
+**Verification:**
+
+- Mobile full suite: **454 / 454 ✅** across 98 suites
+- API feed+content tests: **51 / 51 ✅** across 14 files
+- TypeScript: `apps/api` clean (0 errors), `apps/mobile` clean (5 pre-existing per CLAUDE.md)
+
+**Commits this session resume:** 5, all local.
+
+- `6d4bbe5 feat(api): derive PostCard display fields in feed projection (P6 F1)`
+- `0e093a3 feat(mobile): PostCard primitives — 7 PWA parity badges (P6 F2.1)`
+- `ad8a0db feat(mobile): PostCard 6-variant rewrite for PWA parity (P6 F2.2)`
+- `ebef9cf feat(mobile): StoryRow — 3 ring variants + verified ✓ + Your story CTA`
+- `fb57839 feat(mobile): home header PWA parity — 🪙 coin + 🔥 streak + red unread badge`
+
+**Next recommended:** **P6 F3 — Create screen pixel parity.** Covers the 5 format tabs, 12 subtype cards with contextual banners, `BusinessTagPicker` autocomplete with debounce, moderation + points preview cards, and the 6-icon bottom toolbar. The server side (new `GET /businesses/search?q=` + `businessTagId` already persists on create) is small. Most of the work is the mobile redesign.
 
 
