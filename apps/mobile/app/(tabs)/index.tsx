@@ -5,9 +5,11 @@ import { useRouter } from 'expo-router';
 import { PostCard } from '../../components/PostCard';
 import { StoryRow } from '../../components/StoryRow';
 import { PointsBadge } from '../../components/PointsBadge';
+import { NotificationBell } from '../../components/NotificationBell';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useFeed } from '../../hooks/useFeed';
 import { usePointsStore } from '../../stores/pointsStore';
+import { useNotificationStore } from '../../stores/notificationStore';
 import { feedService } from '../../services/feedService';
 import { colors } from '../../constants/theme';
 
@@ -15,6 +17,7 @@ export default function HomeFeedScreen() {
   const router = useRouter();
   const { posts, loading, refreshing, refresh, loadMore, loadFeed } = useFeed();
   const { refreshSummary, earn } = usePointsStore();
+  const refreshNotifications = useNotificationStore((s) => s.refresh);
   const [stories, setStories] = useState<any[]>([]);
   // Index of the post currently most in view — only that post's video plays.
   const [activeIndex, setActiveIndex] = useState(0);
@@ -22,6 +25,7 @@ export default function HomeFeedScreen() {
   useEffect(() => {
     loadFeed(1);
     refreshSummary();
+    refreshNotifications();
     feedService.getStories().then((r) => setStories(r.stories || [])).catch(() => {});
     earn('daily_checkin');
   }, []);
@@ -44,9 +48,7 @@ export default function HomeFeedScreen() {
         <Text style={styles.logo}>Eru</Text>
         <View style={styles.headerActions}>
           <PointsBadge />
-          <TouchableOpacity onPress={() => router.push('/notifications')} accessibilityLabel="Open notifications">
-            <Text style={{ fontSize: 22 }}>🔔</Text>
-          </TouchableOpacity>
+          <NotificationBell />
           <TouchableOpacity onPress={() => router.push('/messages')} accessibilityLabel="Open messages">
             <Text style={{ fontSize: 22 }}>✉️</Text>
           </TouchableOpacity>
