@@ -4,11 +4,12 @@ import { authMiddleware } from '../middleware/auth.js';
 import { offersQuerySchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
 import { rewardsService } from '../services/rewardsService.js';
+import type { ListOffersResponse, ClaimOfferResponse } from '@eru/shared';
 
 export async function offerRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
 
-  app.get('/offers', async (request) => {
+  app.get('/offers', async (request): Promise<ListOffersResponse> => {
     const parsed = offersQuerySchema.safeParse(request.query as Record<string, string>);
     if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
 
@@ -28,12 +29,18 @@ export async function offerRoutes(app: FastifyInstance) {
       prisma.offer.count({ where }),
     ]);
 
-    return { offers, page, limit, total };
+    return {
+      offers: offers as unknown as ListOffersResponse['offers'],
+      page,
+      limit,
+      total,
+    };
   });
 
-  app.post('/offers/:id/claim', async (request, reply) => {
+  app.post('/offers/:id/claim', async (request, reply): Promise<ClaimOfferResponse> => {
     const { id } = request.params as { id: string };
     const reward = await rewardsService.claimOffer(request.userId, id);
-    return reply.status(201).send({ reward });
+    reply.code(201);
+    return { reward: reward as unknown as ClaimOfferResponse['reward'] };
   });
 }
