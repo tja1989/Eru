@@ -58,4 +58,41 @@ describe('<StoryRow />', () => {
       : seenRing.props.style;
     expect(unseenStyle.borderColor).not.toBe(seenStyle.borderColor);
   });
+
+  it('tapping "Your story" routes to /(tabs)/create', () => {
+    const { getByTestId } = render(<StoryRow stories={[]} />);
+    fireEvent.press(getByTestId('your-story'));
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/create');
+  });
+
+  it('renders a LIVE overlay on live stories', () => {
+    const liveStory = { ...unseenStory, id: 's3', isLive: true, user: { id: 'u3', username: 'cine', avatarUrl: null } };
+    const { getByText } = render(<StoryRow stories={[liveStory]} />);
+    expect(getByText('LIVE')).toBeTruthy();
+  });
+
+  it('live ring uses a distinct color (red) vs unseen ring', () => {
+    const liveStory = { ...unseenStory, id: 's3', isLive: true, user: { id: 'u3', username: 'cine', avatarUrl: null } };
+    const { getByTestId } = render(<StoryRow stories={[unseenStory, liveStory]} />);
+    const unseenRing = getByTestId('story-ring-s1');
+    const liveRing = getByTestId('story-ring-s3');
+    const unseenStyle = Array.isArray(unseenRing.props.style)
+      ? Object.assign({}, ...unseenRing.props.style)
+      : unseenRing.props.style;
+    const liveStyle = Array.isArray(liveRing.props.style)
+      ? Object.assign({}, ...liveRing.props.style)
+      : liveRing.props.style;
+    expect(liveStyle.borderColor).not.toBe(unseenStyle.borderColor);
+  });
+
+  it('renders ✓ verified mark when story.user.isVerified', () => {
+    const verifiedStory = {
+      ...unseenStory,
+      id: 's4',
+      user: { id: 'u4', username: 'chef', avatarUrl: null, isVerified: true },
+    };
+    const { getByText } = render(<StoryRow stories={[verifiedStory]} />);
+    expect(getByText(/chef/)).toBeTruthy();
+    expect(getByText('✓')).toBeTruthy();
+  });
 });
