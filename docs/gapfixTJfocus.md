@@ -349,4 +349,31 @@ This matches the documented pattern in `CLAUDE.md`:
 
 **Commits this resume:** 11 so far.
 
+---
+
+## P6 F5 — Sponsored earning (view + click) (SHIPPED)
+
+**What shipped:**
+
+- **Shared:** `ActionType` gains `view_sponsored` and `click_sponsored_cta`; `ACTION_CONFIGS` rounds out the 25-action earning table with `view_sponsored: +2, dailyCap 50` and `click_sponsored_cta: +5, dailyCap 20`.
+- **Mobile:** new `hooks/useImpressionTimer.ts` hook — fires once per component lifetime after a window of continuous `enabled === true`. Fully tested (enabled=false stays silent; flipping off mid-timer cancels; fires once-only even with re-enable).
+- **PostCard** uses the hook (2 second threshold) to credit `view_sponsored` once a sponsored card has been `isActive && isSponsored` for 2s. The `claimOffer` tap handler fires `click_sponsored_cta` *before* navigating to the storefront.
+
+**Verification:**
+
+- Mobile 489/489 ✅ across 106 suites
+- TS: `apps/mobile` clean (5 pre-existing)
+
+**Commits this resume:** 12.
+
+## P6 phase-completion gate — STATUS
+
+All blocking items ✓. Not done:
+
+- [ ] Playwright smoke screenshots — deferred (visual verification; not code).
+- [ ] 🎵 audio icon on create toolbar — skipped. PWA shows the icon but the audio feature isn't implemented. Adding a dead button would be premature.
+- [ ] Route lockdowns on the 13 structural-only routes — still deferred (mechanical, low-risk; logged in protocol).
+
+**Next recommended:** P7 — Earn/Redeem loop (wallet, redeem, my-rewards including Watchlist tab). Most of the schema + API shape is already there from earlier phases; this phase is mostly mobile redesign.
+
 
