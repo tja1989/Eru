@@ -10,9 +10,9 @@ describe('<WalletQuickActions />', () => {
     expect(getAllByTestId(/wallet-action-/)).toHaveLength(5);
   });
 
-  it('each button has its label', () => {
+  it('renders exact PWA labels: Shop, Local Offers, Gift Cards, Recharge, Donate', () => {
     const { getByText } = render(<WalletQuickActions />);
-    ['Shop', 'Local', 'Gift Cards', 'Recharge', 'Donate'].forEach((label) => {
+    ['Shop', 'Local Offers', 'Gift Cards', 'Recharge', 'Donate'].forEach((label) => {
       expect(getByText(label)).toBeTruthy();
     });
   });

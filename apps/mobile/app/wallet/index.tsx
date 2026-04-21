@@ -21,6 +21,9 @@ interface WalletData {
   rupeeValue: number;
   dailyEarned: number;
   dailyGoal: number;
+  pointsToGoal?: number;
+  dailyGoalHintCopy?: string;
+  streak?: number;
   expiringPoints?: number;
   expiringDays?: number | null;
   currentTier?: string;
@@ -68,6 +71,9 @@ export default function WalletScreen() {
         rupeeValue: data.rupeeValue ?? Math.floor((data.balance ?? storeBalance) * 0.01),
         dailyEarned: data.dailyEarned ?? dailyEarned,
         dailyGoal: data.dailyGoal ?? dailyGoal,
+        pointsToGoal: data.pointsToGoal,
+        dailyGoalHintCopy: data.dailyGoalHintCopy,
+        streak: data.streak,
         expiringPoints: data.expiringPoints,
         expiringDays: data.expiringDays,
         currentTier: data.currentTier,
@@ -138,7 +144,7 @@ export default function WalletScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Wallet</Text>
+          <Text style={styles.headerTitle}>Eru Wallet</Text>
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.centered}>
@@ -213,7 +219,7 @@ export default function WalletScreen() {
         {/* Daily progress */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Daily Progress</Text>
+            <Text style={styles.progressTitle}>Today's Earnings</Text>
             <Text style={styles.progressCount}>
               {(wallet?.dailyEarned ?? dailyEarned).toLocaleString()} / {(wallet?.dailyGoal ?? dailyGoal).toLocaleString()} pts
             </Text>
@@ -221,11 +227,17 @@ export default function WalletScreen() {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
           </View>
-          <Text style={styles.progressHint}>
-            {progressPct >= 100
-              ? 'Daily goal reached! Great work.'
-              : `${(100 - progressPct).toFixed(0)}% to go — keep earning`}
-          </Text>
+          <View style={styles.progressFooter}>
+            {wallet?.streak ? (
+              <Text style={styles.streakLabel}>🔥 {wallet.streak}-day streak</Text>
+            ) : (
+              <Text style={styles.streakLabel} />
+            )}
+            <Text style={styles.progressHint}>
+              {wallet?.dailyGoalHintCopy ??
+                (progressPct >= 100 ? 'Daily goal hit 🎉' : `${100 - progressPct}% to go`)}
+            </Text>
+          </View>
         </View>
 
         {/* Earning history */}
@@ -344,7 +356,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.navy,
     borderRadius: radius.full,
   },
-  progressHint: { fontSize: 12, color: colors.g500 },
+  progressHint: { fontSize: 12, color: colors.teal, fontWeight: '600' },
+  progressFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  streakLabel: { fontSize: 12, color: colors.g500, fontWeight: '600' },
 
   historySection: {
     marginHorizontal: spacing.lg,

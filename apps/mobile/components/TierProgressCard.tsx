@@ -40,12 +40,21 @@ export function TierProgressCard({
 
   return (
     <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.emoji}>{current.emoji}</Text>
-        <View>
-          <Text style={styles.tierLabel}>{current.label} Tier</Text>
-          <Text style={styles.multi}>{current.multiplier} multiplier</Text>
+      <View style={styles.rowBetween}>
+        <View style={styles.row}>
+          <Text style={styles.emoji}>{current.emoji}</Text>
+          <View>
+            <Text style={styles.tierLabel}>{current.label} Tier</Text>
+            <Text style={styles.multi}>{current.multiplier} multiplier</Text>
+          </View>
         </View>
+        {nextTier ? (
+          <View style={styles.nextChip}>
+            <Text style={styles.nextText}>
+              Next: {TIER_META[nextTier]?.emoji ?? ''} {TIER_META[nextTier]?.label ?? nextTier}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       {nextTier && (
@@ -73,7 +82,10 @@ export function TierProgressCard({
 
 const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginVertical: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  nextChip: { paddingHorizontal: 8, paddingVertical: 3, backgroundColor: '#FAFAFA', borderRadius: 999 },
+  nextText: { fontSize: 11, fontWeight: '600', color: '#737373' },
   emoji: { fontSize: 32, marginRight: 12 },
   tierLabel: { fontWeight: '700', fontSize: 16, color: '#262626' },
   multi: { color: '#737373', fontSize: 13 },

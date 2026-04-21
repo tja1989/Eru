@@ -17,7 +17,7 @@ describe('<TierProgressCard />', () => {
   });
 
   it('shows points to next tier', () => {
-    const { getByText } = render(
+    const { getByText, getAllByText } = render(
       <TierProgressCard
         currentTier="influencer"
         nextTier="champion"
@@ -26,7 +26,8 @@ describe('<TierProgressCard />', () => {
       />,
     );
     expect(getByText(/4,820/)).toBeTruthy();
-    expect(getByText(/champion/i)).toBeTruthy();
+    // "Champion" appears in the Next: chip AND the hint — one or more is fine.
+    expect(getAllByText(/champion/i).length).toBeGreaterThan(0);
   });
 
   it('renders progress bar fill proportional to progress', () => {
@@ -53,5 +54,33 @@ describe('<TierProgressCard />', () => {
       />,
     );
     expect(queryByTestId('progress-fill')).toBeNull();
+  });
+
+  it('renders "Next: 👑 Champion" chip above the progress bar', () => {
+    const { getByText, getAllByText } = render(
+      <TierProgressCard
+        currentTier="influencer"
+        nextTier="champion"
+        pointsToNext={4820}
+        lifetimePoints={45180}
+      />,
+    );
+    expect(getByText(/Next:/)).toBeTruthy();
+    // Champion's emoji is 👑 — appears in the chip only.
+    expect(getByText(/👑/)).toBeTruthy();
+    // "Champion" appears in both the chip and the pts-away hint.
+    expect(getAllByText(/Champion/).length).toBeGreaterThan(0);
+  });
+
+  it('Next: chip shows the nextTier emoji (engager → ⚡)', () => {
+    const { getByText } = render(
+      <TierProgressCard
+        currentTier="explorer"
+        nextTier="engager"
+        pointsToNext={2000}
+        lifetimePoints={0}
+      />,
+    );
+    expect(getByText(/⚡/)).toBeTruthy();
   });
 });

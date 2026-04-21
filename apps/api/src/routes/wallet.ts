@@ -87,12 +87,20 @@ export async function walletRoutes(app: FastifyInstance) {
       ? Math.max(0, TIER_CONFIGS[nextTier].threshold - user.lifetimePoints)
       : 0;
 
+    // Points-to-daily-goal + hint copy. Server owns the wording so we can
+    // tweak the emoji/phrasing without a mobile release.
+    const pointsToGoal = Math.max(0, DAILY_POINTS_GOAL - dailyEarned);
+    const dailyGoalHintCopy =
+      pointsToGoal > 0 ? `${pointsToGoal} pts to daily goal!` : 'Daily goal hit 🎉';
+
     return {
       wallet: {
         balance: user.currentBalance,
         rupeeValue: user.currentBalance * 0.01,
         dailyEarned,
         dailyGoal: DAILY_POINTS_GOAL,
+        pointsToGoal,
+        dailyGoalHintCopy,
         streak: user.streakDays,
         tier: user.tier,
         currentTier: user.tier,

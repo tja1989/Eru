@@ -34,6 +34,14 @@ export interface WalletSummary {
   rupeeValue: number;
   dailyEarned: number;
   dailyGoal: number;
+  // Positive integer = pts still needed to hit the daily goal. Zero means
+  // the goal's been hit today. Derivable from dailyGoal-dailyEarned but
+  // canonicalized here so the mobile copy line can't drift out of sync.
+  pointsToGoal: number;
+  // One-sentence hint matching the PWA's bottom-row copy ("105 pts to daily
+  // goal!" or "Daily goal hit 🎉"). Server owns the wording so we can tweak
+  // it without shipping a mobile release.
+  dailyGoalHintCopy: string;
   streak: number;
   tier: Tier;
   currentTier: Tier;

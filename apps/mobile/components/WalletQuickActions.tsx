@@ -6,7 +6,7 @@ type Action = { key: string; emoji: string; label: string };
 
 const ACTIONS: Action[] = [
   { key: 'all', emoji: '\u{1F6D2}', label: 'Shop' },
-  { key: 'local', emoji: '\u{1F3EA}', label: 'Local' },
+  { key: 'local', emoji: '\u{1F3EA}', label: 'Local Offers' },
   { key: 'giftcard', emoji: '\u{1F381}', label: 'Gift Cards' },
   { key: 'recharge', emoji: '\u{1F4F1}', label: 'Recharge' },
   { key: 'donate', emoji: '\u{1F49D}', label: 'Donate' },
