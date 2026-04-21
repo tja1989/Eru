@@ -5,6 +5,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
 import { updateSettingsSchema, paginationSchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
+import { ACTION_CONFIGS } from '@eru/shared';
 
 export async function userRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
@@ -450,5 +451,60 @@ export async function userRoutes(app: FastifyInstance) {
     }
 
     return { settings: user };
+  });
+
+  // POST /users/me/onboarding/complete — credit welcome bonus + first daily check-in.
+  // Idempotent at the lifetime level: if a `welcome_bonus` ledger entry already
+  // exists for this user, return {pointsCredited: 0} without writing anything.
+  app.post('/users/me/onboarding/complete', async (request) => {
+    const userId = request.userId;
+
+    // Lifetime idempotency check — a single welcome_bonus per user, ever.
+    const existing = await prisma.pointsLedger.findFirst({
+      where: { userId, actionType: 'welcome_bonus' },
+      select: { id: true },
+    });
+    if (existing) {
+      return { pointsCredited: 0 };
+    }
+
+    const welcomePts = ACTION_CONFIGS.welcome_bonus.points;
+    const checkinPts = ACTION_CONFIGS.daily_checkin.points;
+    const total = welcomePts + checkinPts;
+
+    // Atomic transaction so a partial credit (welcome but not check-in) can't
+    // happen on a connection blip mid-write.
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 6);
+
+    await prisma.$transaction([
+      prisma.pointsLedger.create({
+        data: {
+          userId,
+          actionType: 'welcome_bonus',
+          points: welcomePts,
+          multiplierApplied: 1,
+          expiresAt,
+        },
+      }),
+      prisma.pointsLedger.create({
+        data: {
+          userId,
+          actionType: 'daily_checkin',
+          points: checkinPts,
+          multiplierApplied: 1,
+          expiresAt,
+        },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          lifetimePoints: { increment: total },
+          currentBalance: { increment: total },
+        },
+      }),
+    ]);
+
+    return { pointsCredited: total };
   });
 }
