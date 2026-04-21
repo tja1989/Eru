@@ -65,6 +65,10 @@ export interface Comment {
 
 export type InteractionType = 'like' | 'save' | 'share';
 
+export type UgcBadgeVariant = 'creator' | 'user_created' | null;
+export type ModerationBadgeVariant = 'approved' | 'pending' | 'declined' | null;
+export type MediaKind = 'photo' | 'video' | 'carousel' | 'poll' | 'reel' | 'thread' | 'text';
+
 export interface FeedPost extends Content {
   media: ContentMedia[];
   user: {
@@ -78,4 +82,16 @@ export interface FeedPost extends Content {
   isLiked: boolean;
   isSaved: boolean;
   commentsPreview: Comment[];
+  ugcBadge: UgcBadgeVariant;
+  moderationBadge: ModerationBadgeVariant;
+  isSponsored: boolean;
+  sponsorName: string | null;
+  sponsorAvatarUrl: string | null;
+  sponsorBusinessId: string | null;
+  offerUrl: string | null;
+  pointsEarnedOnView: number;
+  locationLabel: string | null;
+  mediaKind: MediaKind;
+  carouselCount: number | null;
+  durationSeconds: number | null;
 }

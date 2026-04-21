@@ -55,6 +55,19 @@ interface ScoredContent {
     category: string;
     pincode: string;
   } | null;
+  // --- Derived fields consumed by mobile PostCard variants (PWA parity) ---
+  ugcBadge: 'creator' | 'user_created' | null;
+  moderationBadge: 'approved' | 'pending' | 'declined' | null;
+  isSponsored: boolean;
+  sponsorName: string | null;
+  sponsorAvatarUrl: string | null;
+  sponsorBusinessId: string | null;
+  offerUrl: string | null;
+  pointsEarnedOnView: number;
+  locationLabel: string | null;
+  mediaKind: 'photo' | 'video' | 'carousel' | 'poll' | 'reel' | 'thread' | 'text';
+  carouselCount: number | null;
+  durationSeconds: number | null;
 }
 
 interface FeedContext {
@@ -165,6 +178,103 @@ export const SUBTYPE_REACH_MULTIPLIER: Record<string, number> = {
   hot_take: 1.0,
   meme: 1.0,
 };
+
+// ---------------------------------------------------------------------------
+// Display-field derivations — turn raw Prisma rows into the shape the mobile
+// PostCard needs to render PWA's 6 variants. Keeping this pure + colocated
+// with the feed so any change to the wire format is obvious from this file.
+// ---------------------------------------------------------------------------
+
+interface DerivedDisplayFields {
+  ugcBadge: 'creator' | 'user_created' | null;
+  moderationBadge: 'approved' | 'pending' | 'declined' | null;
+  isSponsored: boolean;
+  sponsorName: string | null;
+  sponsorAvatarUrl: string | null;
+  sponsorBusinessId: string | null;
+  offerUrl: string | null;
+  pointsEarnedOnView: number;
+  locationLabel: string | null;
+  mediaKind: 'photo' | 'video' | 'carousel' | 'poll' | 'reel' | 'thread' | 'text';
+  carouselCount: number | null;
+  durationSeconds: number | null;
+}
+
+function deriveDisplayFields(c: {
+  type: string;
+  moderationStatus: string;
+  locationPincode: string | null;
+  user: { isVerified: boolean };
+  media: ContentMediaLite[];
+  businessTag: { id: string; name: string; avatarUrl: string | null } | null;
+  sponsorshipProposals: { id: string }[];
+}): DerivedDisplayFields {
+  const ugcBadge: 'creator' | 'user_created' | null = c.user.isVerified
+    ? 'creator'
+    : 'user_created';
+
+  // APPROVED badge only surfaces on UGC (user_created). Verified creators
+  // don't show it because their content bypasses visible moderation labelling.
+  const moderationBadge: DerivedDisplayFields['moderationBadge'] =
+    ugcBadge === 'user_created' && c.moderationStatus === 'published'
+      ? 'approved'
+      : c.moderationStatus === 'pending'
+        ? 'pending'
+        : c.moderationStatus === 'declined'
+          ? 'declined'
+          : null;
+
+  const isSponsored = c.sponsorshipProposals.length > 0;
+  const sponsorName = c.businessTag?.name ?? null;
+  const sponsorAvatarUrl = c.businessTag?.avatarUrl ?? null;
+  const sponsorBusinessId = c.businessTag?.id ?? null;
+  const offerUrl = c.businessTag ? `/business/${c.businessTag.id}` : null;
+
+  const firstMedia = c.media[0];
+  const mediaKind: DerivedDisplayFields['mediaKind'] = (() => {
+    if (c.type === 'reel') return 'reel';
+    if (c.type === 'poll') return 'poll';
+    if (c.type === 'thread') return 'thread';
+    if (c.media.length > 1) return 'carousel';
+    if (firstMedia?.type === 'video') return 'video';
+    if (firstMedia?.type === 'image') return 'photo';
+    return 'text';
+  })();
+
+  const carouselCount = mediaKind === 'carousel' ? c.media.length : null;
+  const durationSeconds = firstMedia?.durationSeconds ?? null;
+
+  // pointsEarnedOnView — shown top-right as 🪙 +N on the PostCard. Matches
+  // the PWA reference numbers so the labels don't wobble between screens.
+  const pointsEarnedOnView = (() => {
+    if (isSponsored) return 15;
+    if (mediaKind === 'poll') return 25;
+    if (mediaKind === 'reel') return 5;
+    if (mediaKind === 'video') return 12;
+    if (ugcBadge === 'user_created' && moderationBadge === 'approved') return 30;
+    if (mediaKind === 'photo') return 8;
+    return 4;
+  })();
+
+  // For now the label is just the pincode. A later pass can resolve it into
+  // "Kochi, Kerala" via pincodes.json but that's cosmetic polish.
+  const locationLabel = c.locationPincode;
+
+  return {
+    ugcBadge,
+    moderationBadge,
+    isSponsored,
+    sponsorName,
+    sponsorAvatarUrl,
+    sponsorBusinessId,
+    offerUrl,
+    pointsEarnedOnView,
+    locationLabel,
+    mediaKind,
+    carouselCount,
+    durationSeconds,
+  };
+}
 
 /**
  * scoreContent — combines the five factor scores into one final number,
@@ -277,6 +387,13 @@ export async function getFeed(ctx: FeedContext, page: number, limit: number): Pr
           pincode: true,
         },
       },
+      // An "active" sponsorship is what makes a post sponsored right now.
+      // We only need to know *whether one exists* — 1 row is enough.
+      sponsorshipProposals: {
+        where: { status: 'active' },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
 
@@ -297,13 +414,17 @@ export async function getFeed(ctx: FeedContext, page: number, limit: number): Pr
   const likedSet = new Set(likedInteractions.map((i) => i.contentId));
   const savedSet = new Set(savedInteractions.map((i) => i.contentId));
 
-  // 3. Score every candidate
-  const scored: ScoredContent[] = candidates.map((c) => ({
-    ...c,
-    score: scoreContent(c, ctx),
-    isLiked: likedSet.has(c.id),
-    isSaved: savedSet.has(c.id),
-  }));
+  // 3. Score every candidate + derive PostCard display fields
+  const scored: ScoredContent[] = candidates.map((c) => {
+    const derived = deriveDisplayFields(c);
+    return {
+      ...c,
+      score: scoreContent(c, ctx),
+      isLiked: likedSet.has(c.id),
+      isSaved: savedSet.has(c.id),
+      ...derived,
+    };
+  });
 
   // 4. Sort highest score first
   scored.sort((a, b) => b.score - a.score);
