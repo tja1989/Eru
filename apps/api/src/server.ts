@@ -25,6 +25,7 @@ if (process.env.SENTRY_DSN) {
 import { buildApp } from './app.js';
 import { getConfig } from './config/index.js';
 import { startCronJobs } from './jobs/index.js';
+import { initGateway } from './ws/gateway.js';
 
 async function start() {
   const config = getConfig();
@@ -37,6 +38,9 @@ async function start() {
     app.log.error(err);
     process.exit(1);
   }
+
+  // Attach the WS gateway after `listen()` so app.server is the bound httpServer.
+  initGateway(app.server);
 
   if (config.NODE_ENV !== 'test') {
     startCronJobs();
