@@ -10,51 +10,61 @@ declare module 'fastify' {
   }
 }
 
-export async function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
-  const authHeader = request.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw Errors.unauthorized('Missing or invalid Authorization header');
-  }
+export interface ResolvedUser {
+  id: string;
+  role: string;
+}
 
-  const token = authHeader.slice(7);
+/**
+ * Verify a bearer token and return the matching active user.
+ * Returns `null` for invalid / unknown / deleted tokens — never throws.
+ *
+ * Used by both `authMiddleware` (REST) and the Socket.io gateway (WS), so the
+ * "dev-test-* fast path" + "Firebase verify" + "deleted = treat as missing"
+ * rules live in exactly one place.
+ */
+export async function resolveUserFromToken(token: string): Promise<ResolvedUser | null> {
+  if (!token) return null;
 
+  let firebaseUid: string;
   try {
-    // Dev-token fast path: when ALLOW_DEV_TOKENS=true, treat tokens that start
-    // with "dev-" as already-verified. The full token string is the firebaseUid.
-    // This enables Expo Go testing without native Firebase phone-auth.
-    // Disable by setting ALLOW_DEV_TOKENS=false in production.
     const allowDev = process.env.ALLOW_DEV_TOKENS === 'true';
-    let firebaseUid: string;
-
     if (allowDev && token.startsWith('dev-')) {
       firebaseUid = token;
     } else {
       const decoded = await verifyFirebaseToken(token);
       firebaseUid = decoded.uid;
     }
+  } catch {
+    return null;
+  }
 
-    const user = await prisma.user.findUnique({
-      where: { firebaseUid },
-      select: { id: true, role: true, deletedAt: true },
-    });
+  const user = await prisma.user.findUnique({
+    where: { firebaseUid },
+    select: { id: true, role: true, deletedAt: true },
+  });
 
-    if (!user) {
-      throw Errors.unauthorized('User not found. Please register first.');
-    }
+  if (!user || user.deletedAt !== null) return null;
+  return { id: user.id, role: user.role };
+}
 
-    if (user.deletedAt !== null) {
-      throw Errors.unauthorized('This account has been deleted.');
-    }
+export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
+  const authHeader = request.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw Errors.unauthorized('Missing or invalid Authorization header');
+  }
 
-    request.userId = user.id;
-    request.userRole = user.role;
-
-    prisma.user.update({
-      where: { id: user.id },
-      data: { lastActive: new Date() },
-    }).catch(() => {});
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AppError') throw error;
+  const token = authHeader.slice(7);
+  const user = await resolveUserFromToken(token);
+  if (!user) {
     throw Errors.unauthorized('Invalid or expired token');
   }
+
+  request.userId = user.id;
+  request.userRole = user.role;
+
+  prisma.user.update({
+    where: { id: user.id },
+    data: { lastActive: new Date() },
+  }).catch(() => {});
 }
