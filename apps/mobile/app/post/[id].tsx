@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { PostCard } from '../../components/PostCard';
 import { CommentInput } from '../../components/CommentInput';
+import { CommentSortDropdown, type CommentSort } from '../../components/CommentSortDropdown';
+import { BusinessReplyCard } from '../../components/BusinessReplyCard';
 import { contentService } from '../../services/contentService';
 import { colors, spacing } from '../../constants/theme';
 
@@ -21,7 +23,7 @@ interface Comment {
   id: string;
   text: string;
   createdAt: string;
-  user: { id: string; name: string; username: string; avatarUrl?: string | null };
+  user: { id: string; name: string; username: string; avatarUrl?: string | null; kind?: 'user' | 'business'; verified?: boolean };
   replies?: Comment[];
 }
 
@@ -80,13 +82,14 @@ export default function PostDetailScreen() {
   const [commentsPage, setCommentsPage] = useState(1);
   const [commentsTotal, setCommentsTotal] = useState(0);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [sort, setSort] = useState<CommentSort>('top');
 
   const loadComments = useCallback(
-    async (page: number) => {
+    async (page: number, sortArg: CommentSort) => {
       if (!id) return;
       setCommentsLoading(true);
       try {
-        const r = await contentService.getComments(id, page);
+        const r = await contentService.getComments(id, page, sortArg);
         const list: Comment[] = r.comments ?? r.data ?? [];
         setComments((prev) => (page === 1 ? list : [...prev, ...list]));
         setCommentsTotal(r.total ?? list.length);
@@ -113,15 +116,20 @@ export default function PostDetailScreen() {
       })
       .finally(() => setLoading(false));
 
-    loadComments(1);
-  }, [id, loadComments]);
+    loadComments(1, sort);
+  }, [id, loadComments, sort]);
+
+  const handleSortChange = (next: CommentSort) => {
+    setSort(next);
+    setCommentsPage(1);
+  };
 
   const hasMoreComments = comments.length < commentsTotal;
 
   const handleLoadMore = () => {
     const next = commentsPage + 1;
     setCommentsPage(next);
-    loadComments(next);
+    loadComments(next, sort);
   };
 
   return (
@@ -157,9 +165,12 @@ export default function PostDetailScreen() {
 
               {/* Comments thread */}
               <View style={styles.commentsSection}>
-                <Text style={styles.commentsHeading}>
-                  Comments{commentsTotal > 0 ? ` (${commentsTotal})` : ''}
-                </Text>
+                <View style={styles.commentsHeadingRow}>
+                  <Text style={styles.commentsHeading}>
+                    Comments{commentsTotal > 0 ? ` (${commentsTotal})` : ''}
+                  </Text>
+                  <CommentSortDropdown value={sort} onChange={handleSortChange} />
+                </View>
 
                 {commentsLoading && comments.length === 0 ? (
                   <View style={styles.commentsLoading}>
@@ -174,7 +185,21 @@ export default function PostDetailScreen() {
                 ) : (
                   <>
                     {comments.map((c) => (
-                      <CommentRow key={c.id} comment={c} />
+                      <View key={c.id}>
+                        <CommentRow comment={c} />
+                        {c.replies?.map((r) =>
+                          r.user?.kind === 'business' ? (
+                            <BusinessReplyCard
+                              key={r.id}
+                              id={r.id}
+                              text={r.text}
+                              createdAt={r.createdAt}
+                              user={{ id: r.user.id, username: r.user.username, avatarUrl: r.user.avatarUrl ?? null }}
+                              verified={r.user.verified ?? true}
+                            />
+                          ) : null,
+                        )}
+                      </View>
                     ))}
                     {hasMoreComments ? (
                       <TouchableOpacity onPress={handleLoadMore} style={styles.loadMore}>
@@ -243,11 +268,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 8,
     borderTopColor: colors.g100,
   },
+  commentsHeadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
   commentsHeading: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.g800,
-    marginBottom: spacing.md,
   },
   commentsLoading: { paddingVertical: 30, alignItems: 'center' },
   emptyComments: { paddingVertical: 40, alignItems: 'center', gap: 6 },

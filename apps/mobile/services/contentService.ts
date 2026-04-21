@@ -16,8 +16,8 @@ export const contentService = {
   unsave: (id: string) => api.delete(`/posts/${id}/unsave`).then((r) => r.data),
   comment: (id: string, text: string, parentId?: string) =>
     api.post(`/posts/${id}/comments`, { text, parentId }).then((r) => r.data),
-  getComments: (id: string, page = 1) =>
-    api.get(`/posts/${id}/comments`, { params: { page } }).then((r) => r.data),
+  getComments: (id: string, page = 1, sort?: 'top' | 'recent') =>
+    api.get(`/posts/${id}/comments`, { params: { page, ...(sort ? { sort } : {}) } }).then((r) => r.data),
   async createComment(contentId: string, text: string, parentId?: string) {
     if (!text.trim()) {
       throw new Error('Comment cannot be empty');
