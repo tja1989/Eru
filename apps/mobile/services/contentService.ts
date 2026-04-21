@@ -2,7 +2,7 @@ import api from './api';
 import type { ContentSubtype } from '@eru/shared';
 
 export const contentService = {
-  create: (data: { type: string; subtype: ContentSubtype; text?: string; mediaIds: string[]; hashtags: string[]; locationPincode?: string; pollOptions?: string[]; threadParts?: string[]; taggedUserIds?: string[] }) =>
+  create: (data: { type: string; subtype: ContentSubtype; text?: string; mediaIds: string[]; hashtags: string[]; locationPincode?: string; pollOptions?: string[]; threadParts?: string[]; taggedUserIds?: string[]; businessTagId?: string }) =>
     api.post('/content/create', data).then((r) => r.data),
   getThread: (id: string) => api.get(`/content/${id}/thread`).then((r) => r.data),
   getById: (id: string) => api.get(`/content/${id}`).then((r) => r.data),

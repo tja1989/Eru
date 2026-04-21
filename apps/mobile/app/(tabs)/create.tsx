@@ -21,7 +21,10 @@ import { ThreadComposer } from '../../components/ThreadComposer';
 import { LocationPicker } from '../../components/LocationPicker';
 import { UserTagPicker, TagUser } from '../../components/UserTagPicker';
 import { ContentSubtypeSelector } from '../../components/ContentSubtypeSelector';
-import type { ContentSubtype } from '@eru/shared';
+import { BusinessTagPicker } from '../../components/BusinessTagPicker';
+import { PointsPreviewCard } from '../../components/PointsPreviewCard';
+import { ModerationNoticeCard } from '../../components/ModerationNoticeCard';
+import type { ContentSubtype, BusinessSearchItem } from '@eru/shared';
 import { colors, spacing, radius } from '../../constants/theme';
 
 const CONTENT_TYPES = ['photo', 'video', 'text', 'poll', 'thread'] as const;
@@ -62,6 +65,9 @@ export default function CreateScreen() {
   // Tag users state
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [taggedUsers, setTaggedUsers] = useState<TagUser[]>([]);
+  // Business tag state — populated by BusinessTagPicker when the user
+  // selects a business from the autocomplete. null means no tag.
+  const [businessTag, setBusinessTag] = useState<BusinessSearchItem | null>(null);
 
   const pickMedia = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -145,6 +151,8 @@ export default function CreateScreen() {
 
       const taggedUserIds = taggedUsers.length > 0 ? taggedUsers.map((u) => u.id) : undefined;
 
+      const businessTagId = businessTag?.id;
+
       if (contentType === 'poll') {
         await contentService.create({
           type: TYPE_TO_API.poll,
@@ -155,6 +163,7 @@ export default function CreateScreen() {
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
           taggedUserIds,
+          businessTagId,
         });
       } else if (contentType === 'thread') {
         await contentService.create({
@@ -165,6 +174,7 @@ export default function CreateScreen() {
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
           taggedUserIds,
+          businessTagId,
         });
       } else {
         const payload = {
@@ -175,8 +185,8 @@ export default function CreateScreen() {
           hashtags: parsedHashtags,
           locationPincode: selectedPincode ?? undefined,
           taggedUserIds,
+          businessTagId,
         };
-        console.log('[create.tsx] POST /content/create payload:', JSON.stringify(payload, null, 2));
         await contentService.create(payload);
       }
 
@@ -201,7 +211,7 @@ export default function CreateScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.headerBtn}>✕</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Post</Text>
+        <Text style={styles.headerTitle}>Create Post</Text>
         <TouchableOpacity
           style={[styles.shareBtn, isShareDisabled && styles.shareBtnDisabled]}
           onPress={handleSubmit}
@@ -330,22 +340,14 @@ export default function CreateScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Moderation notice */}
-        <View style={styles.moderationBanner}>
-          <Text style={styles.moderationIcon}>⚠️</Text>
-          <Text style={styles.moderationText}>
-            All posts are reviewed before going live. This usually takes a few minutes.
-            Content that violates community guidelines will not be approved.
-          </Text>
-        </View>
+        {/* Business tag — unlocks the 20% commission split */}
+        <BusinessTagPicker value={businessTag} onChange={setBusinessTag} />
 
-        {/* Points preview */}
-        <View style={styles.pointsPreview}>
-          <Text style={styles.pointsIcon}>⭐</Text>
-          <Text style={styles.pointsText}>
-            Earn up to <Text style={styles.pointsHighlight}>+{estimatedPoints} pts</Text> for this post
-          </Text>
-        </View>
+        {/* Moderation notice — PWA's 15-minute + +30pt copy */}
+        <ModerationNoticeCard />
+
+        {/* Points preview — 3-column breakdown: approved / like / trending */}
+        <PointsPreviewCard />
 
         {/* Bottom toolbar */}
         <View style={styles.toolbar}>
@@ -454,7 +456,7 @@ const styles = StyleSheet.create({
   headerBtn: { fontSize: 20, color: colors.g800, padding: spacing.xs },
   headerTitle: { fontSize: 16, fontWeight: '700', color: colors.g900 },
   shareBtn: {
-    backgroundColor: colors.blue,
+    backgroundColor: colors.orange,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
