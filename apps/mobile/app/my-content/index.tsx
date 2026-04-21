@@ -18,6 +18,7 @@ import { colors, spacing, radius } from '../../constants/theme';
 import { MyContentStatsBar } from '../../components/MyContentStatsBar';
 import { CreatorEarningsCard } from '../../components/CreatorEarningsCard';
 import { CreatorScoreCard } from '../../components/CreatorScoreCard';
+import { CreatorScoreTransparencyPanel } from '../../components/CreatorScoreTransparencyPanel';
 import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
 import type { UserContentItem, GetUserContentResponse } from '@eru/shared';
 
@@ -165,6 +166,14 @@ export default function MyContentScreen() {
       <CreatorScoreCard
         score={Number(user?.creatorScore ?? 50)}
         deltaThisWeek={scoreDelta}
+      />
+      <CreatorScoreTransparencyPanel
+        score={Number(user?.creatorScore ?? 50)}
+        likes={allItems.reduce((s, i) => s + (i.likeCount ?? 0), 0)}
+        dislikes={allItems.reduce((s, i) => s + ((i as any).dislikeCount ?? 0), 0)}
+        reports={0}
+        shares={allItems.reduce((s, i) => s + ((i as any).shareCount ?? 0), 0)}
+        trending={allItems.filter((i) => (i as any).isTrending === true).length}
       />
 
       {/* Filter pills */}
