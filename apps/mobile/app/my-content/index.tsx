@@ -241,11 +241,14 @@ export default function MyContentScreen() {
                 {/* Meta */}
                 <Text style={styles.cardDate}>{formatDate(String(item.createdAt))}</Text>
 
-                {/* Stats for published content */}
+                {/* Stats for published content — PWA engagement chip row
+                    shows likes + dislikes + comments. Views are useful too,
+                    so we keep them on the far left. */}
                 {isPublished && (
                   <View style={styles.statsRow}>
                     <Text style={styles.statItem}>👁 {(item.viewCount ?? 0).toLocaleString()}</Text>
-                    <Text style={styles.statItem}>❤️ {(item.likeCount ?? 0).toLocaleString()}</Text>
+                    <Text style={styles.statItem}>👍 {(item.likeCount ?? 0).toLocaleString()}</Text>
+                    <Text style={styles.statItem}>👎 {((item as any).dislikeCount ?? 0).toLocaleString()}</Text>
                     <Text style={styles.statItem}>💬 {(item.commentCount ?? 0).toLocaleString()}</Text>
                   </View>
                 )}
