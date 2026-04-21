@@ -484,8 +484,8 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Account section */}
-        <Text style={styles.sectionHeader}>Account</Text>
+        {/* Eru Account stats — lifetime + engagement totals */}
+        <Text style={styles.sectionHeader}>Eru Account</Text>
         <View style={styles.section}>
           <View style={styles.infoRow}>
             <Text style={styles.fieldLabel}>Username</Text>
@@ -495,6 +495,25 @@ export default function SettingsScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.fieldLabel}>Phone</Text>
             <Text style={styles.infoValue}>{user?.phone ?? '—'}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.fieldLabel}>Lifetime points</Text>
+            <Text style={styles.infoValue}>
+              🪙 {Number((user as any)?.lifetimePoints ?? 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.fieldLabel}>Current tier</Text>
+            <Text style={styles.infoValue}>{String(user?.tier ?? 'explorer')}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.fieldLabel}>Creator score</Text>
+            <Text style={styles.infoValue}>
+              {Number(user?.creatorScore ?? 50).toFixed(0)}/100
+            </Text>
           </View>
         </View>
 
