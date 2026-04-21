@@ -4,6 +4,15 @@ import MyRewardsScreen from '@/app/my-rewards/index';
 import { rewardsService } from '@/services/rewardsService';
 
 jest.mock('@/services/rewardsService');
+jest.mock('@/services/watchlistService', () => ({
+  watchlistService: {
+    list: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+    listDeals: jest.fn().mockResolvedValue([]),
+  },
+}));
+jest.mock('@/services/offersService', () => ({
+  offersService: { claim: jest.fn() },
+}));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
 }));
@@ -35,10 +44,10 @@ describe('<MyRewardsScreen /> — 4 tabs', () => {
     });
   });
 
-  it('Watchlist tab shows a coming-soon placeholder (no rewardsService call)', async () => {
-    const { getByText } = render(<MyRewardsScreen />);
+  it('Watchlist tab shows empty-state placeholder when no stores + no deals', async () => {
+    const { getByText, findByText } = render(<MyRewardsScreen />);
     fireEvent.press(getByText('Watchlist'));
-    expect(await findOrNull(() => getByText(/stores you follow/i))).toBeTruthy();
+    expect(await findByText(/stores you follow/i)).toBeTruthy();
   });
 
   it('rewardsService.list is called with active|used|expired only (not watchlist)', async () => {
@@ -53,7 +62,3 @@ describe('<MyRewardsScreen /> — 4 tabs', () => {
     expect(calls.some((c) => c[0] === 'watchlist')).toBe(false);
   });
 });
-
-function findOrNull<T>(fn: () => T): T | null {
-  try { return fn(); } catch { return null as any; }
-}

@@ -1,5 +1,10 @@
 import api from './api';
-import type { WatchlistEntry, GetWatchlistResponse } from '@eru/shared';
+import type {
+  WatchlistEntry,
+  GetWatchlistResponse,
+  WatchlistDealItem,
+  WatchlistDealsResponse,
+} from '@eru/shared';
 
 export const watchlistService = {
   list: async (): Promise<GetWatchlistResponse> => {
@@ -18,5 +23,11 @@ export const watchlistService = {
 
   setNotify: async (businessId: string, notifyOnOffers: boolean): Promise<void> => {
     await api.patch(`/watchlist/${businessId}`, { notifyOnOffers });
+  },
+
+  // Live deals from followed businesses — drives the Watchlist tab.
+  listDeals: async (): Promise<WatchlistDealItem[]> => {
+    const res = await api.get('/watchlist/deals');
+    return (res.data as WatchlistDealsResponse).items;
   },
 };

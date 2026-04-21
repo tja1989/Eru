@@ -7,6 +7,7 @@ import { prisma } from '../utils/prisma.js';
 import type {
   GetWatchlistResponse,
   AddWatchlistResponse,
+  WatchlistDealsResponse,
 } from '@eru/shared';
 
 const addSchema = z.object({ businessId: z.string().uuid() });
@@ -28,6 +29,12 @@ export async function watchlistRoutes(app: FastifyInstance) {
 
   app.get('/watchlist', async (req): Promise<GetWatchlistResponse> => {
     return watchlistService.listForUser(req.userId);
+  });
+
+  // Live deals from businesses the user watches. Feeds the Watchlist tab on
+  // My Rewards — newest-first, active + unexpired only.
+  app.get('/watchlist/deals', async (req): Promise<WatchlistDealsResponse> => {
+    return watchlistService.listDealsForUser(req.userId);
   });
 
   app.delete('/watchlist/:businessId', async (req, reply) => {

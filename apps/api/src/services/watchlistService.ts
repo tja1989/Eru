@@ -1,5 +1,10 @@
 import { prisma } from '../utils/prisma.js';
-import type { WatchlistEntry, GetWatchlistResponse } from '@eru/shared';
+import type {
+  WatchlistEntry,
+  GetWatchlistResponse,
+  WatchlistDealItem,
+  WatchlistDealsResponse,
+} from '@eru/shared';
 
 type WatchlistRow = {
   id: string;
@@ -85,5 +90,57 @@ export const watchlistService = {
       where: { userId_businessId: { userId, businessId } },
       data: { notifyOnOffers: notify },
     });
+  },
+
+  // Live deals from businesses the user follows. Narrowly scoped: active +
+  // not-yet-expired only. No N+1 — one findMany joined on business.
+  async listDealsForUser(userId: string): Promise<WatchlistDealsResponse> {
+    const watched = await prisma.watchlist.findMany({
+      where: { userId },
+      select: { businessId: true },
+    });
+    if (watched.length === 0) return { items: [] };
+
+    const businessIds = watched.map((w) => w.businessId);
+    const now = new Date();
+    const offers = await prisma.offer.findMany({
+      where: {
+        businessId: { in: businessIds },
+        isActive: true,
+        validUntil: { gt: now },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        business: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            category: true,
+            pincode: true,
+          },
+        },
+      },
+    });
+
+    const items: WatchlistDealItem[] = offers
+      .filter((o) => o.business !== null)
+      .map((o) => ({
+        id: o.id,
+        title: o.title,
+        description: o.description,
+        imageUrl: o.imageUrl,
+        pointsCost: o.pointsCost,
+        cashValue: Number(o.cashValue),
+        expiresAt: o.validUntil.toISOString(),
+        createdAt: o.createdAt.toISOString(),
+        businessId: o.business!.id,
+        businessName: o.business!.name,
+        businessAvatarUrl: o.business!.avatarUrl,
+        businessCategory: o.business!.category,
+        businessPincode: o.business!.pincode,
+      }));
+
+    return { items };
   },
 };
