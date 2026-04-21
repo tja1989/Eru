@@ -126,4 +126,24 @@ describe('rewardsService.claimOffer', () => {
     const r2 = await rewardsService.claimOffer(user2.id, offer.id);
     expect(r1.claimCode).not.toBe(r2.claimCode);
   });
+
+  it('persists a server-generated qrSvg with the reward', async () => {
+    const user = await seedUser({
+      firebaseUid: 'dev-test-rewardqr',
+      phone: '+919300000099',
+      username: 'trewardqr',
+    });
+    await prisma.user.update({ where: { id: user.id }, data: { currentBalance: 500 } });
+    const offer = await seedOffer({ pointsCost: 100 });
+
+    const reward = await rewardsService.claimOffer(user.id, offer.id);
+
+    expect(reward.qrSvg).toBeTruthy();
+    expect(reward.qrSvg).toMatch(/<svg /);
+    expect(reward.qrSvg).toMatch(/<\/svg>/);
+
+    // The persisted column reflects the same value
+    const persisted = await prisma.userReward.findUnique({ where: { id: reward.id } });
+    expect(persisted?.qrSvg).toBe(reward.qrSvg);
+  });
 });

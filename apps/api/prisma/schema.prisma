@@ -460,6 +460,7 @@ model UserReward {
   userId        String       @map("user_id")
   offerId       String       @map("offer_id")
   claimCode     String       @unique @map("claim_code")
+  qrSvg         String?      @map("qr_svg")
   pointsSpent   Int          @map("points_spent")
   status        RewardStatus @default(active)
   expiresAt     DateTime     @map("expires_at")

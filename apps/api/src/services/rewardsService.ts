@@ -2,6 +2,7 @@ import { prisma } from '../utils/prisma.js';
 import { Errors } from '../utils/errors.js';
 import { randomBytes } from 'node:crypto';
 import { badgesService } from './badgesService.js';
+import { qrService } from './qrService.js';
 
 function generateClaimCode(prefix = 'ERU') {
   const rand = randomBytes(4).toString('hex').toUpperCase();
@@ -44,12 +45,17 @@ export const rewardsService = {
         });
       }
 
-      // Create the reward
+      // Create the reward — generate the QR SVG up-front so a network blip
+      // later (between create and read) can never leave a reward with no
+      // scannable code.
+      const claimCode = generateClaimCode();
+      const qrSvg = await qrService.generate(claimCode);
       const created = await tx.userReward.create({
         data: {
           userId,
           offerId,
-          claimCode: generateClaimCode(),
+          claimCode,
+          qrSvg,
           pointsSpent: offer.pointsCost,
           status: 'active',
           expiresAt: offer.validUntil,
