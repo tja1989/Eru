@@ -162,6 +162,7 @@ model Content {
   type             ContentType
   subtype          ContentSubtype?
   commissionPctEarned Int           @default(0) @map("commission_pct_earned")
+  businessTagId    String?          @map("business_tag_id")
   text             String?
   hashtags         String[]         @default([])
   locationPincode  String?          @map("location_pincode") @db.VarChar(6)
@@ -184,6 +185,7 @@ model Content {
   threadPosition   Int?             @map("thread_position")
 
   user             User             @relation(fields: [userId], references: [id])
+  businessTag      Business?        @relation("BusinessTaggedContent", fields: [businessTagId], references: [id])
   threadParent     Content?         @relation("ThreadChildren", fields: [threadParentId], references: [id], onDelete: Cascade)
   threadChildren   Content[]        @relation("ThreadChildren")
   media            ContentMedia[]
@@ -204,6 +206,7 @@ model Content {
   @@index([deletedAt])
   @@index([threadParentId])
   @@index([subtype])
+  @@index([businessTagId])
   @@map("content")
 }
 
@@ -421,6 +424,7 @@ model Business {
   offers               Offer[]
   sponsorshipProposals SponsorshipProposal[]
   watchlist            Watchlist[]
+  taggedContent        Content[] @relation("BusinessTaggedContent")
 
   @@index([pincode])
   @@map("businesses")
