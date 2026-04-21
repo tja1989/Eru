@@ -1194,15 +1194,24 @@ Derived from PWA lines 436–471 (tutorial screen) + Dev Spec §4.1 reference + 
 
 Applied on credit, not on display. Stored as `multiplier` on `PointsLedger`.
 
-### Task 6.1: Verify `pointsEngine.ts` matches
+### Task 6.1: Audit findings — current state
 
-- [ ] Open `apps/api/src/services/pointsEngine.ts`. Confirm it exposes an `ACTIONS` const (or equivalent) with exactly these 25 entries, same keys, same values.
-- [ ] If it drifts: **the spec wins** (per protocol §8). Fix the engine with a failing test first that asserts `Object.keys(ACTIONS).length === 25`.
+The repo's `packages/shared/src/constants/points.ts` exports `ACTION_CONFIGS` with **15 actions**, not 25. The guardrail `packages/shared/__tests__/action-configs.test.ts` (added in P4 F6) asserts exactly 15, so future drift is caught at build time.
+
+**Currently shipped (15):**
+
+`read_article`, `watch_video`, `reel_watch`, `listen_podcast`, `read_thread`, `like`, `comment` (10-word gating in `validation.minWordCount`), `share`, `save`, `follow`, `daily_checkin`, `create_content`, `content_trending`, `refer_friend`, `complete_profile`.
+
+**Planned but not yet implemented (10 — DEFERRED):**
+
+`vote_poll`, `short_survey`, `long_survey`, `review`, `rate_business`, `view_sponsored`, `click_sponsored_cta`, `claim_offer` (likely covered by reward-claim flow side-effect), `redeem_qr`, `purchase`, `sponsored_ugc_live`, `welcome_bonus` (covered by `complete_profile`-style one-shot in P5 F6).
+
+Why deferred: each of the 10 needs product validation on (a) the exact point value, (b) daily cap, (c) verification method (e.g., `purchase` needs a partner webhook). Adding them to the engine without those decisions invites churn. P5 F6 (`welcome_bonus`) and P6 F5 (`view_sponsored`/`click_sponsored_cta`) will revisit specific entries when their phase needs them.
 
 ### Task 6.2: Commit
 
 ```
-docs(gapfix): consolidate 25 earning actions reference + engine alignment
+test(shared): action-configs guardrail; docs(gapfix): align P4 F6 to shipped subset
 ```
 
 ---
