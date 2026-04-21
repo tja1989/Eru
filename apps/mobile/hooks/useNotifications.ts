@@ -20,7 +20,12 @@ if (!IS_EXPO_GO) {
   Notifications = require('expo-notifications') as NotificationsModule;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
+      // expo-notifications 0.30+ replaced shouldShowAlert with the split
+      // shouldShowBanner / shouldShowList pair. Keep the old key too for
+      // older SDK consumers that still read it.
       shouldShowAlert: false,
+      shouldShowBanner: false,
+      shouldShowList: true,
       shouldPlaySound: false,
       shouldSetBadge: true,
     }),
@@ -30,8 +35,11 @@ if (!IS_EXPO_GO) {
 export function useNotifications() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const { refreshUnread } = useNotificationStore();
-  const responseListener = useRef<any>();
+  // The store exposes refresh() (full list + unread count); the local alias
+  // keeps the old hook API surface so callers don't break.
+  const refresh = useNotificationStore((s) => s.refresh);
+  const refreshUnread = () => refresh();
+  const responseListener = useRef<any>(null);
 
   useEffect(() => {
     if (!Notifications) return;
