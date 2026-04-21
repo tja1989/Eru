@@ -322,4 +322,31 @@ This matches the documented pattern in `CLAUDE.md`:
 
 **Next recommended:** **P6 F3 — Create screen pixel parity.** Covers the 5 format tabs, 12 subtype cards with contextual banners, `BusinessTagPicker` autocomplete with debounce, moderation + points preview cards, and the 6-icon bottom toolbar. The server side (new `GET /businesses/search?q=` + `businessTagId` already persists on create) is small. Most of the work is the mobile redesign.
 
+---
+
+## P6 F3 + F4 + F5 — Create screen, post detail, comment word-count (SHIPPED)
+
+**What shipped (5 commits):**
+
+1. **F3 Task 3.1 — `GET /api/v1/businesses/search?q=`.** Fuzzy + case-insensitive, 10-max, Zod-validated, contract-locked to new `BusinessSearchResponse` shared type. 5/5 tests green.
+2. **F3 Task 3.2 — `<BusinessTagPicker />`.** 150ms-debounced autocomplete, chip + ✕ remove, the full PWA "+20% commission" copy block. 7/7 tests.
+3. **F3 Task 3.4 — Create screen polish.** Header → "Create Post", Share button → orange, new `<PointsPreviewCard />` (3-col +30/+1/+200) and `<ModerationNoticeCard />` (15-min + +30pt) replace the old single-line banners. `<BusinessTagPicker />` wired in. `contentService.create()` forwards optional `businessTagId` in every code path (post/poll/thread). 5/5 screen-integration tests green.
+4. **F5 — Comment +3pt word-count gate.** POST /posts/:id/comments calls `earnPoints('comment', ...)` only when text has ≥ 10 word tokens after stripping non-letter/non-number chars (so emoji-only padding can't inflate). Credit errors never fail the comment post itself. 4/4 tests green.
+5. **F4.3 + F4.4 — Comment sort + post-detail parity.** `GET /posts/:id/comments?sort=top|recent` supports the "Most liked ▾" dropdown (likeCount DESC with recency tiebreak). Mobile: `<CommentSortDropdown />` + `<BusinessReplyCard />` (orange-tint, ✓verified, indented) wired into `post/[id].tsx`; sort change refetches the thread. 4/4 API + 7/7 component tests.
+
+**Decisions-of-note:**
+
+- **Word-count algorithm** = `text.replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean).length`. This counts 2 words for "nice 🎂 cake" (strips the emoji, keeps the two word tokens). Alternative was counting raw whitespace tokens which would have over-credited emoji padding. The stricter rule matches the PWA's "thoughtful" intent.
+- **Streak cleanup fix.** Adding `earnPoints` to the comment handler uncovered a missing `prisma.streak.deleteMany(...)` in the test-helper cleanup — `pointsEngine.updateStreak` now runs on every comment credit, so tests that seed + cleanup users would FK-violate without this. Added before user deletion. No production behavior change.
+- **Default sort order preserved.** Existing `getComments` callers that don't pass `sort` keep the old `createdAt ASC` order — nothing to migrate. The post-detail screen opts in to `sort='top'` as its default (matching PWA's "Most liked ▾").
+- **BusinessReplyCard wiring** assumes the comment response has `comment.user.kind === 'business'` and optional `user.verified`. Server doesn't emit these yet (comments only join `user: {id, name, username, avatarUrl}`). The card *will* render once the business-comment author flow ships (P9), but the wiring is safe — no business-kind comments means no orange cards, the regular `<CommentRow />` still renders.
+
+**Verification:**
+
+- **API:** feed+content 51/51, business-search 5/5, content-comments 9/9 (5 existing + 4 points), content-comments-sort 4/4 — new total across touched files: 69/69 ✅
+- **Mobile:** 482/482 ✅ across 105 suites
+- **TypeScript:** `apps/api` clean (0), `apps/mobile` clean (5 pre-existing per CLAUDE.md)
+
+**Commits this resume:** 11 so far.
+
 
