@@ -151,6 +151,7 @@ model User {
   pollVotes             PollVote[]
   highlights            Highlight[]
   watchlist             Watchlist[]
+  ownedBusinesses       Business[]            @relation("BusinessOwner")
 
   @@index([primaryPincode])
   @@map("users")
@@ -406,27 +407,33 @@ enum QuestPeriod {
 }
 
 model Business {
-  id              String    @id @default(uuid())
-  name            String
-  category        String
-  description     String?
-  avatarUrl       String?   @map("avatar_url")
-  pincode         String    @db.VarChar(6)
-  address         String?
-  phone           String?
-  openHours       Json?     @map("open_hours")
-  isVerified      Boolean   @default(false) @map("is_verified")
-  rating          Decimal   @default(0) @db.Decimal(2, 1)
-  reviewCount     Int       @default(0) @map("review_count")
-  followerCount   Int       @default(0) @map("follower_count")
-  createdAt       DateTime  @default(now()) @map("created_at")
+  id                  String    @id @default(uuid())
+  name                String
+  category            String
+  description         String?
+  avatarUrl           String?   @map("avatar_url")
+  bannerUrl           String?   @map("banner_url")
+  pincode             String    @db.VarChar(6)
+  address             String?
+  phone               String?
+  openHours           Json?     @map("open_hours")
+  since               Int?
+  responseTimeMinutes Int?      @map("response_time_minutes")
+  ownerId             String?   @map("owner_id")
+  isVerified          Boolean   @default(false) @map("is_verified")
+  rating              Decimal   @default(0) @db.Decimal(2, 1)
+  reviewCount         Int       @default(0) @map("review_count")
+  followerCount       Int       @default(0) @map("follower_count")
+  createdAt           DateTime  @default(now()) @map("created_at")
 
   offers               Offer[]
   sponsorshipProposals SponsorshipProposal[]
   watchlist            Watchlist[]
   taggedContent        Content[] @relation("BusinessTaggedContent")
+  owner                User?     @relation("BusinessOwner", fields: [ownerId], references: [id])
 
   @@index([pincode])
+  @@index([ownerId])
   @@map("businesses")
 }
 
@@ -592,21 +599,22 @@ model Message {
 }
 
 model SponsorshipProposal {
-  id              String            @id @default(uuid())
-  businessId      String            @map("business_id")
-  contentId       String?           @map("content_id")
-  creatorId       String            @map("creator_id")
-  boostAmount     Decimal           @map("boost_amount") @db.Decimal(10, 2)
-  commissionPct   Decimal           @default(20) @map("commission_pct") @db.Decimal(5, 2)
-  creatorEarnings Decimal?          @map("creator_earnings") @db.Decimal(10, 2)
-  status          SponsorshipStatus @default(pending)
-  reach           Int               @default(0)
-  clicks          Int               @default(0)
-  boostSpent      Decimal           @default(0) @map("boost_spent") @db.Decimal(10, 2)
-  acceptedAt      DateTime?         @map("accepted_at")
-  startsAt        DateTime?         @map("starts_at")
-  endsAt          DateTime?         @map("ends_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
+  id                   String            @id @default(uuid())
+  businessId           String            @map("business_id")
+  contentId            String?           @map("content_id")
+  creatorId            String            @map("creator_id")
+  boostAmount          Decimal           @map("boost_amount") @db.Decimal(10, 2)
+  commissionPct        Decimal           @default(20) @map("commission_pct") @db.Decimal(5, 2)
+  creatorEarnings      Decimal?          @map("creator_earnings") @db.Decimal(10, 2)
+  status               SponsorshipStatus @default(pending)
+  reach                Int               @default(0)
+  clicks               Int               @default(0)
+  boostSpent           Decimal           @default(0) @map("boost_spent") @db.Decimal(10, 2)
+  acceptedAt           DateTime?         @map("accepted_at")
+  startsAt             DateTime?         @map("starts_at")
+  endsAt               DateTime?         @map("ends_at")
+  negotiationHistory   Json?             @map("negotiation_history")
+  createdAt            DateTime          @default(now()) @map("created_at")
 
   business Business @relation(fields: [businessId], references: [id])
   creator  User     @relation(fields: [creatorId], references: [id])
