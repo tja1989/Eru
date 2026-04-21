@@ -29,8 +29,10 @@ describe('<Storefront />', () => {
   });
 
   it('renders business name and rating', async () => {
-    const { findByText } = render(<Storefront />);
-    expect(await findByText('Kashi Bakes')).toBeTruthy();
+    const { findAllByText, findByText } = render(<Storefront />);
+    // Name appears in both the header and the body heading.
+    const names = await findAllByText('Kashi Bakes');
+    expect(names.length).toBeGreaterThan(0);
     expect(await findByText(/4\.7/)).toBeTruthy();
     expect(await findByText(/287 reviews/i)).toBeTruthy();
   });
