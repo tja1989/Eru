@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { signInWithCustomToken } from 'firebase/auth';
 import { authService } from '@/services/authService';
 import { whatsappAuthService } from '@/services/whatsappAuthService';
-import { getFirebaseAuth } from '@/services/firebase';
+import { signInWithCustomToken } from '@/services/firebase';
+import {
+  getPendingConfirmation,
+  clearPendingConfirmation,
+} from '@/services/pendingConfirmation';
 import { useAuthStore } from '@/stores/authStore';
 import { ProgressSteps } from '@/components/ProgressSteps';
 import { colors } from '@/constants/theme';
@@ -22,9 +25,8 @@ const RESEND_SECONDS = 30;
 
 export default function OtpScreen() {
   const router = useRouter();
-  const { phone, verificationId, channel } = useLocalSearchParams<{
+  const { phone, channel } = useLocalSearchParams<{
     phone: string;
-    verificationId: string;
     channel: string;
   }>();
   const isWhatsApp = channel === 'whatsapp';
@@ -76,20 +78,25 @@ export default function OtpScreen() {
 
   async function handleVerify() {
     if (!complete) return;
-    if (!isWhatsApp && !verificationId) return;
     setSubmitting(true);
     setError(null);
     try {
       let idToken: string;
       if (isWhatsApp) {
         const customToken = await whatsappAuthService.verify(String(phone), full);
-        const userCred = await signInWithCustomToken(getFirebaseAuth(), customToken);
+        const userCred = await signInWithCustomToken(customToken);
         idToken = await userCred.user.getIdToken();
       } else {
-        idToken = await authService.verifyOtpAndSignIn(
-          String(verificationId),
-          full,
-        );
+        // Native Firebase: confirm the pending phone-auth session with the
+        // 6-digit code. The module-level ref was populated on /login.
+        const confirmation = getPendingConfirmation();
+        if (!confirmation) {
+          throw new Error('Session expired — go back and re-send the code.');
+        }
+        const userCred = await confirmation.confirm(full);
+        if (!userCred) throw new Error('Verification returned no user.');
+        idToken = await userCred.user.getIdToken();
+        clearPendingConfirmation();
       }
       const registered = await authService.checkRegistered(idToken);
       if (registered) {

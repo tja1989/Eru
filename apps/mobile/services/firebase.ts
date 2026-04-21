@@ -1,33 +1,30 @@
-import { initializeApp, getApps } from 'firebase/app';
-import {
-  getAuth,
-  PhoneAuthProvider,
-  signInWithCredential,
-  type Auth,
-} from 'firebase/auth';
-import Constants from 'expo-constants';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
-// Firebase config is provided via app.json → expo.extra.firebase. Values are
-// placeholder strings (`__REPLACE_ME__` …) until a real Firebase project is
-// wired in; consumers should check `isFirebaseConfigured()` before attempting
-// to hit the SDK at runtime.
-const cfg = (Constants.expoConfig?.extra as any)?.firebase;
-
-let auth: Auth | null = null;
-
+// Native SDK reads google-services.json at build time and auto-initializes.
+// Returning true means the caller can unconditionally use Firebase — if the
+// native config is missing, the app crashes at startup long before we get here.
 export function isFirebaseConfigured(): boolean {
-  if (!cfg) return false;
-  const placeholder = (v: unknown) =>
-    typeof v !== 'string' || v.length === 0 || v.includes('__REPLACE_ME__');
-  return !placeholder(cfg.apiKey) && !placeholder(cfg.projectId) && !placeholder(cfg.appId);
+  return true;
 }
 
-export function getFirebaseAuth(): Auth {
-  if (!auth) {
-    const app = getApps()[0] ?? initializeApp(cfg);
-    auth = getAuth(app);
-  }
-  return auth;
+export function signInWithPhoneNumber(
+  formattedPhone: string,
+): Promise<FirebaseAuthTypes.ConfirmationResult> {
+  return auth().signInWithPhoneNumber(formattedPhone);
 }
 
-export { PhoneAuthProvider, signInWithCredential };
+// `signInWithCustomToken` is kept for the WhatsApp OTP flow — Gupshup returns
+// a Firebase custom token that we exchange here for a normal Firebase session.
+export function signInWithCustomToken(token: string) {
+  return auth().signInWithCustomToken(token);
+}
+
+export function getCurrentUserIdToken(): Promise<string | null> {
+  const user = auth().currentUser;
+  return user ? user.getIdToken() : Promise.resolve(null);
+}
+
+export async function firebaseSignOut(): Promise<void> {
+  const user = auth().currentUser;
+  if (user) await auth().signOut();
+}

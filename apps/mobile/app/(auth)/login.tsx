@@ -4,11 +4,8 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { setAuthToken } from '../../services/api';
 import { feedService } from '../../services/feedService';
-import {
-  isFirebaseConfigured,
-  getFirebaseAuth,
-  PhoneAuthProvider,
-} from '../../services/firebase';
+import { isFirebaseConfigured, signInWithPhoneNumber } from '../../services/firebase';
+import { setPendingConfirmation } from '../../services/pendingConfirmation';
 import { whatsappAuthService } from '../../services/whatsappAuthService';
 import { colors, spacing } from '../../constants/theme';
 
@@ -52,18 +49,15 @@ export default function LoginScreen() {
   };
 
   const handleFirebaseOtp = async (formattedPhone: string) => {
-    // TODO: Firebase Phone Auth in Expo Go requires `expo-firebase-recaptcha`
-    // for the web recaptcha modal. For production use a dev-client build with
-    // the native Firebase SDK so verification is invisible. The second arg to
-    // `verifyPhoneNumber` should be a FirebaseRecaptchaVerifierModal ref.
-    const provider = new PhoneAuthProvider(getFirebaseAuth());
-    const verificationId = await provider.verifyPhoneNumber(
-      formattedPhone,
-      undefined as any,
-    );
+    // Native SDK path — Play Integrity (Android) or APNs silent push (iOS)
+    // handles verification invisibly, no reCAPTCHA. We stash the
+    // ConfirmationResult in a module-level ref because expo-router's typed
+    // routes can't serialise the Firebase object through search params.
+    const confirmation = await signInWithPhoneNumber(formattedPhone);
+    setPendingConfirmation(confirmation);
     router.push({
       pathname: '/(auth)/otp',
-      params: { phone: formattedPhone, verificationId },
+      params: { phone: formattedPhone },
     });
   };
 

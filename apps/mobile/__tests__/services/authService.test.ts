@@ -9,13 +9,6 @@ describe('authService', () => {
     jest.clearAllMocks();
   });
 
-  describe('verifyOtpAndSignIn()', () => {
-    it('exchanges verificationId+code for a Firebase credential and returns the ID token', async () => {
-      const token = await authService.verifyOtpAndSignIn('vid-1', '123456');
-      expect(token).toBe('firebase-id-token-abc');
-    });
-  });
-
   describe('checkRegistered()', () => {
     it('calls GET /wallet/summary with the token; returns true on 200', async () => {
       (api.get as jest.Mock).mockResolvedValue({ status: 200, data: {} });

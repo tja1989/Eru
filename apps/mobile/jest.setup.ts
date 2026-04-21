@@ -32,21 +32,30 @@ jest.mock('@/services/api', () => ({
 
 // Firebase is only used via our thin wrapper at `@/services/firebase`. Mocking
 // the wrapper keeps tests deterministic — no real SDK init, no network calls.
-// Individual tests can override `signInWithCredential` / `getFirebaseAuth`
-// with `jest.mocked(...)` as needed.
+// Individual tests override these with `jest.mocked(...)` when they need
+// specific behaviour (e.g. a successful confirmation.confirm()).
 jest.mock('@/services/firebase', () => ({
   __esModule: true,
-  getFirebaseAuth: jest.fn(() => ({})),
-  isFirebaseConfigured: jest.fn(() => false),
-  PhoneAuthProvider: {
-    credential: jest.fn((verificationId: string, code: string) => ({
-      verificationId,
-      code,
+  isFirebaseConfigured: jest.fn(() => true),
+  signInWithPhoneNumber: jest.fn(async () => ({
+    confirm: jest.fn(async () => ({
+      user: { getIdToken: async () => 'firebase-id-token-abc' },
     })),
-  },
-  signInWithCredential: jest.fn(async () => ({
+  })),
+  signInWithCustomToken: jest.fn(async () => ({
     user: { getIdToken: async () => 'firebase-id-token-abc' },
   })),
+  getCurrentUserIdToken: jest.fn(async () => null),
+  firebaseSignOut: jest.fn(async () => {}),
+}));
+
+// ConfirmationResult ref between /login → /otp. Tests that exercise the OTP
+// screen override `getPendingConfirmation` to return a specific confirm spy.
+jest.mock('@/services/pendingConfirmation', () => ({
+  __esModule: true,
+  getPendingConfirmation: jest.fn(() => null),
+  setPendingConfirmation: jest.fn(),
+  clearPendingConfirmation: jest.fn(),
 }));
 
 // expo-video pulls in a native module that fails to initialize in the jest

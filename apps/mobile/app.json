@@ -23,11 +23,24 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FAFAFA"
       },
-      "package": "app.eru.consumer"
+      "package": "app.eru.consumer",
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       "expo-router",
-      "expo-video"
+      "expo-video",
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -39,12 +52,6 @@
       "router": {},
       "eas": {
         "projectId": "5fb96f5e-8595-40ac-a854-07f89029aa07"
-      },
-      "firebase": {
-        "apiKey": "__REPLACE_ME__",
-        "authDomain": "__REPLACE_ME__.firebaseapp.com",
-        "projectId": "__REPLACE_ME__",
-        "appId": "__REPLACE_ME__"
       }
     },
     "owner": "eru_aflo"

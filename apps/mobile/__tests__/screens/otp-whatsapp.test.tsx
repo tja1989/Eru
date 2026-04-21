@@ -3,6 +3,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import OtpScreen from '@/app/(auth)/otp';
 import { whatsappAuthService } from '@/services/whatsappAuthService';
 import { authService } from '@/services/authService';
+import { signInWithCustomToken } from '@/services/firebase';
+import { getPendingConfirmation } from '@/services/pendingConfirmation';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -15,10 +17,23 @@ jest.mock('@/services/whatsappAuthService', () => ({
 
 jest.mock('@/services/authService', () => ({
   authService: {
-    verifyOtpAndSignIn: jest.fn(),
     checkRegistered: jest.fn(),
     getOnboardingStatus: jest.fn().mockResolvedValue({ complete: true }),
   },
+}));
+
+jest.mock('@/services/firebase', () => ({
+  signInWithPhoneNumber: jest.fn(),
+  signInWithCustomToken: jest.fn(),
+  isFirebaseConfigured: () => true,
+  getCurrentUserIdToken: jest.fn(),
+  firebaseSignOut: jest.fn(),
+}));
+
+jest.mock('@/services/pendingConfirmation', () => ({
+  getPendingConfirmation: jest.fn(),
+  clearPendingConfirmation: jest.fn(),
+  setPendingConfirmation: jest.fn(),
 }));
 
 jest.mock('@/stores/authStore', () => ({
@@ -34,19 +49,9 @@ jest.mock('@/stores/authStore', () => ({
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 
-// useLocalSearchParams is overridden per-test via jest.spyOn
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
-  useLocalSearchParams: jest.fn(() => ({
-    phone: '+919876543210',
-    verificationId: 'vid-1',
-    channel: 'sms',
-  })),
-}));
-
-// Mock firebase/auth for signInWithCustomToken
-jest.mock('firebase/auth', () => ({
-  signInWithCustomToken: jest.fn(),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn() }),
+  useLocalSearchParams: jest.fn(() => ({ phone: '+919876543210', channel: 'sms' })),
 }));
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -64,7 +69,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
   });
 
   it('when channel=whatsapp, submitting calls whatsappAuthService.verify then signInWithCustomToken', async () => {
-    const { signInWithCustomToken } = require('firebase/auth');
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
       user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
@@ -74,7 +78,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
       phone: '+919876543210',
-      verificationId: '',
       channel: 'whatsapp',
     });
 
@@ -84,12 +87,11 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
 
     await waitFor(() => {
       expect(whatsappAuthService.verify).toHaveBeenCalledWith('+919876543210', '123456');
-      expect(signInWithCustomToken).toHaveBeenCalledWith(expect.anything(), 'custom-token-abc');
+      expect(signInWithCustomToken).toHaveBeenCalledWith('custom-token-abc');
     });
   });
 
   it('when channel=whatsapp and registered + onboarding complete, navigates to /(tabs)', async () => {
-    const { signInWithCustomToken } = require('firebase/auth');
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
       user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
@@ -100,7 +102,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
       phone: '+919876543210',
-      verificationId: '',
       channel: 'whatsapp',
     });
 
@@ -114,7 +115,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
   });
 
   it('when registered but onboarding NOT complete, navigates to /(auth)/tutorial', async () => {
-    const { signInWithCustomToken } = require('firebase/auth');
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
       user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
@@ -125,7 +125,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
       phone: '+919876543210',
-      verificationId: '',
       channel: 'whatsapp',
     });
 
@@ -139,7 +138,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
   });
 
   it('when channel=whatsapp and NOT registered, navigates to onboarding', async () => {
-    const { signInWithCustomToken } = require('firebase/auth');
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
       user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
@@ -149,7 +147,6 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
       phone: '+919876543210',
-      verificationId: '',
       channel: 'whatsapp',
     });
 
@@ -164,14 +161,16 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     });
   });
 
-  it('when channel=sms (default), uses authService.verifyOtpAndSignIn and NOT whatsappAuthService', async () => {
-    (authService.verifyOtpAndSignIn as jest.Mock).mockResolvedValue('id-token-sms');
+  it('when channel=sms (default), uses native confirmation.confirm and NOT whatsappAuthService', async () => {
+    const mockConfirm = jest.fn().mockResolvedValue({
+      user: { getIdToken: jest.fn().mockResolvedValue('id-token-sms') },
+    });
+    (getPendingConfirmation as jest.Mock).mockReturnValue({ confirm: mockConfirm });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(true);
 
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
       phone: '+919876543210',
-      verificationId: 'vid-1',
       channel: 'sms',
     });
 
@@ -180,7 +179,7 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     fireEvent.press(getByTestId('otp-verify'));
 
     await waitFor(() => {
-      expect(authService.verifyOtpAndSignIn).toHaveBeenCalledWith('vid-1', '274816');
+      expect(mockConfirm).toHaveBeenCalledWith('274816');
       expect(whatsappAuthService.verify).not.toHaveBeenCalled();
     });
   });

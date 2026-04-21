@@ -90,8 +90,15 @@ describe('<AuthLayout /> — onboarding gate', () => {
     expect(queryByTestId('stack')).toBeNull();
   });
 
-  it('unauthenticated + !hasCompletedOnboarding on /login → redirects to /(auth)/welcome', () => {
+  it('unauthenticated + !hasCompletedOnboarding on /login → renders Stack (login IS an onboarding route)', () => {
     setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false }, ['(auth)', 'login']);
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('stack')).toBeTruthy();
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it('unauthenticated + !hasCompletedOnboarding on a non-onboarding route → redirects to /(auth)/welcome', () => {
+    setup({ initializing: false, isAuthenticated: false, hasCompletedOnboarding: false }, ['(tabs)', 'profile']);
     const { getByTestId } = render(<AuthLayout />);
     expect(getByTestId('redirect').props.children).toBe('/(auth)/welcome');
     expect(mockRedirect).toHaveBeenCalledWith('/(auth)/welcome');
@@ -133,12 +140,23 @@ describe('<AuthLayout /> — onboarding gate', () => {
     expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
   });
 
-  it('authenticated + !hasCompletedOnboarding on /login → redirects to /(auth)/tutorial', () => {
+  it('authenticated + !hasCompletedOnboarding on /login → renders Stack (login is an onboarding route)', () => {
+    // Edge case: a user who has a token but somehow ended up on /login. The gate
+    // lets them stay on /login rather than bouncing to tutorial — in practice
+    // this can't happen because post-login flow routes forward, but verifying
+    // the invariant prevents regression loops.
     setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: false }, ['(auth)', 'login']);
     const { getByTestId } = render(<AuthLayout />);
-    expect(getByTestId('redirect').props.children).toBe('/(auth)/tutorial');
+    expect(getByTestId('stack')).toBeTruthy();
     expect(mockRedirect).not.toHaveBeenCalledWith('/(tabs)');
     expect(mockRedirect).not.toHaveBeenCalledWith('/(auth)/welcome');
+  });
+
+  it('authenticated + !hasCompletedOnboarding on a non-onboarding route → redirects to /(auth)/tutorial', () => {
+    setup({ initializing: false, isAuthenticated: true, hasCompletedOnboarding: false }, ['(tabs)', 'index']);
+    const { getByTestId } = render(<AuthLayout />);
+    expect(getByTestId('redirect').props.children).toBe('/(auth)/tutorial');
+    expect(mockRedirect).toHaveBeenCalledWith('/(auth)/tutorial');
   });
 
   it('authenticated + !hasCompletedOnboarding already on /tutorial → renders Stack (no redirect loop)', () => {
