@@ -20,7 +20,8 @@ export default function Storefront() {
       setLoading(false);
     });
     // Check current watchlist state so the Follow button reflects reality.
-    watchlistService.list().then((rows) => {
+    watchlistService.list().then((res: any) => {
+      const rows = Array.isArray(res) ? res : (res?.items ?? []);
       const found = rows.some((r: any) => r.businessId === id);
       setFollowing(found);
     }).catch(() => {});

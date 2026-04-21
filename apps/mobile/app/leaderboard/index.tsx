@@ -148,6 +148,30 @@ export default function LeaderboardScreen() {
           ) : null}
         </View>
 
+        {/* Season prize tiles (PWA lines 3412–3440). Hardcoded for the
+            current season; when the API starts returning per-season prize
+            data this block moves to read from `season.prizes`. */}
+        <View style={styles.prizeRow}>
+          <View style={[styles.prizeTile, styles.prizeGrand]}>
+            <Text style={styles.prizeLabel}>GRAND</Text>
+            <Text style={styles.prizeEmoji}>📱</Text>
+            <Text style={styles.prizeName}>iPhone 16</Text>
+            <Text style={styles.prizeRank}>Rank #1</Text>
+          </View>
+          <View style={[styles.prizeTile, styles.prizeRunner]}>
+            <Text style={styles.prizeLabel}>RUNNER-UP</Text>
+            <Text style={styles.prizeEmoji}>💻</Text>
+            <Text style={styles.prizeName}>MacBook Air</Text>
+            <Text style={styles.prizeRank}>Ranks #2–3</Text>
+          </View>
+          <View style={[styles.prizeTile, styles.prizeWeekly]}>
+            <Text style={styles.prizeLabel}>WEEKLY</Text>
+            <Text style={styles.prizeEmoji}>💳</Text>
+            <Text style={styles.prizeName}>₹200 card</Text>
+            <Text style={styles.prizeRank}>Top 10</Text>
+          </View>
+        </View>
+
         {/* My rank card */}
         {myRank ? (
           <View style={styles.myRankCard}>
@@ -285,6 +309,26 @@ const styles = StyleSheet.create({
   seasonName: { fontSize: 16, fontWeight: '700', color: '#fff' },
   seasonDays: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   seasonTheme: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontStyle: 'italic' },
+  prizeRow: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  prizeTile: {
+    flex: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  prizeGrand: { backgroundColor: 'rgba(217,119,6,0.08)', borderColor: 'rgba(217,119,6,0.25)' },
+  prizeRunner: { backgroundColor: 'rgba(192,192,192,0.15)', borderColor: 'rgba(192,192,192,0.35)' },
+  prizeWeekly: { backgroundColor: 'rgba(37,99,235,0.08)', borderColor: 'rgba(37,99,235,0.25)' },
+  prizeLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 1, color: colors.g500 },
+  prizeEmoji: { fontSize: 28, marginVertical: 4 },
+  prizeName: { fontSize: 12, fontWeight: '700', color: colors.g800, textAlign: 'center' },
+  prizeRank: { fontSize: 10, color: colors.g500, marginTop: 2 },
 
   myRankCard: {
     flexDirection: 'row',
