@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma.js';
 import { Errors } from '../utils/errors.js';
+import { emitToUser } from '../ws/gateway.js';
 
 function orderedPair(a: string, b: string) {
   return a < b ? [a, b] : [b, a];
@@ -31,6 +32,19 @@ export const messagesService = {
         data: { lastMessageAt: new Date() },
       }),
     ]);
+
+    // Push the message to the recipient's websocket room so their chat
+    // view appends it immediately. Also echo back to the sender so their
+    // other open clients (web + mobile) stay in sync.
+    const recipientId = conv.userAId === senderId ? conv.userBId : conv.userAId;
+    const payload = { conversationId, message };
+    try {
+      emitToUser(recipientId, 'message:new', payload);
+      emitToUser(senderId, 'message:new', payload);
+    } catch {
+      // Gateway isn't available in tests; ignore.
+    }
+
     return message;
   },
 

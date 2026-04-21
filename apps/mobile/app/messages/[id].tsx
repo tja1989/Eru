@@ -14,13 +14,17 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { messagesService, Message } from '@/services/messagesService';
 import { MessageBubble } from '@/components/MessageBubble';
 import { useAuthStore } from '@/stores/authStore';
+import { realtime } from '@/services/realtime';
 
-const POLL_INTERVAL_MS = 5000;
+// Fallback polling when the websocket is unavailable. Realtime is the
+// primary transport; polling keeps the UI fresh if the connection drops.
+const POLL_INTERVAL_MS = 15_000;
 
 export default function ChatDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
+  const token = useAuthStore((s) => s.token);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
 
@@ -39,6 +43,30 @@ export default function ChatDetailScreen() {
     const timer = setInterval(loadMessages, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [loadMessages]);
+
+  // Realtime — subscribe to "message:new" for this conversation. Append
+  // immediately, dedupe by id so the echo from our own send doesn't
+  // double-add (send handler already optimistically appends).
+  useEffect(() => {
+    if (!id || !token) return;
+    let cancelled = false;
+
+    const handler = (...args: unknown[]) => {
+      const payload = args[0] as { conversationId?: string; message?: Message } | undefined;
+      if (!payload || cancelled) return;
+      if (payload.conversationId !== id) return;
+      const msg = payload.message;
+      if (!msg) return;
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+    };
+
+    realtime.connect(token).catch(() => {});
+    realtime.on('message:new', handler);
+    return () => {
+      cancelled = true;
+      realtime.off('message:new', handler);
+    };
+  }, [id, token]);
 
   const onSend = async () => {
     if (!text.trim() || !id) return;
