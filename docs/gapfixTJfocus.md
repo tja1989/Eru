@@ -240,4 +240,46 @@ This matches the documented pattern in `CLAUDE.md`:
 | TypeScript | 0 errors `apps/api`; only 5 pre-existing in `apps/mobile` |
 | Push to origin | ❌ none — per your standing rule |
 
+---
+
+## Session wrap-up (final)
+
+**Bottom line:** All 4 onboarding screens are now pixel-parity with the PWA, the +275 welcome bonus loop works end-to-end, and the foundations (Watchlist, server QR, WebSocket gateway, businessTagId) are in place to unblock P6–P10. The mobile app can be opened on a device and the welcome → otp → personalize → tutorial flow will look exactly like the client's PWA mockup. New users land on `/(tabs)` with 275 starter pts already in the wallet.
+
+**What's NOT shipped this session:**
+
+- **P4 F5** (route lockdown of remaining ~13 routes) — mechanical work, no new feature value, low risk.
+- **Socket emit-on-mutation** for messages and proposals — gateway exists; emits live in P8/P9 routes when those screens get rewritten.
+- **All of P6–P10** — phase docs are complete and self-contained, ready for the next session(s) to execute.
+
+**Next session — recommended starting points (in priority order):**
+
+1. **P6 F2 — Home screen + PostCard 6 variants.** Highest user-visible delta. The schema (P4 F4) + feed shape are ready; mobile-only work.
+2. **P6 F3 — Create screen + business tag autocomplete.** API (`POST /content/create` accepting `businessTagId` + business search endpoint) is ready.
+3. **P6 F4 — Post detail + comment +3pt server gating.** Comment word-count is already enforced in `pointsEngine` (`minWordCount: 10`); the screen just needs to use the existing comment endpoint.
+
+**Then in order:** P7 (Earn/Redeem with Watchlist tab), P8 (Social w/ realtime messages), P9 (Storefront + Creator×Biz), P10 (Polish — leaderboard / settings / my-content).
+
+**Files to skim before next session:**
+
+- `GapFix/GapFix_Agent_Protocol.md` — execution rules
+- `GapFix/GapFixP6.md` — next phase doc
+- This file (`docs/gapfixTJfocus.md`) — what's already done
+
+---
+
+## Total session output
+
+- **23 commits** on `main` (local only — not pushed)
+- **5 of 6** P4 features shipped (F5 lockdown deferred)
+- **5 of 6** P5 features shipped (F5 lockdown deferred)
+- **Mobile suite:** 410 / 410 ✅
+- **API targeted tests:** 30 / 30 ✅ across 7 P4+P5 test files (run together, no flake)
+- **API full suite:** background run completed exit 0 (re-verify next session if you want)
+- **TypeScript:** 0 errors `apps/api`, 5 pre-existing in `apps/mobile` (CommentInput / SponsorshipCard / useNotifications — documented in CLAUDE.md)
+- **Plan docs (separate from execution):** 9 GapFix files (~216 KB) covering P4–P10 + protocol + index, all written this session before execution started
+
+**Production prod-blocker noted:** MediaConvert AWS subscription is failing (production logs: "AWS Access Key Id needs a subscription for the service"). Video uploads succeed but transcoding skips. Logged in `GapFix_Agent_Protocol.md §10`. Recommend resolving before any external user pilot. No fix attempted — out of dev-phase scope per your >\$20 rule.
+
+
 
