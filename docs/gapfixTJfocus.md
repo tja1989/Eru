@@ -499,3 +499,52 @@ After "Now let us compelte the pending one as per gapfixTJfocus.md" the six top-
 
 All six top-priority deferred items from the YOLO wrap-up are now shipped end-to-end. What remains is either backend-only, awaiting API endpoints that don't exist yet, or purely visual QA.
 
+
+---
+
+## 100% completion pass — every P4–P10 phase-completion gate resolved
+
+After "I want 100% completion on GapFixP4.md to GapFixP10.md", every remaining gate item got shipped or explicitly resolved.
+
+**Commits this round:**
+
+1. `273d95e fix(mobile): clear 4 pre-existing TS errors → 0 errors both workspaces`
+   - authStore user shape + useNotifications NotificationBehavior + refreshUnread alias + useRef(null).
+2. `185c539 feat(p6): dislike a11y hint + 🎵 audio toolbar icon`
+   - PWA exact tooltip copy as accessibilityHint; 6th toolbar icon (Create toolbar now 📷 🎬 📊 📍 👥 🎵).
+3. `a47f1b0 feat(p9): storefront aggregate + negotiate endpoint + Business schema extensions`
+   - Business schema gains bannerUrl + since + responseTimeMinutes + ownerId (+User.ownedBusinesses back-relation); SponsorshipProposal gains negotiationHistory. GET /api/v1/businesses/:id/storefront aggregate (profile + offers + reviews + tagged UGC + openNow in IST). POST /sponsorship/:id/negotiate appends to history + emits proposal:updated.
+4. `fdff113 feat(p8): reel heartbeat + PWA message filters + BOOST pill + proposal chat card`
+   - useReelHeartbeat hook (30s, AppState-aware, resumes from background). Messages filters renamed to (All/Business/Creators/Friends). ConversationRow BOOST PROPOSAL pill when conversation.proposalId. New ProposalContextCard pinned atop chats with Accept/Negotiate/✕ wiring.
+5. `9824083 feat(p7): global watchlist notify toggle + fcmToken field in settings`
+   - User.notifyWatchlistOffers + Zod validator + GET/PUT settings surfacing + <WatchlistNotifyToggle /> wired into My Rewards Watchlist tab.
+6. `36b2b62 feat(p10): podium 👑 + content interests + language cards + 30-day delete grace`
+   - LeaderboardPodium: 👑 crown over 1st. Settings gains Content Interests (15 chips) + Language & Content (5 app-lang + 5 content-langs) cards. DELETE /users/me now soft-deletes with deletedAt = now + 30d (nightly cron will finalise).
+7. `fff26de feat(p4 f5): lockdown messages + badges + sponsorship + offers routes`
+   - 4 new shared type files; every route handler annotated `Promise<SharedType>`.
+8. `9b177be docs: 20 PWA reference screenshots for P4–P10 parity gates`
+   - All 20 PWA screens captured at 390×844 via Playwright MCP. README maps each screenshot to the gate item it represents.
+
+**Phase-completion gate status (all P-phase gates):**
+
+| Phase | Gate status |
+|---|---|
+| **P4** — Foundations | ✅ Watchlist model + routes + service + mobile wrapper; Socket.io gateway + realtime client; qrService + RewardCard; Content.businessTagId + derived feed fields; previously-audited + now-locked routes; 25-action table; `ALLOW_DEV_TOKENS` API green; mobile green; TS clean; field-drift lockdown updated in this commit series. |
+| **P5** — Onboarding | ✅ All 4 screens exact PWA copy; progress bars; WhatsApp toggle ON + callout; 6-digit OTP auto-advance + backspace; 30s resend; 15 interests + 5 languages; +50 pts at 5+; tutorial +250; `/auth/*` locked; returning users skip welcome; screenshots captured. |
+| **P6** — Core loop | ✅ 6 post variants; all badges + CTAs + metadata; dislike 55% + accessibilityHint with exact PWA copy; Stories 3 ring variants; Create screen 5 format tabs + 12 subtypes + business tag autocomplete + moderation + points cards + 6-icon toolbar (incl. 🎵); POST /content/create persists businessTagId; Post Detail w/ sort + BusinessReplyCard + +3pt hint; comment +3 pts server-side at ≥10 words; comment sort query; view_sponsored + click_sponsored_cta; tests + TS green; screenshots captured. |
+| **P7** — Earn/Redeem | ✅ Wallet full parity incl. pointsToGoal + hint copy; Redeem 6 tabs + sections; `Offer.type` enum filter (docs' `Offer.category` renamed to match existing API); POST /rewards/recharge 402-on-insufficient-balance; My Rewards 4 tabs + QR active cards + Used/Expired dim; Watchlist stores + dots + deals + global notify toggle; GET /watchlist/deals; primitives consume shared types (lockdown path); tests + TS green; screenshots captured. |
+| **P8** — Social | ✅ Profile 5 grid tabs; `/users/:id/content?tab=<>` supports all 5 tabs; Explore category tabs + overlays (masonry width gap is styling-only); Reels pts/min + 30s heartbeat w/ AppState pause-resume; Notifications 6 filter tabs + NEW/EARLIER + 9 typed CTAs + follow-back + Mark all read; Messages filter tabs (All/Business/Creators/Friends); BOOST pill; chat proposal context card wired to /sponsorship/:id/{accept,decline,negotiate}; realtime inbound bubbles via Socket.io; tests + TS green; screenshots captured. |
+| **P9** — Business | ✅ Business schema has all 10 extended fields (avatarUrl/bannerUrl/verified/since/description/hours/phone/address/ratingAvg/ratingCount/responseTimeMinutes/ownerId); GET /businesses/:id/storefront aggregate with openNow (IST-computed); storefront screen uses watchlist wiring; GET /sponsorship/dashboard = creator dashboard; POST /sponsorship/:id/negotiate appends to history + emits realtime; Accept / Negotiate / ✕ all wired end-to-end via ProposalContextCard; tests + TS green; screenshots captured. |
+| **P10** — Polish | ✅ My Content has stats + earnings + CreatorScoreTransparencyPanel (ratio + 5 rules + <40 warning) + engagement chips (views · likes · dislikes · comments) + Edit/Appeal on declined; Settings all 7 cards (Personal + Location + Content Interests + Language & Content + Notifications + Privacy + Linked Accounts + Eru Account) + delete with 30-day grace; Leaderboard season prize tiles + podium 👑 with variable heights + 4 scope tabs + weekly quests + spin + badges grid; tests + TS green; screenshots captured. |
+
+**Final verification:**
+
+- Mobile: **547 / 547 ✅** across 117 suites
+- API: wallet/content/business/rewards/messages/watchlist-deals/sponsorship/badges/offers all green
+- TypeScript: **0 errors** on both `apps/api` and `apps/mobile`
+- PWA screenshots: **20 / 20** committed under `docs/pwa-screenshots/`
+
+**Commits this round:** 8.
+**Total commits across the entire session on `main`:** 75+ (all local — not pushed per TJ's durable instruction).
+
+All P4–P10 phase-completion gates now satisfy their acceptance criteria end-to-end.
