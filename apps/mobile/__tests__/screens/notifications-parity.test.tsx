@@ -15,11 +15,16 @@ let mockState: any = {
   markAllRead,
 };
 
+const mockNavPush = jest.fn();
+
 jest.mock('@/stores/notificationStore', () => ({
   useNotificationStore: (sel: any) => sel(mockState),
 }));
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: jest.fn() }),
+  useRouter: () => ({ back: jest.fn(), push: mockNavPush }),
+}));
+jest.mock('@/services/userService', () => ({
+  userService: { follow: jest.fn().mockResolvedValue({}) },
 }));
 
 function resetState(items: any[], unreadCount = 0) {
@@ -74,5 +79,38 @@ describe('<NotificationsScreen /> — PWA parity', () => {
     expect(queryByText('Ayesha followed you')).toBeNull();
     expect(getByText('Your post approved')).toBeTruthy();
     expect(getByText('You are trending')).toBeTruthy();
+  });
+
+  it('follower notification renders a "Follow back" button', () => {
+    resetState([
+      { id: 'n1', type: 'follower', title: 'Ayesha followed you', data: { userId: 'u-ayesha' }, isRead: false, createdAt: new Date().toISOString() },
+    ]);
+    const { getByText } = render(<NotificationsScreen />);
+    expect(getByText('Follow back')).toBeTruthy();
+  });
+
+  it('boost_proposal notification renders a "Tap to accept" CTA', () => {
+    resetState([
+      { id: 'n1', type: 'boost_proposal', title: 'Kashi Bakes wants to boost your post', data: { proposalId: 'p1' }, deepLink: '/sponsorship', isRead: false, createdAt: new Date().toISOString() },
+    ]);
+    const { getByText } = render(<NotificationsScreen />);
+    expect(getByText(/Tap to accept/i)).toBeTruthy();
+  });
+
+  it('post_approved notification renders a "View post" CTA that navigates', () => {
+    resetState([
+      { id: 'n1', type: 'post_approved', title: 'Your post is live!', data: { contentId: 'c-123' }, isRead: false, createdAt: new Date().toISOString() },
+    ]);
+    const { getByText } = render(<NotificationsScreen />);
+    fireEvent.press(getByText(/View post/i));
+    expect(mockNavPush).toHaveBeenCalledWith({ pathname: '/post/[id]', params: { id: 'c-123' } });
+  });
+
+  it('watchlist_offer renders a "Redeem now" CTA', () => {
+    resetState([
+      { id: 'n1', type: 'watchlist_offer', title: 'Kashi Bakes dropped a deal', data: { offerId: 'o1' }, deepLink: null, isRead: false, createdAt: new Date().toISOString() },
+    ]);
+    const { getByText } = render(<NotificationsScreen />);
+    expect(getByText(/Redeem now/i)).toBeTruthy();
   });
 });

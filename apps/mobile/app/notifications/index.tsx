@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { RelativeTime } from '../../components/RelativeTime';
+import { userService } from '../../services/userService';
 import { colors, spacing, radius } from '../../constants/theme';
 
 // PWA 6 filter tabs. "all" is a wildcard; other keys match either Notification
@@ -138,6 +140,7 @@ export default function NotificationsScreen() {
                     <RelativeTime iso={item.createdAt} />
                   </View>
                 ) : null}
+                <NotificationCta item={item} router={router} />
               </View>
             </View>
           );
@@ -154,6 +157,112 @@ export default function NotificationsScreen() {
       />
     </View>
   );
+}
+
+// Type-specific CTA row rendered under a notification. Each notification
+// `type` maps to one action the user most wants to take next — the PWA's
+// inline buttons (Follow back, Tap to accept, Redeem now, View post).
+function NotificationCta({ item, router }: { item: any; router: any }) {
+  const data = item.data ?? {};
+  const deepLink: string | undefined = item.deepLink;
+
+  async function followBack(userId: string) {
+    try {
+      await userService.follow(userId);
+      Alert.alert('Followed', 'You are now following this person.');
+    } catch (e: any) {
+      Alert.alert('Could not follow', e?.response?.data?.error ?? 'Try again');
+    }
+  }
+
+  switch (item.type) {
+    case 'follower':
+      if (!data.userId) return null;
+      return (
+        <TouchableOpacity
+          onPress={() => followBack(data.userId)}
+          style={[styles.ctaBtn, styles.ctaPrimary]}
+          accessibilityLabel="Follow back"
+        >
+          <Text style={styles.ctaPrimaryText}>Follow back</Text>
+        </TouchableOpacity>
+      );
+    case 'boost_proposal':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push(deepLink ?? '/sponsorship')}
+          style={[styles.ctaBtn, styles.ctaAccent]}
+          accessibilityLabel="Review proposal"
+        >
+          <Text style={styles.ctaAccentText}>Tap to accept →</Text>
+        </TouchableOpacity>
+      );
+    case 'watchlist_offer':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push(deepLink ?? { pathname: '/redeem', params: { type: 'local' } })}
+          style={[styles.ctaBtn, styles.ctaTeal]}
+          accessibilityLabel="Redeem now"
+        >
+          <Text style={styles.ctaTealText}>Redeem now →</Text>
+        </TouchableOpacity>
+      );
+    case 'post_approved':
+    case 'trending':
+      if (!data.contentId) return null;
+      return (
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/post/[id]', params: { id: data.contentId } })}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="View post"
+        >
+          <Text style={styles.ctaSecondaryText}>View post →</Text>
+        </TouchableOpacity>
+      );
+    case 'post_declined':
+      if (!data.contentId) return null;
+      return (
+        <TouchableOpacity
+          onPress={() => router.push('/my-content')}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="See reason"
+        >
+          <Text style={styles.ctaSecondaryText}>See reason →</Text>
+        </TouchableOpacity>
+      );
+    case 'leaderboard':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push('/leaderboard')}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="See ranks"
+        >
+          <Text style={styles.ctaSecondaryText}>See ranks →</Text>
+        </TouchableOpacity>
+      );
+    case 'quest':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push('/leaderboard')}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="View quests"
+        >
+          <Text style={styles.ctaSecondaryText}>View quests →</Text>
+        </TouchableOpacity>
+      );
+    case 'expiry':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/redeem', params: { type: 'all' } })}
+          style={[styles.ctaBtn, styles.ctaAccent]}
+          accessibilityLabel="Redeem before expiry"
+        >
+          <Text style={styles.ctaAccentText}>Redeem now →</Text>
+        </TouchableOpacity>
+      );
+    default:
+      return null;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -208,4 +317,19 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', padding: 48 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { color: colors.g400, fontSize: 14 },
+  ctaBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    marginTop: 8,
+  },
+  ctaPrimary: { backgroundColor: colors.blue },
+  ctaPrimaryText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  ctaAccent: { backgroundColor: colors.orange },
+  ctaAccentText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  ctaTeal: { backgroundColor: colors.teal },
+  ctaTealText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  ctaSecondary: { backgroundColor: colors.g100 },
+  ctaSecondaryText: { color: colors.g700, fontSize: 12, fontWeight: '700' },
 });
