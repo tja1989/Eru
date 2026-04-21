@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { userService } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
+import { INTERESTS, LANGUAGES } from '@eru/shared';
 import { colors, spacing, radius } from '../../constants/theme';
 
 type Gender = 'male' | 'female' | 'other';
@@ -32,6 +33,9 @@ interface UserSettings {
   gender: Gender | null;
   secondaryPincodes: string[];
   notificationEmail: boolean;
+  interests: string[];
+  contentLanguages: string[];
+  appLanguage: string | null;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -45,6 +49,9 @@ const DEFAULT_SETTINGS: UserSettings = {
   gender: null,
   secondaryPincodes: [],
   notificationEmail: false,
+  interests: [],
+  contentLanguages: [],
+  appLanguage: null,
 };
 
 /** Formats an ISO date string (YYYY-MM-DD) to a human-friendly form like "15 Jan 1990". */
@@ -82,17 +89,23 @@ export default function SettingsScreen() {
     const loadSettings = async () => {
       try {
         const data = await userService.getSettings();
+        // `getSettings` returns either {settings: {...}} (wrapper) or {...}.
+        // Handle both so the hook is resilient to either shape.
+        const src = (data as any)?.settings ?? data;
         setSettings({
-          name: data.name ?? user?.name ?? '',
-          bio: data.bio ?? '',
-          pincode: data.pincode ?? '',
-          pushNotifications: data.pushNotifications ?? true,
-          privateAccount: data.privateAccount ?? false,
-          shareDataWithBrands: data.shareDataWithBrands ?? true,
-          dob: data.dob ?? null,
-          gender: data.gender ?? null,
-          secondaryPincodes: data.secondaryPincodes ?? [],
-          notificationEmail: data.notificationEmail ?? false,
+          name: src.name ?? user?.name ?? '',
+          bio: src.bio ?? '',
+          pincode: src.primaryPincode ?? src.pincode ?? '',
+          pushNotifications: src.notificationPush ?? src.pushNotifications ?? true,
+          privateAccount: src.isPrivate ?? src.privateAccount ?? false,
+          shareDataWithBrands: src.shareDataWithBrands ?? true,
+          dob: src.dob ?? null,
+          gender: src.gender ?? null,
+          secondaryPincodes: src.secondaryPincodes ?? [],
+          notificationEmail: src.notificationEmail ?? false,
+          interests: src.interests ?? [],
+          contentLanguages: src.contentLanguages ?? [],
+          appLanguage: src.appLanguage ?? null,
         });
       } catch {
         setSettings((prev) => ({ ...prev, name: user?.name ?? '' }));
@@ -446,6 +459,89 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Content Interests — tap to toggle. Same 15 interests as Personalize. */}
+        <Text style={styles.sectionHeader}>Content Interests</Text>
+        <View style={styles.section}>
+          <Text style={styles.interestsHint}>
+            Pick topics you want to see more of. Tap to toggle.
+          </Text>
+          <View style={styles.interestChipWrap}>
+            {INTERESTS.map((i) => {
+              const selected = settings.interests.includes(i.key);
+              return (
+                <TouchableOpacity
+                  key={i.key}
+                  testID={`interest-chip-${i.key}`}
+                  onPress={() => {
+                    const next = selected
+                      ? settings.interests.filter((k) => k !== i.key)
+                      : [...settings.interests, i.key];
+                    updateField('interests', next);
+                  }}
+                  style={[
+                    styles.interestChip,
+                    selected && { backgroundColor: i.color, borderColor: i.color },
+                  ]}
+                >
+                  <Text style={[styles.interestChipText, selected && styles.interestChipTextSelected]}>
+                    {i.emoji} {i.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Language & Content — app language + what content languages to see. */}
+        <Text style={styles.sectionHeader}>Language & Content</Text>
+        <View style={styles.section}>
+          <Text style={styles.fieldLabel}>App language</Text>
+          <View style={styles.interestChipWrap}>
+            {LANGUAGES.map((l) => {
+              const selected = settings.appLanguage === l.code;
+              return (
+                <TouchableOpacity
+                  key={l.code}
+                  testID={`app-lang-${l.code}`}
+                  onPress={() => updateField('appLanguage', l.code)}
+                  style={[styles.interestChip, selected && styles.interestChipSelected]}
+                >
+                  <Text style={[styles.interestChipText, selected && styles.interestChipTextSelected]}>
+                    {l.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <View style={styles.divider} />
+          <Text style={styles.fieldLabel}>Content languages</Text>
+          <Text style={styles.interestsHint}>
+            Posts in these languages will surface first in your feed.
+          </Text>
+          <View style={styles.interestChipWrap}>
+            {LANGUAGES.map((l) => {
+              const selected = settings.contentLanguages.includes(l.code);
+              return (
+                <TouchableOpacity
+                  key={l.code}
+                  testID={`content-lang-${l.code}`}
+                  onPress={() => {
+                    const next = selected
+                      ? settings.contentLanguages.filter((c) => c !== l.code)
+                      : [...settings.contentLanguages, l.code];
+                    updateField('contentLanguages', next);
+                  }}
+                  style={[styles.interestChip, selected && styles.interestChipSelected]}
+                >
+                  <Text style={[styles.interestChipText, selected && styles.interestChipTextSelected]}>
+                    {l.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* F10.5: Linked Accounts section */}
         <Text style={styles.sectionHeader}>Linked Accounts</Text>
         <View style={styles.section}>
@@ -688,6 +784,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
+  interestsHint: { fontSize: 12, color: colors.g500, marginBottom: spacing.sm, marginTop: 2 },
+  interestChipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  interestChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.g200,
+  },
+  interestChipSelected: { backgroundColor: colors.navy, borderColor: colors.navy },
+  interestChipText: { fontSize: 12, color: colors.g700, fontWeight: '600' },
+  interestChipTextSelected: { color: '#fff' },
   pincodeChip: {
     flexDirection: 'row',
     alignItems: 'center',
