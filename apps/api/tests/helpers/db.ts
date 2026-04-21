@@ -70,6 +70,7 @@ export async function cleanupTestData() {
   await prisma.storyView.deleteMany({ where: { viewer: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.story.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.watchlist.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.streak.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.user.deleteMany({ where: { firebaseUid: { startsWith: 'dev-test-' } } });
 }
 

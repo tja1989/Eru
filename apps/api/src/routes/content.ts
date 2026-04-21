@@ -6,6 +6,7 @@ import { createContentSchema, commentSchema, paginationSchema, reportContentSche
 import { Errors } from '../utils/errors.js';
 import { triggerTranscode } from '../services/transcodeService.js';
 import { extractS3Key } from '../utils/s3.js';
+import { earnPoints } from '../services/pointsEngine.js';
 
 export async function contentRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
@@ -589,6 +590,20 @@ export async function contentRoutes(app: FastifyInstance) {
         data: { commentCount: { increment: 1 } },
       }),
     ]);
+
+    // +3 pts iff the comment shows real thought: 10+ word tokens after
+    // stripping non-letter/non-number characters (so strings of emoji
+    // don't inflate the count). earnPoints enforces the daily cap too.
+    const wordCount = text.replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean).length;
+    if (wordCount >= 10) {
+      try {
+        await earnPoints(request.userId, 'comment', contentId, { wordCount });
+      } catch {
+        // Daily cap hit, or some other reward-side error — the comment still
+        // persists, user just doesn't get points. Never let a reward failure
+        // fail the comment post itself.
+      }
+    }
 
     return reply.status(201).send({ comment });
   });
