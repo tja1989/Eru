@@ -18,10 +18,16 @@ export function LeaderboardScopeTabs({
   onChange: (s: Scope) => void;
 }) {
   return (
+    // flexGrow: 0 prevents the horizontal ScrollView from stretching to fill
+    // its parent's vertical space — without it, each tab renders as a huge
+    // vertical capsule when the parent is a flex column. React Native's
+    // horizontal ScrollView doesn't auto-constrain height the way a web
+    // <div> would.
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.root}
+      style={styles.scroll}
+      contentContainerStyle={styles.content}
     >
       {TABS.map((t) => (
         <TouchableOpacity
@@ -40,7 +46,8 @@ export function LeaderboardScopeTabs({
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  scroll: { flexGrow: 0 },
+  content: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center' },
   tab: {
     paddingHorizontal: 14,
     paddingVertical: 8,

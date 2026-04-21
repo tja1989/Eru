@@ -343,12 +343,15 @@ export function injectSponsoredContent(): null {
 export async function getFeed(ctx: FeedContext, page: number, limit: number): Promise<FeedPage> {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  // 1. Pull candidates — up to 200 published posts from the last 7 days
+  // 1. Pull candidates — up to 200 published posts from the last 7 days.
+  // Content from soft-deleted users (user.deletedAt NOT NULL) is excluded
+  // so anonymized "deleted_<uuid>" author names never reach the feed.
   const candidates = await prisma.content.findMany({
     where: {
       moderationStatus: 'published',
       deletedAt: null,
       createdAt: { gte: sevenDaysAgo },
+      user: { deletedAt: null },
     },
     take: 200,
     orderBy: { createdAt: 'desc' },

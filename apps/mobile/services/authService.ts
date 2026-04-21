@@ -39,4 +39,12 @@ export const authService = {
     const res = await api.post('/users/me/onboarding/complete');
     return res.data;
   },
+
+  // GET /users/me/onboarding-status — server-truth check for whether this
+  // user has already claimed their welcome_bonus. Used after login to decide
+  // whether to skip the tutorial screen or route to it.
+  async getOnboardingStatus(): Promise<{ complete: boolean }> {
+    const res = await api.get('/users/me/onboarding-status');
+    return res.data;
+  },
 };

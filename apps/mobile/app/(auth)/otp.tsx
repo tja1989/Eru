@@ -93,8 +93,21 @@ export default function OtpScreen() {
       }
       const registered = await authService.checkRegistered(idToken);
       if (registered) {
-        useAuthStore.getState().setToken(idToken);
-        router.replace('/(tabs)');
+        const store = useAuthStore.getState();
+        store.setToken(idToken);
+        // Server-truth check: did this user already collect their welcome
+        // bonus? If yes, skip onboarding; if no, route to tutorial so they
+        // complete the flow. Prevents a returning user (or one who switched
+        // phone numbers on the same device install) from being stuck with
+        // a stale hasCompletedOnboarding flag persisted from earlier.
+        try {
+          const status = await authService.getOnboardingStatus();
+          store.setOnboardingComplete(status.complete);
+          router.replace(status.complete ? '/(tabs)' : '/(auth)/tutorial');
+        } catch {
+          store.setOnboardingComplete(false);
+          router.replace('/(auth)/tutorial');
+        }
       } else {
         router.replace({
           pathname: '/(auth)/onboarding',

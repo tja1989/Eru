@@ -455,6 +455,19 @@ export async function userRoutes(app: FastifyInstance) {
     return { settings: user };
   });
 
+  // GET /users/me/onboarding-status — has this user completed the onboarding
+  // tutorial? "Complete" is proxied via the existence of a welcome_bonus
+  // ledger entry (created exactly once by POST onboarding/complete). Drives
+  // the mobile auth gate's decision to route returning users past the
+  // welcome/tutorial screens.
+  app.get('/users/me/onboarding-status', async (request) => {
+    const existing = await prisma.pointsLedger.findFirst({
+      where: { userId: request.userId, actionType: 'welcome_bonus' },
+      select: { id: true },
+    });
+    return { complete: existing !== null };
+  });
+
   // POST /users/me/onboarding/complete — credit welcome bonus + first daily check-in.
   // Idempotent at the lifetime level: if a `welcome_bonus` ledger entry already
   // exists for this user, return {pointsCredited: 0} without writing anything.

@@ -17,12 +17,16 @@ jest.mock('@/services/authService', () => ({
   authService: {
     verifyOtpAndSignIn: jest.fn(),
     checkRegistered: jest.fn(),
+    getOnboardingStatus: jest.fn().mockResolvedValue({ complete: true }),
   },
 }));
 
 jest.mock('@/stores/authStore', () => ({
   useAuthStore: {
-    getState: () => ({ setToken: jest.fn() }),
+    getState: () => ({
+      setToken: jest.fn(),
+      setOnboardingComplete: jest.fn(),
+    }),
     setState: jest.fn(),
   },
 }));
@@ -84,13 +88,14 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     });
   });
 
-  it('when channel=whatsapp and registered, navigates to /(tabs)', async () => {
+  it('when channel=whatsapp and registered + onboarding complete, navigates to /(tabs)', async () => {
     const { signInWithCustomToken } = require('firebase/auth');
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
       user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
     });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(true);
+    (authService.getOnboardingStatus as jest.Mock).mockResolvedValue({ complete: true });
 
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
@@ -105,6 +110,31 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
+    });
+  });
+
+  it('when registered but onboarding NOT complete, navigates to /(auth)/tutorial', async () => {
+    const { signInWithCustomToken } = require('firebase/auth');
+    (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
+    (signInWithCustomToken as jest.Mock).mockResolvedValue({
+      user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
+    });
+    (authService.checkRegistered as jest.Mock).mockResolvedValue(true);
+    (authService.getOnboardingStatus as jest.Mock).mockResolvedValue({ complete: false });
+
+    const { useLocalSearchParams } = require('expo-router');
+    (useLocalSearchParams as jest.Mock).mockReturnValue({
+      phone: '+919876543210',
+      verificationId: '',
+      channel: 'whatsapp',
+    });
+
+    const { getByTestId, getAllByTestId } = render(<OtpScreen />);
+    enterDigits(getAllByTestId, '123456');
+    fireEvent.press(getByTestId('otp-verify'));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/tutorial');
     });
   });
 
