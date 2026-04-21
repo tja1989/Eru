@@ -3,9 +3,18 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../constants/theme';
 
-// Routes that ARE the onboarding experience itself — rendering them must not
-// trigger another redirect to welcome/tutorial, otherwise the gate loops.
-const ONBOARDING_ROUTES = new Set(['welcome', 'personalize', 'tutorial']);
+// Routes that a not-yet-onboarded user is allowed to be on. Rendering them
+// must NOT trigger another redirect to welcome, otherwise tapping Get Started
+// bounces straight back to welcome (the gate redirects /login → /welcome
+// because login wasn't in this set).
+const ONBOARDING_ROUTES = new Set([
+  'welcome',
+  'login',
+  'otp',
+  'onboarding',
+  'personalize',
+  'tutorial',
+]);
 
 export default function AuthLayout() {
   const { initializing, isAuthenticated, hasCompletedOnboarding } = useAuth();
