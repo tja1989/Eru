@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import Personalize from '@/app/(auth)/personalize';
+import { INTERESTS, LANGUAGES } from '@eru/shared';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
@@ -17,73 +18,93 @@ jest.mock('@/services/api', () => ({
   default: { get: jest.fn() },
 }));
 
-describe('<Personalize />', () => {
+describe('<Personalize /> (P5 F3 pixel parity)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders interest pills', async () => {
+  it('renders all 15 PWA interest labels (lines 372-386)', async () => {
     const { getByText } = render(<Personalize />);
     await act(async () => {});
-    expect(getByText('Food')).toBeTruthy();
-    expect(getByText('Travel')).toBeTruthy();
-    expect(getByText('Sports')).toBeTruthy();
-    expect(getByText('Gaming')).toBeTruthy();
+    INTERESTS.forEach((interest) => {
+      expect(getByText(new RegExp(interest.label))).toBeTruthy();
+    });
   });
 
-  it('Continue button is disabled until 3+ interests are selected', async () => {
-    const { getByText, getByTestId } = render(<Personalize />);
+  it('renders all 5 PWA language pills in PWA order (lines 395-399)', async () => {
+    const { getAllByLabelText } = render(<Personalize />);
+    await act(async () => {});
+    const langPills = getAllByLabelText(/^lang-pill-/);
+    const labels = langPills.map((p: any) => p.props.accessibilityLabel.replace('lang-pill-', ''));
+    expect(labels).toEqual(LANGUAGES.map((l) => l.code));
+  });
+
+  it('shows Step 2 of 4 progress bar caption (PWA line 355)', async () => {
+    const { getByText } = render(<Personalize />);
+    await act(async () => {});
+    expect(getByText(/Step 2 of 4/)).toBeTruthy();
+  });
+
+  it('Continue button stays disabled until 5+ interests (PWA spec)', async () => {
+    const { getByLabelText, getByTestId } = render(<Personalize />);
     await act(async () => {});
 
     const continueBtn = getByTestId('continue-btn');
     expect(continueBtn.props.accessibilityState?.disabled).toBe(true);
 
-    fireEvent.press(getByText('Food'));
-    fireEvent.press(getByText('Travel'));
+    ['food', 'tech', 'travel', 'books'].forEach((key) =>
+      fireEvent.press(getByLabelText(`interest-pill-${key}`)),
+    );
     expect(continueBtn.props.accessibilityState?.disabled).toBe(true);
 
-    fireEvent.press(getByText('Sports'));
+    fireEvent.press(getByLabelText('interest-pill-fitness'));
     expect(continueBtn.props.accessibilityState?.disabled).toBe(false);
   });
 
-  it('shows "+50 pts" when exactly 5 interests are selected', async () => {
-    const { getByText, queryByText } = render(<Personalize />);
+  it('shows the "+50 pts" bonus badge once 5 interests are selected (PWA line 388)', async () => {
+    const { getByLabelText, queryByText } = render(<Personalize />);
     await act(async () => {});
-
-    const interests = ['Food', 'Travel', 'Sports', 'Music', 'Gaming'];
-    interests.forEach((i) => fireEvent.press(getByText(i)));
-
+    ['food', 'tech', 'travel', 'books', 'fitness'].forEach((key) =>
+      fireEvent.press(getByLabelText(`interest-pill-${key}`)),
+    );
     expect(queryByText(/\+50 pts/i)).toBeTruthy();
-
-    fireEvent.press(getByText('Tech'));
-    expect(queryByText(/\+50 pts/i)).toBeNull();
   });
 
-  it('language pill toggles work', async () => {
-    const { getByText } = render(<Personalize />);
+  it('"+50 pts" stays visible when MORE than 5 are selected (5+ rule)', async () => {
+    const { getByLabelText, queryByText } = render(<Personalize />);
     await act(async () => {});
-
-    const hindi = getByText('Hindi');
-    // Toggle on
-    fireEvent.press(hindi);
-    // Toggle off
-    fireEvent.press(hindi);
-    // No crash means it works; selected state is visual only — trust the logic
-    expect(hindi).toBeTruthy();
+    ['food', 'tech', 'travel', 'books', 'fitness', 'cinema'].forEach((key) =>
+      fireEvent.press(getByLabelText(`interest-pill-${key}`)),
+    );
+    expect(queryByText(/\+50 pts/i)).toBeTruthy();
   });
 
-  it('Continue navigates to /(auth)/tutorial', async () => {
+  it('Skip button is present and routes to /(auth)/tutorial (PWA line 346)', async () => {
     const push = jest.fn();
     jest
       .spyOn(require('expo-router'), 'useRouter')
       .mockReturnValue({ push, replace: jest.fn() });
 
-    const { getByText, getByTestId } = render(<Personalize />);
+    const { getByText } = render(<Personalize />);
     await act(async () => {});
 
-    ['Food', 'Travel', 'Sports'].forEach((i) => fireEvent.press(getByText(i)));
-    fireEvent.press(getByTestId('continue-btn'));
+    fireEvent.press(getByText('Skip'));
+    expect(push).toHaveBeenCalledWith('/(auth)/tutorial');
+  });
 
+  it('Continue navigates to /(auth)/tutorial when 5+ interests are selected', async () => {
+    const push = jest.fn();
+    jest
+      .spyOn(require('expo-router'), 'useRouter')
+      .mockReturnValue({ push, replace: jest.fn() });
+
+    const { getByLabelText, getByTestId } = render(<Personalize />);
+    await act(async () => {});
+
+    ['food', 'tech', 'travel', 'books', 'fitness'].forEach((key) =>
+      fireEvent.press(getByLabelText(`interest-pill-${key}`)),
+    );
+    fireEvent.press(getByTestId('continue-btn'));
     expect(push).toHaveBeenCalledWith('/(auth)/tutorial');
   });
 });
