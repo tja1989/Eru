@@ -5,5 +5,6 @@ export * from './types/api.js';
 export * from './types/watchlist.js';
 export * from './constants/points.js';
 export * from './constants/tiers.js';
+export * from './constants/onboarding.js';
 export { pickVideoUrl } from './media.js';
 export type { PickableMedia, PickOptions } from './media.js';
