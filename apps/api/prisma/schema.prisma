@@ -119,6 +119,7 @@ model User {
   isVerified          Boolean   @default(false) @map("is_verified")
   notificationPush    Boolean   @default(true) @map("notification_push")
   notificationEmail   Boolean   @default(false) @map("notification_email")
+  notifyWatchlistOffers Boolean @default(true) @map("notify_watchlist_offers")
   isPrivate           Boolean   @default(false) @map("is_private")
   shareDataWithBrands Boolean   @default(false) @map("share_data_with_brands")
   fcmToken            String?   @map("fcm_token")

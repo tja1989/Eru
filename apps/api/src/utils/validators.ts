@@ -86,8 +86,10 @@ export const updateSettingsSchema = z.object({
   appLanguage: z.string().optional(),
   notificationPush: z.boolean().optional(),
   notificationEmail: z.boolean().optional(),
+  notifyWatchlistOffers: z.boolean().optional(),
   isPrivate: z.boolean().optional(),
   shareDataWithBrands: z.boolean().optional(),
+  fcmToken: z.string().optional(),
 });
 
 export const commentSchema = z.object({

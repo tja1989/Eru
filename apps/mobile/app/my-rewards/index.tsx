@@ -4,9 +4,11 @@ import { useRouter } from 'expo-router';
 import { rewardsService, Reward, RewardStatus } from '@/services/rewardsService';
 import { watchlistService } from '@/services/watchlistService';
 import { offersService } from '@/services/offersService';
+import { userService } from '@/services/userService';
 import { RewardCard } from '@/components/RewardCard';
 import { WatchlistStoresRow } from '@/components/WatchlistStoresRow';
 import { WatchlistDealCard } from '@/components/WatchlistDealCard';
+import { WatchlistNotifyToggle } from '@/components/WatchlistNotifyToggle';
 import type { WatchlistDealItem, WatchlistEntry } from '@eru/shared';
 import { colors, spacing, radius } from '@/constants/theme';
 
@@ -27,6 +29,7 @@ export default function MyRewardsScreen() {
   // Watchlist-specific state — stores the user follows + live deals from them.
   const [stores, setStores] = useState<WatchlistEntry[]>([]);
   const [deals, setDeals] = useState<WatchlistDealItem[]>([]);
+  const [notifyEnabled, setNotifyEnabled] = useState(true);
 
   const load = useCallback(async (status: RewardStatus) => {
     setLoading(true);
@@ -41,12 +44,14 @@ export default function MyRewardsScreen() {
   const loadWatchlist = useCallback(async () => {
     setLoading(true);
     try {
-      const [wl, dls] = await Promise.all([
+      const [wl, dls, settings] = await Promise.all([
         watchlistService.list(),
         watchlistService.listDeals(),
+        userService.getSettings().catch(() => ({ settings: { notifyWatchlistOffers: true } })),
       ]);
       setStores(wl.items ?? []);
       setDeals(dls ?? []);
+      setNotifyEnabled((settings as any)?.settings?.notifyWatchlistOffers ?? true);
     } catch {
       setStores([]);
       setDeals([]);
@@ -77,8 +82,6 @@ export default function MyRewardsScreen() {
     try {
       const reward = await offersService.claim(offerId);
       Alert.alert('Claimed!', `Your code: ${reward.claimCode}`);
-      // Refresh both watchlist deals (in case it was single-use) and the
-      // Active rewards tab so the new reward shows up there too.
       await loadWatchlist();
     } catch (e: any) {
       Alert.alert('Could not claim', e?.response?.data?.error ?? 'Try again');
@@ -127,6 +130,7 @@ export default function MyRewardsScreen() {
             </View>
           ) : (
             <>
+              <WatchlistNotifyToggle initialValue={notifyEnabled} />
               <Text style={styles.watchlistHeader}>🏪 Stores you follow</Text>
               <WatchlistStoresRow
                 stores={stores.map((s) => ({
