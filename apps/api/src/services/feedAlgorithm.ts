@@ -1,4 +1,5 @@
 import { prisma } from '../utils/prisma.js';
+import { locationsService } from './locationsService.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -256,9 +257,15 @@ function deriveDisplayFields(c: {
     return 4;
   })();
 
-  // For now the label is just the pincode. A later pass can resolve it into
-  // "Kochi, Kerala" via pincodes.json but that's cosmetic polish.
-  const locationLabel = c.locationPincode;
+  // Localize pincode → "Area, District" (e.g. "Fort Kochi, Ernakulam") via
+  // locationsService. Falls back to the raw pincode when the pin isn't in
+  // the dataset (sparse coverage in some states today).
+  const locationLabel = (() => {
+    if (!c.locationPincode) return null;
+    const resolved = locationsService.byPincode(c.locationPincode);
+    if (!resolved) return c.locationPincode;
+    return `${resolved.area}, ${resolved.district}`;
+  })();
 
   return {
     ugcBadge,

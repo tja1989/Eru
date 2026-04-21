@@ -5,7 +5,11 @@ export type ActionType =
   | 'like' | 'comment' | 'share' | 'save' | 'follow'
   | 'daily_checkin' | 'create_content' | 'content_trending' | 'refer_friend' | 'complete_profile'
   | 'welcome_bonus'
-  | 'view_sponsored' | 'click_sponsored_cta';
+  | 'view_sponsored' | 'click_sponsored_cta'
+  // "Give Opinions" cluster (PWA tutorial line 437-441).
+  | 'vote_poll' | 'short_survey' | 'long_survey' | 'review' | 'rate_business'
+  // "Shop & Claim" cluster (PWA tutorial line 443-445).
+  | 'claim_offer' | 'redeem_qr' | 'purchase';
 
 export interface PointsLedgerEntry {
   id: string;

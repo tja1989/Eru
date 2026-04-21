@@ -34,6 +34,20 @@ export const ACTION_CONFIGS: Record<ActionType, ActionConfig> = {
   // when the user taps the Claim Offer bar overlayed on the media.
   view_sponsored: { type: 'view_sponsored', category: 'engagement', points: 2, dailyCap: 50, requiresContentId: true, validation: {} },
   click_sponsored_cta: { type: 'click_sponsored_cta', category: 'engagement', points: 5, dailyCap: 20, requiresContentId: true, validation: {} },
+  // "Give Opinions" cluster (PWA tutorial line 437-441). Surveys + ratings
+  // carry higher weight because they take real effort and drive the
+  // feedback loop for creators and businesses.
+  vote_poll: { type: 'vote_poll', category: 'engagement', points: 5, dailyCap: 10, requiresContentId: true, validation: {} },
+  short_survey: { type: 'short_survey', category: 'engagement', points: 15, dailyCap: 5, requiresContentId: false, validation: {} },
+  long_survey: { type: 'long_survey', category: 'engagement', points: 40, dailyCap: 2, requiresContentId: false, validation: {} },
+  review: { type: 'review', category: 'engagement', points: 10, dailyCap: 5, requiresContentId: true, validation: { minWordCount: 20 } },
+  rate_business: { type: 'rate_business', category: 'engagement', points: 5, dailyCap: 5, requiresContentId: false, validation: {} },
+  // "Shop & Claim" cluster (PWA tutorial line 443-445). Redeem QR fires
+  // when the creator physically redeems at a store; purchase fires on
+  // successful checkout receipt.
+  claim_offer: { type: 'claim_offer', category: 'engagement', points: 10, dailyCap: 10, requiresContentId: false, validation: {} },
+  redeem_qr: { type: 'redeem_qr', category: 'engagement', points: 25, dailyCap: 5, requiresContentId: false, validation: {} },
+  purchase: { type: 'purchase', category: 'growth', points: 15, dailyCap: 10, requiresContentId: false, validation: {} },
 };
 
 export const DAILY_POINTS_GOAL = 250;

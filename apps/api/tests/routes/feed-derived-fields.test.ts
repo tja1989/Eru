@@ -276,7 +276,7 @@ describe('GET /api/v1/feed — derived fields for PostCard variants', () => {
     expect(byId(carousel.id).carouselCount).toBe(3);
   });
 
-  it('locationLabel: "<pincode>" when pincode only; null when no pincode', async () => {
+  it('locationLabel: "Area, District" when pincode resolves; null when no pincode', async () => {
     const u = await seedUser({
       firebaseUid: 'dev-test-fd6',
       phone: '+912000060006',
@@ -308,7 +308,8 @@ describe('GET /api/v1/feed — derived fields for PostCard variants', () => {
       headers: { Authorization: devToken('dev-test-fd6') },
     });
     const items = res.json().data as Array<{ id: string; locationLabel: string | null }>;
-    expect(items.find((i) => i.id === withPin.id)!.locationLabel).toBe('682016');
+    // 682016 resolves to "Ernakulam Central, Ernakulam" via locationsService.
+    expect(items.find((i) => i.id === withPin.id)!.locationLabel).toBe('Ernakulam Central, Ernakulam');
     expect(items.find((i) => i.id === noPin.id)!.locationLabel).toBeNull();
   });
 
