@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setAuthToken } from '../services/api';
+import { setAuthToken, registerOnUnauthorized } from '../services/api';
 import { authService } from '../services/authService';
 
 interface AuthState {
@@ -72,6 +72,13 @@ export const useAuthStore = create<AuthState>()(
         // Re-attach the token to the axios client after the store is restored
         // from AsyncStorage, otherwise requests go out without Authorization.
         if (state?.token) setAuthToken(state.token);
+        // Wire the axios 401 handler once per app boot. Any 401 from the API
+        // now self-heals: we drop the persisted auth blob so the (auth) gate
+        // routes the user back to /welcome on the next render. Fixes the
+        // "stale token from previous install → stuck on feed with 401s" bug.
+        registerOnUnauthorized(() => {
+          useAuthStore.getState().reset();
+        });
       },
     },
   ),
