@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
+import { authService } from '@/services/authService';
 import { ProgressSteps } from '@/components/ProgressSteps';
 import { colors } from '@/constants/theme';
 
@@ -58,8 +59,13 @@ export default function Tutorial() {
   const router = useRouter();
   const setOnboardingComplete = useAuthStore((s) => s.setOnboardingComplete);
 
-  const handleStart = () => {
+  const handleStart = async () => {
+    // Mark local flag immediately so the (auth)/_layout gate stops looping
+    // back to onboarding even if the API call is slow or fails.
     setOnboardingComplete(true);
+    // Fire-and-forget; idempotent server-side. Failures are non-fatal — the
+    // user can earn again next session via daily check-in or any other action.
+    authService.completeOnboarding().catch(() => {});
     router.replace('/(tabs)');
   };
 

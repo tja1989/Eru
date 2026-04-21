@@ -32,4 +32,11 @@ export const authService = {
       throw err;
     }
   },
+
+  // POST /users/me/onboarding/complete — fired from the tutorial screen's
+  // "Start Earning 🚀" CTA. Idempotent server-side: subsequent calls return 0.
+  async completeOnboarding(): Promise<{ pointsCredited: number }> {
+    const res = await api.post('/users/me/onboarding/complete');
+    return res.data;
+  },
 };
