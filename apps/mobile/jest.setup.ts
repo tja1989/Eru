@@ -26,7 +26,7 @@ jest.mock('expo-router', () => ({
 // `@/services/contentService` directly.
 jest.mock('@/services/api', () => ({
   __esModule: true,
-  default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() },
+  default: { get: jest.fn(), post: jest.fn(), put: jest.fn(), patch: jest.fn(), delete: jest.fn() },
   setAuthToken: jest.fn(),
 }));
 
