@@ -70,8 +70,8 @@ describe('<ProfileScreen /> — Tagged tab', () => {
 
   it('renders the Tagged tab icon in the grid tab bar', async () => {
     const { findByText } = render(<ProfileScreen />);
-    // The icon for tagged is 👥
-    expect(await findByText('👥')).toBeTruthy();
+    // The icon for tagged is 👤
+    expect(await findByText('👤')).toBeTruthy();
   });
 
   it('switching to Tagged tab calls userService.getContent with "tagged"', async () => {
@@ -79,10 +79,10 @@ describe('<ProfileScreen /> — Tagged tab', () => {
     const { findByText, getByText } = render(<ProfileScreen />);
 
     // Wait for initial render
-    await findByText('👥');
+    await findByText('👤');
 
     // Press the Tagged tab
-    fireEvent.press(getByText('👥'));
+    fireEvent.press(getByText('👤'));
 
     await waitFor(() => {
       expect(userService.getContent).toHaveBeenCalledWith('me', 'tagged');
@@ -96,8 +96,8 @@ describe('<ProfileScreen /> — Tagged tab', () => {
     });
 
     const { findByText, getByText } = render(<ProfileScreen />);
-    await findByText('👥');
-    fireEvent.press(getByText('👥'));
+    await findByText('👤');
+    fireEvent.press(getByText('👤'));
 
     await waitFor(() => {
       expect(userService.getContent).toHaveBeenCalledWith('me', 'tagged');

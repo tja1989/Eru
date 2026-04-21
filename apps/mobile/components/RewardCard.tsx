@@ -12,18 +12,21 @@ function daysUntil(iso: string): number {
 }
 
 function expiryLabel(reward: Reward): string {
-  if (reward.status === 'used') return 'Used';
+  if (reward.status === 'used') return 'USED ✓';
   if (reward.status === 'expired') return 'Expired';
   const days = daysUntil(reward.expiresAt);
+  if (days <= 7) return `⚡ Expires in ${days} day${days === 1 ? '' : 's'}`;
   return `Expires in ${days}d`;
 }
 
 export function RewardCard({ reward, onUse }: Props) {
-  const badgeText = reward.status.toUpperCase();
+  const badgeText = reward.status === 'used' ? 'USED ✓' : reward.status.toUpperCase();
   const isActive = reward.status === 'active';
+  // Used/expired cards dim to 60% to visually de-emphasize them vs active.
+  const dim = !isActive;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, dim && styles.cardDim]}>
       <View style={styles.header}>
         <Text style={styles.title}>{reward.offer.title}</Text>
         <View style={[styles.badge, !isActive && styles.badgeDim]}>
@@ -31,7 +34,9 @@ export function RewardCard({ reward, onUse }: Props) {
         </View>
       </View>
 
-      <Text style={styles.expiry}>{expiryLabel(reward)}</Text>
+      <Text style={[styles.expiry, reward.status === 'active' && daysUntil(reward.expiresAt) <= 7 && styles.expiryUrgent]}>
+        {expiryLabel(reward)}
+      </Text>
 
       <View style={styles.qrWrap} testID="reward-qr">
         {reward.qrSvg ? (
@@ -67,6 +72,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  cardDim: { opacity: 0.6 },
+  expiryUrgent: { color: '#E8792B', fontWeight: '700' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 16, fontWeight: '700', color: '#262626', flex: 1, paddingRight: 8 },
   badge: {

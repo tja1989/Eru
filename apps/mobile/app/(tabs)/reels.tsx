@@ -173,10 +173,10 @@ function ReelItem({
         </View>
       ) : null}
 
-      {/* Points indicator top-right */}
+      {/* Points indicator top-right — "🪙 +N pts/min" per PWA line 1103 */}
       {item.pointsPreview != null && (
         <View style={styles.pointsIndicator}>
-          <Text style={styles.pointsText}>+{item.pointsPreview} pts</Text>
+          <Text style={styles.pointsText}>🪙 +{item.pointsPreview} pts/min</Text>
         </View>
       )}
 

@@ -26,10 +26,10 @@ import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
 
 const GRID_TABS = [
   { key: 'posts', icon: '⊞', label: 'Posts' },
-  { key: 'reels', icon: '🎬', label: 'Reels' },
-  { key: 'created', icon: '✨', label: 'Created' },
+  { key: 'reels', icon: '▶', label: 'Reels' },
+  { key: 'created', icon: '✍️', label: 'My Creations' },
   { key: 'saved', icon: '🔖', label: 'Saved' },
-  { key: 'tagged', icon: '👥', label: 'Tagged' },
+  { key: 'tagged', icon: '👤', label: 'Tagged' },
 ] as const;
 
 type GridTab = (typeof GRID_TABS)[number]['key'];
