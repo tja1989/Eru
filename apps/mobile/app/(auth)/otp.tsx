@@ -67,7 +67,7 @@ export default function OtpScreen() {
       } else {
         // Firebase send-otp requires a recaptcha verifier on web; in app we
         // simply re-trigger the existing send. Stub out gracefully if unsupported.
-        await authService.requestOtp?.(String(phone));
+        await (authService as any).requestOtp?.(String(phone));
       }
     } catch {
       // Resend errors are non-fatal — user can try the existing code or wait.

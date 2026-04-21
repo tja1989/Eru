@@ -245,3 +245,144 @@ describe('<PostCard /> save button', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// <PostCard /> variant rendering — PWA parity for the 6 post types that live
+// on the home feed. Each test seeds only the derived fields that variant
+// needs; defaults from variantBase cover everything else.
+// ---------------------------------------------------------------------------
+
+const variantBase = {
+  id: 'p1',
+  type: 'post',
+  text: 'Monsoon mornings in Munnar hit different.',
+  media: [{ id: 'm1', type: 'image', originalUrl: 'x', thumbnailUrl: 'x', sortOrder: 0 }],
+  isLiked: false,
+  isDisliked: false,
+  isSaved: false,
+  likeCount: 5124,
+  commentCount: 342,
+  user: {
+    id: 'u1',
+    username: 'KeralaDiaries',
+    name: 'Kerala Diaries',
+    avatarUrl: null,
+    tier: 'influencer',
+    isVerified: true,
+  },
+  // P6 derived fields
+  ugcBadge: 'creator' as const,
+  moderationBadge: null,
+  isSponsored: false,
+  sponsorName: null,
+  sponsorAvatarUrl: null,
+  sponsorBusinessId: null,
+  offerUrl: null,
+  pointsEarnedOnView: 8,
+  locationLabel: 'Munnar, Kerala',
+  mediaKind: 'photo' as const,
+  carouselCount: null,
+  durationSeconds: null,
+  createdAt: new Date(Date.now() - 32 * 60_000).toISOString(),
+};
+
+describe('<PostCard /> variants (PWA parity)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (contentService.like as jest.Mock).mockResolvedValue({});
+    (contentService.unlike as jest.Mock).mockResolvedValue({});
+    (contentService.save as jest.Mock).mockResolvedValue({});
+    (contentService.unsave as jest.Mock).mockResolvedValue({});
+    (contentService.dislike as jest.Mock).mockResolvedValue({});
+    (contentService.undislike as jest.Mock).mockResolvedValue({});
+  });
+
+  it('V1 creator photo: ✓ CREATOR + location + +8 pts + 5,124 likes + 342 comments + 32m', () => {
+    const { getByText } = render(<PostCard post={variantBase} />);
+    expect(getByText('✓ CREATOR')).toBeTruthy();
+    expect(getByText('Munnar, Kerala')).toBeTruthy();
+    expect(getByText(/🪙 \+8/)).toBeTruthy();
+    expect(getByText(/5,124 likes/i)).toBeTruthy();
+    expect(getByText(/View all 342 comments/i)).toBeTruthy();
+    expect(getByText('32m')).toBeTruthy();
+  });
+
+  it('V2 creator video: play button + duration 4:32', () => {
+    const video = {
+      ...variantBase,
+      mediaKind: 'video' as const,
+      media: [{ id: 'm1', type: 'video', originalUrl: 'v', thumbnailUrl: 'x', sortOrder: 0, durationSeconds: 272 }],
+      durationSeconds: 272,
+    };
+    const { getByLabelText, getByText } = render(<PostCard post={video} />);
+    expect(getByLabelText('play')).toBeTruthy();
+    expect(getByText('4:32')).toBeTruthy();
+  });
+
+  it('V3 sponsored: • Sponsored label + distance line + Claim Offer CTA', () => {
+    const sponsored = {
+      ...variantBase,
+      ugcBadge: null,
+      isSponsored: true,
+      sponsorName: 'Kashi Bakes',
+      sponsorBusinessId: 'b1',
+      offerUrl: '/business/b1',
+      locationLabel: '682016 • 0.8 km',
+      pointsEarnedOnView: 15,
+    };
+    const { getByText, getByRole } = render(<PostCard post={sponsored} />);
+    expect(getByText(/Kashi Bakes/)).toBeTruthy();
+    expect(getByText(/• Sponsored/)).toBeTruthy();
+    expect(getByText(/0\.8 km/)).toBeTruthy();
+    expect(getByText(/🪙 \+15/)).toBeTruthy();
+    expect(getByRole('button', { name: /Claim Offer/i })).toBeTruthy();
+  });
+
+  it('V4 UGC carousel: ✓ USER CREATED + ✓ APPROVED + 3 dots', () => {
+    const ugc = {
+      ...variantBase,
+      ugcBadge: 'user_created' as const,
+      moderationBadge: 'approved' as const,
+      user: { ...variantBase.user, isVerified: false },
+      mediaKind: 'carousel' as const,
+      carouselCount: 3,
+      media: [
+        { id: 'm1', type: 'image', originalUrl: 'x', thumbnailUrl: 'x', sortOrder: 0 },
+        { id: 'm2', type: 'image', originalUrl: 'x', thumbnailUrl: 'x', sortOrder: 1 },
+        { id: 'm3', type: 'image', originalUrl: 'x', thumbnailUrl: 'x', sortOrder: 2 },
+      ],
+    };
+    const { getByText, getByLabelText, getAllByLabelText } = render(<PostCard post={ugc} />);
+    expect(getByText('✓ USER CREATED')).toBeTruthy();
+    expect(getByText('✓ APPROVED')).toBeTruthy();
+    expect(getByLabelText('carousel indicator')).toBeTruthy();
+    expect(getAllByLabelText(/carousel dot/)).toHaveLength(3);
+  });
+
+  it('V5 poll: renders pollOptions via PollCard', () => {
+    const poll = {
+      ...variantBase,
+      type: 'poll',
+      mediaKind: 'poll' as const,
+      pollOptions: [
+        { id: 'a', text: 'Sharjah Shake at Beach', voteCount: 1764 },
+        { id: 'b', text: 'Pazhampori from bakery', voteCount: 1302 },
+      ],
+      userVote: null,
+    };
+    const { getByText } = render(<PostCard post={poll} />);
+    expect(getByText(/Sharjah Shake at Beach/)).toBeTruthy();
+  });
+
+  it('V6 reel: ▶ Reel • 0:45 badge', () => {
+    const reel = {
+      ...variantBase,
+      type: 'reel',
+      mediaKind: 'reel' as const,
+      media: [{ id: 'm1', type: 'video', originalUrl: 'v', thumbnailUrl: 'x', sortOrder: 0, durationSeconds: 45 }],
+      durationSeconds: 45,
+    };
+    const { getByText } = render(<PostCard post={reel} />);
+    expect(getByText('▶ Reel • 0:45')).toBeTruthy();
+  });
+});
