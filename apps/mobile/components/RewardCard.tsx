@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { SvgXml } from 'react-native-svg';
 import type { Reward } from '@/services/rewardsService';
 
 type Props = { reward: Reward; onUse: (id: string) => void };
@@ -33,7 +34,15 @@ export function RewardCard({ reward, onUse }: Props) {
       <Text style={styles.expiry}>{expiryLabel(reward)}</Text>
 
       <View style={styles.qrWrap} testID="reward-qr">
-        <QRCode value={reward.claimCode} size={160} />
+        {reward.qrSvg ? (
+          <View testID="reward-qr-server">
+            <SvgXml xml={reward.qrSvg} width={160} height={160} />
+          </View>
+        ) : (
+          <View testID="reward-qr-client">
+            <QRCode value={reward.claimCode} size={160} />
+          </View>
+        )}
       </View>
 
       <Text style={styles.code}>{reward.claimCode}</Text>

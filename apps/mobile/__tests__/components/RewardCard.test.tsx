@@ -39,4 +39,20 @@ describe('<RewardCard />', () => {
     fireEvent.press(getByText(/use at store/i));
     expect(onUse).toHaveBeenCalledWith(sampleReward.id);
   });
+
+  it('renders the server-side SVG when reward.qrSvg is present (testID=reward-qr-server)', () => {
+    const withSvg: Reward = {
+      ...sampleReward,
+      qrSvg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#000"/></svg>',
+    };
+    const { getByTestId, queryByTestId } = render(<RewardCard reward={withSvg} onUse={jest.fn()} />);
+    expect(getByTestId('reward-qr-server')).toBeTruthy();
+    expect(queryByTestId('reward-qr-client')).toBeNull();
+  });
+
+  it('falls back to client-side QRCode when reward.qrSvg is missing (testID=reward-qr-client)', () => {
+    const { getByTestId, queryByTestId } = render(<RewardCard reward={sampleReward} onUse={jest.fn()} />);
+    expect(getByTestId('reward-qr-client')).toBeTruthy();
+    expect(queryByTestId('reward-qr-server')).toBeNull();
+  });
 });

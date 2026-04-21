@@ -5,6 +5,7 @@ export type RewardStatus = 'active' | 'used' | 'expired';
 export type Reward = {
   id: string;
   claimCode: string;
+  qrSvg?: string | null;
   status: RewardStatus;
   pointsSpent: number;
   expiresAt: string;
