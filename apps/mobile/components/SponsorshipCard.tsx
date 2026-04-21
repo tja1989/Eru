@@ -13,7 +13,10 @@ function statusLabel(status: SponsorshipStatus): string {
   if (status === 'pending') return 'PENDING';
   if (status === 'declined') return 'DECLINED';
   if (status === 'completed') return 'DONE';
-  return status.toUpperCase();
+  // Exhaustive on the SponsorshipStatus union — keep a stable fallback so
+  // any future enum addition prints something human-readable until this
+  // switch catches up.
+  return String(status).toUpperCase();
 }
 
 function statusColor(status: SponsorshipStatus): string {
