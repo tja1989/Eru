@@ -3,6 +3,7 @@ export * from './types/content.js';
 export * from './types/points.js';
 export * from './types/api.js';
 export * from './types/watchlist.js';
+export * from './types/business.js';
 export * from './constants/points.js';
 export * from './constants/tiers.js';
 export * from './constants/onboarding.js';
