@@ -32,6 +32,7 @@ import { locationsRoutes } from './routes/locations.js';
 import { highlightRoutes } from './routes/highlights.js';
 import { whatsappOtpRoutes } from './routes/whatsapp-otp.js';
 import { webhookRoutes } from './routes/webhooks.js';
+import { watchlistRoutes } from './routes/watchlist.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -124,6 +125,7 @@ export function buildApp(): FastifyInstance {
   app.register(locationsRoutes, { prefix: '/api/v1' });
   app.register(highlightRoutes, { prefix: '/api/v1' });
   app.register(webhookRoutes, { prefix: '/api/v1' });
+  app.register(watchlistRoutes, { prefix: '/api/v1' });
 
   app.register(fastifyStatic, {
     root: join(__dirname, 'admin-panel'),
