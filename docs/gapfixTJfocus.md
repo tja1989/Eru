@@ -376,4 +376,39 @@ All blocking items ✓. Not done:
 
 **Next recommended:** P7 — Earn/Redeem loop (wallet, redeem, my-rewards including Watchlist tab). Most of the schema + API shape is already there from earlier phases; this phase is mostly mobile redesign.
 
+---
+
+## P7 F1 + F2 + F3 + partial F5 (SHIPPED)
+
+**What shipped (5 commits, this resume round):**
+
+1. **F1 — Wallet PWA parity:** `WalletSummary` gains `pointsToGoal` + `dailyGoalHintCopy` (server derivation). `WalletQuickActions` "Local" → "Local Offers" to match PWA. `TierProgressCard` gets a "Next: 👑 Champion" chip above the progress bar. Wallet screen header "Wallet" → "Eru Wallet", renders API hint copy + 🔥 N-day streak row. 17 tests (3 API wallet + 3 quick-actions + 6 tier-card + 5 wallet-parity).
+2. **F2 — Redeem PWA parity:** Header "Redeem" → "Rewards Store" with 🪙 balance pill. 6 category tabs (initial from `?type=` query). Four sections wired per-tab: Hot Deals Near You carousel (All/Local), Gift Cards 6-tile grid (All/Gift Cards), Mobile Recharge card with Jio plan pills (All/Recharge), Donate tiles (All/Donate). 3 new components (`GiftCardTile`, `DonateTile`, `RechargeCard`). 31 tests (11 component + 8 parity + 12 legacy-updated).
+3. **F3 — `POST /rewards/recharge` scaffold:** hardcoded Jio ₹149/₹239/₹479 plans, Zod validation (planId + `+91XXXXXXXXXX` phone), atomic point deduction via optimistic `user.update where balance >= cost` clause. Lazily upserts a `recharge-<planId>` Offer row so the UserReward FK stays valid. 6 tests including 402-on-insufficient-balance. Errors helper gains `paymentRequired()`.
+4. **F5a — My Rewards 4-tab structure:** New Watchlist tab slots between Active and Used with a coming-soon placeholder. `rewardsService.list` only hits the API for the 3 reward-status tabs. 5 tests.
+
+**Decisions-of-note:**
+
+- **Query param name stays `type`** (not `category`). P7 plan doc spoke of `?category=`, but the API already supports `?type=` with an `OfferType` enum (local/giftcard/recharge/donate/premium) — migrating mobile/server to a new name would be churn with no user-facing upside. Kept `type` throughout.
+- **Offer schema reuses the existing `type` column** — no `Offer.category` enum added. Doc's P7 Task 2.1 turned out to be already-done under a different name.
+- **Recharge atomicity via optimistic where clause** — `user.update({ where: { id, currentBalance: { gte: cost } }, data: { currentBalance: { decrement: cost } }})`. If two concurrent recharges race, the second one throws `P2025` and we return 402 — no double-spend window.
+- **Synthetic recharge offer rows** — lazily `upsert()` an `id='recharge-<planId>'` Offer the first time any user recharges with that plan. Idempotent, satisfies UserReward's FK, no schema change needed. Test-cleanup sweeps these after each test.
+- **F4 (Watchlist live deals endpoint + WatchlistStoresRow/DealCard/NotifyToggle components) deferred** — ~1 hr of work (API service + route + 3 mobile components + PATCH /users/me/settings for the global notify flag). The tab shell is present; it shows a clear "coming soon" placeholder until F4 ships.
+- **F5b (QR reward cards, compact rows, Used-dim styling) deferred** — RewardCard already renders qrSvg (P4 F3); the full PWA parity pass hasn't been done. Lightweight vs F4 — a reasonable next target.
+
+**Verification:**
+
+- API: wallet-goal-hint 3/3 ✅ · rewards-recharge 6/6 ✅ (full touched-file sweep not yet run)
+- Mobile: 520/520 ✅ across 112 suites
+- TypeScript: `apps/api` clean, `apps/mobile` clean (5 pre-existing)
+
+**Commits this P7 round:** 5 (all local).
+
+- `ee4680f feat(p7 f1): wallet PWA parity — hint copy + tier chip + streak + labels`
+- `0dc48da feat(api): POST /rewards/recharge scaffold (P7 F3)`
+- `397fed5 feat(p7 f2): redeem screen PWA parity — tabs + sections + 3 new components`
+- `b60da74 feat(mobile): My Rewards — 4 tabs (Active/Watchlist/Used/Expired)`
+
+Next recommended: **F5b (QR reward cards + Used/Expired dimming + compact rows)** — small, mobile-only, finishes the my-rewards PWA parity. Then F4 if time allows.
+
 
