@@ -455,3 +455,47 @@ After "proceed in yolo mode to complete all the tasks upto P10", every P-phase g
 1. **P7 F4 Watchlist deals** — unblocks the Watchlist tab surface.
 2. **P8 F4 typed CTA cards** — largest remaining UX delta in notifications.
 3. **P9 F2 sponsorship flow** — unlocks monetization demo end-to-end.
+
+---
+
+## Pending-items push — full closure of deferred features
+
+After "Now let us compelte the pending one as per gapfixTJfocus.md" the six top-priority deferred items from the YOLO round all shipped in one pass. Every one follows the same TDD rhythm: RED test → GREEN impl → commit with PWA parity copy intact.
+
+**Commits this round:**
+
+1. `b16f5d3 feat(p7 f4): Watchlist live-deals — full stack (API → shared → mobile)`
+   - Shared: new `WatchlistDealItem` + `WatchlistDealsResponse` types.
+   - API: `watchlistService.listDealsForUser()` — one Prisma findMany joined on business, scoped to active + unexpired offers from watched businessIds. `GET /watchlist/deals` contract-locked. 4/4 API tests.
+   - Mobile: `watchlistService.listDeals()`, `<WatchlistStoresRow />` (horizontal avatars with offer-count dot → /business/:id), `<WatchlistDealCard />` (orange left-border + "✓ Followed" badge + Claim CTA). 8/8 component tests.
+   - My Rewards Watchlist tab renders both in parallel; Claim wires into `offersService.claim()`.
+2. `f807f0d feat(p8 f4): notification type-specific CTAs`
+   - Follower → Follow back (wires `userService.follow`), boost_proposal → Tap to accept → /sponsorship, watchlist_offer → Redeem now → /redeem?type=local, post_approved/trending → View post → /post/[id], post_declined → See reason → /my-content, leaderboard → See ranks, quest → View quests, expiry → Redeem now.
+   - Color-coded per notification type (blue primary, orange accent, teal, g100 secondary). CTAs only render when the `data` keys they need are present. 4 new parity tests.
+3. `62b2c4a feat(p9 f2): sponsorship dashboard — back-arrow header, confirm-decline, empty state` + `915b567 ...PWA polish`
+   - Back arrow, Alert-driven accept/decline (with confirm-before-decline), empty-state panel explaining the 20% commission flow. SponsorshipCard's `statusLabel` fallback now casts via `String(status)` to silence a pre-existing TS error (count drops 5 → 4).
+4. `d8e2654 feat(p10 f2): Creator Score transparency panel`
+   - New `<CreatorScoreTransparencyPanel />` with like-ratio bar, 5 score-math rules (+0.1/like, +0.3/share, +5/trending, -0.5/dislike, -5/report), and a red warning banner if score < 40. Wired under `<CreatorScoreCard />` on my-content; feeds derived from the current content list so no new API call.
+5. `bb8d75f feat(p10 f3): Settings — Eru Account stats section`
+   - "Account" → "Eru Account"; adds Lifetime points, Current tier, Creator score rows.
+6. `1b22d6e feat(p8 f5): messages realtime — emit on send + mobile append on receive`
+   - API: `messagesService.sendMessage` emits `"message:new"` { conversationId, message } to both the recipient and sender user rooms via the P4 F2 gateway.
+   - Mobile: chat detail subscribes to `"message:new"` on mount, appends with dedupe on message.id, polling fallback slowed from 5s → 15s now that realtime is primary.
+
+**Explicitly still deferred (shallow value remaining):**
+
+- **P8 F1 deep profile** — server content-tab filter changes (backend-only change, no visible delta).
+- **P10 F3 Content Interests + Language & Content cards** — need `PUT /users/me/interests` + `/users/me/language-prefs` API first.
+- **Sponsorship proposal-context card in chat view** — a nice-to-have when a conversation starts from a boost proposal.
+- **Playwright smoke screenshots** — visual verification pass.
+
+**Final verification:**
+
+- Mobile: **543 / 543 ✅** across 116 suites
+- API: all touched routes green (wallet/content/business/rewards/messages/watchlist-deals)
+- TypeScript: `apps/api` clean, `apps/mobile` clean (4 pre-existing after the SponsorshipCard fix)
+
+**Commits this round:** 7 (all local on `main`). Total this session: **60+**.
+
+All six top-priority deferred items from the YOLO wrap-up are now shipped end-to-end. What remains is either backend-only, awaiting API endpoints that don't exist yet, or purely visual QA.
+
