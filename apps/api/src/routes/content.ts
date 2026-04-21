@@ -20,12 +20,18 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.badRequest(parsed.error.issues[0].message);
     }
 
-    const { type, subtype, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts, taggedUserIds } = parsed.data;
+    const { type, subtype, text, mediaIds, hashtags, locationPincode, pollOptions, threadParts, taggedUserIds, businessTagId } = parsed.data;
 
     // Validate that every tagged user actually exists
     if (taggedUserIds && taggedUserIds.length > 0) {
       const count = await prisma.user.count({ where: { id: { in: taggedUserIds } } });
       if (count !== taggedUserIds.length) throw Errors.badRequest('One or more tagged users do not exist');
+    }
+
+    // Validate business tag references a real business row
+    if (businessTagId) {
+      const bizExists = await prisma.business.findUnique({ where: { id: businessTagId }, select: { id: true } });
+      if (!bizExists) throw Errors.badRequest('Tagged business does not exist');
     }
 
     // Create the content row and any poll options / thread parts atomically so we
@@ -37,6 +43,7 @@ export async function contentRoutes(app: FastifyInstance) {
           type,
           subtype,
           commissionPctEarned: 0,
+          businessTagId: businessTagId ?? null,
           text: type === 'thread' && threadParts ? threadParts[0] : text,
           hashtags,
           locationPincode,
@@ -144,6 +151,15 @@ export async function contentRoutes(app: FastifyInstance) {
             avatarUrl: true,
             isVerified: true,
             tier: true,
+          },
+        },
+        businessTag: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            category: true,
+            pincode: true,
           },
         },
       },

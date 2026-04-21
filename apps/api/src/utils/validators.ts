@@ -34,6 +34,7 @@ export const createContentSchema = z.object({
     .optional()
     .transform((ids) => (ids ? Array.from(new Set(ids)) : ids))
     .pipe(z.array(z.string().uuid()).max(10).optional()),
+  businessTagId: z.string().uuid().optional(),
 }).refine((data) => {
   // poll type MUST have 2–4 options and MUST NOT supply threadParts
   if (data.type === 'poll') {

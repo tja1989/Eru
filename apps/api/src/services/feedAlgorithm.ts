@@ -28,6 +28,7 @@ interface ScoredContent {
   text: string | null;
   hashtags: string[];
   locationPincode: string | null;
+  businessTagId: string | null;
   moderationStatus: string;
   likeCount: number;
   commentCount: number;
@@ -47,6 +48,13 @@ interface ScoredContent {
     isVerified: boolean;
     tier: string;
   };
+  businessTag: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    category: string;
+    pincode: string;
+  } | null;
 }
 
 interface FeedContext {
@@ -258,6 +266,15 @@ export async function getFeed(ctx: FeedContext, page: number, limit: number): Pr
           avatarUrl: true,
           isVerified: true,
           tier: true,
+        },
+      },
+      businessTag: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          category: true,
+          pincode: true,
         },
       },
     },
