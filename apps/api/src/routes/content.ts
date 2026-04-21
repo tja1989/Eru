@@ -618,18 +618,33 @@ export async function contentRoutes(app: FastifyInstance) {
       throw Errors.badRequest(paginationParsed.error.issues[0].message);
     }
 
+    // Optional sort: top = likeCount DESC → recency tiebreak; recent =
+    // createdAt DESC. Default preserves the pre-existing ASC order so we
+    // don't break callers that haven't been updated.
+    const sort = rawQuery.sort;
+    if (sort !== undefined && sort !== 'top' && sort !== 'recent') {
+      throw Errors.badRequest('sort must be "top" or "recent"');
+    }
+
     const { page, limit } = paginationParsed.data;
     const skip = (page - 1) * limit;
 
     const content = await prisma.content.findUnique({ where: { id: contentId } });
     if (!content) throw Errors.notFound('Content');
 
+    const orderBy =
+      sort === 'top'
+        ? ([{ likeCount: 'desc' }, { createdAt: 'desc' }] as const)
+        : sort === 'recent'
+          ? ([{ createdAt: 'desc' }] as const)
+          : ([{ createdAt: 'asc' }] as const);
+
     // Fetch top-level comments (no parentId) with pagination
     const topLevelComments = await prisma.comment.findMany({
       where: { contentId, parentId: null },
       skip,
       take: limit,
-      orderBy: { createdAt: 'asc' },
+      orderBy: [...orderBy],
       include: {
         user: {
           select: { id: true, name: true, username: true, avatarUrl: true },
