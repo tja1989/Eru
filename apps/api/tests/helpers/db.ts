@@ -71,6 +71,9 @@ export async function cleanupTestData() {
   await prisma.story.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.watchlist.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.streak.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  // Synthetic recharge offers (id prefix recharge-) are created lazily by
+  // the /rewards/recharge handler; clean them up so test counts stay stable.
+  await prisma.offer.deleteMany({ where: { id: { startsWith: 'recharge-' } } });
   await prisma.user.deleteMany({ where: { firebaseUid: { startsWith: 'dev-test-' } } });
 }
 
