@@ -388,6 +388,16 @@ export default function CreateScreen() {
               {taggedUsers.length > 0 ? `${taggedUsers.length} tagged` : 'Tag'}
             </Text>
           </TouchableOpacity>
+          {/* Audio — placeholder icon matching PWA's 6-icon toolbar. The audio
+              feature itself (background track picker) isn't wired yet. */}
+          <TouchableOpacity
+            style={styles.toolbarBtn}
+            onPress={() => Alert.alert('Audio coming soon', 'Background audio picker is on the roadmap.')}
+            accessibilityLabel="Add audio"
+          >
+            <Text style={styles.toolbarIcon}>🎵</Text>
+            <Text style={styles.toolbarLabel}>Audio</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

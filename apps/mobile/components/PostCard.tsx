@@ -310,6 +310,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
           <TouchableOpacity
             onPress={handleDislike}
             accessibilityLabel="Not for me"
+            accessibilityHint="Not for me — helps us improve your feed and affects creator score"
             accessibilityState={{ selected: disliked }}
           >
             <Text style={{ fontSize: 26, opacity: disliked ? 1 : 0.55, color: disliked ? '#E53E3E' : '#737373' }}>
