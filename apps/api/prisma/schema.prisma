@@ -150,6 +150,7 @@ model User {
   storyViews            StoryView[]
   pollVotes             PollVote[]
   highlights            Highlight[]
+  watchlist             Watchlist[]
 
   @@index([primaryPincode])
   @@map("users")
@@ -419,6 +420,7 @@ model Business {
 
   offers               Offer[]
   sponsorshipProposals SponsorshipProposal[]
+  watchlist            Watchlist[]
 
   @@index([pincode])
   @@map("businesses")
@@ -697,4 +699,22 @@ model HighlightItem {
 
   @@unique([highlightId, contentId])
   @@map("highlight_items")
+}
+
+// ========== P4 F1: Watchlist ==========
+
+model Watchlist {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  businessId     String   @map("business_id")
+  notifyOnOffers Boolean  @default(true) @map("notify_on_offers")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
+  @@map("watchlist")
 }
