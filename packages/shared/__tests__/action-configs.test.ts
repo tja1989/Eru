@@ -23,8 +23,8 @@ describe('ACTION_CONFIGS — internal consistency', () => {
     }
   });
 
-  it('exactly 15 actions are currently configured (P4 F6 baseline; 10 more deferred)', () => {
-    expect(Object.keys(ACTION_CONFIGS)).toHaveLength(15);
+  it('exactly 16 actions are currently configured (P4 F6 baseline + P5 F6 welcome_bonus; 9 more deferred)', () => {
+    expect(Object.keys(ACTION_CONFIGS)).toHaveLength(16);
   });
 
   it('every shipped ActionType union member has a corresponding config', () => {
@@ -32,10 +32,15 @@ describe('ACTION_CONFIGS — internal consistency', () => {
       'read_article','watch_video','reel_watch','listen_podcast','read_thread',
       'like','comment','share','save','follow',
       'daily_checkin','create_content','content_trending','refer_friend','complete_profile',
+      'welcome_bonus',
     ];
     for (const t of expected) {
       expect(ACTION_CONFIGS[t]).toBeDefined();
     }
+  });
+
+  it('welcome_bonus is +250 pts (Dev Spec §2.1 Screen 4)', () => {
+    expect(ACTION_CONFIGS.welcome_bonus.points).toBe(250);
   });
 
   it('comment requires 10+ words server-side (Dev Spec §2.6 S18 + PWA post-detail copy)', () => {

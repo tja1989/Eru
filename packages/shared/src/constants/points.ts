@@ -25,6 +25,10 @@ export const ACTION_CONFIGS: Record<ActionType, ActionConfig> = {
   content_trending: { type: 'content_trending', category: 'growth', points: 200, dailyCap: 1, requiresContentId: true, validation: {} },
   refer_friend: { type: 'refer_friend', category: 'growth', points: 100, dailyCap: 3, requiresContentId: false, validation: {} },
   complete_profile: { type: 'complete_profile', category: 'growth', points: 50, dailyCap: 1, requiresContentId: false, validation: {} },
+  // welcome_bonus is the one-shot +250 pts credited when onboarding completes.
+  // Idempotency is enforced by the route handler (lifetime cap of 1 — checks
+  // for an existing welcome_bonus ledger entry before crediting again).
+  welcome_bonus: { type: 'welcome_bonus', category: 'growth', points: 250, dailyCap: 1, requiresContentId: false, validation: {} },
 };
 
 export const DAILY_POINTS_GOAL = 250;
