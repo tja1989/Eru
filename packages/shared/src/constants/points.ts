@@ -29,6 +29,11 @@ export const ACTION_CONFIGS: Record<ActionType, ActionConfig> = {
   // Idempotency is enforced by the route handler (lifetime cap of 1 — checks
   // for an existing welcome_bonus ledger entry before crediting again).
   welcome_bonus: { type: 'welcome_bonus', category: 'growth', points: 250, dailyCap: 1, requiresContentId: false, validation: {} },
+  // Sponsored-post earning actions (P6 F5). view_sponsored fires once per
+  // post per session after 2s of visibility; click_sponsored_cta fires
+  // when the user taps the Claim Offer bar overlayed on the media.
+  view_sponsored: { type: 'view_sponsored', category: 'engagement', points: 2, dailyCap: 50, requiresContentId: true, validation: {} },
+  click_sponsored_cta: { type: 'click_sponsored_cta', category: 'engagement', points: 5, dailyCap: 20, requiresContentId: true, validation: {} },
 };
 
 export const DAILY_POINTS_GOAL = 250;

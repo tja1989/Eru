@@ -4,7 +4,8 @@ export type ActionType =
   | 'read_article' | 'watch_video' | 'reel_watch' | 'listen_podcast' | 'read_thread'
   | 'like' | 'comment' | 'share' | 'save' | 'follow'
   | 'daily_checkin' | 'create_content' | 'content_trending' | 'refer_friend' | 'complete_profile'
-  | 'welcome_bonus';
+  | 'welcome_bonus'
+  | 'view_sponsored' | 'click_sponsored_cta';
 
 export interface PointsLedgerEntry {
   id: string;

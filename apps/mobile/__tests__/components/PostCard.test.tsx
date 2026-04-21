@@ -4,8 +4,9 @@ import { PostCard } from '@/components/PostCard';
 import { contentService } from '@/services/contentService';
 
 jest.mock('@/services/contentService');
+const mockEarn = jest.fn();
 jest.mock('@/stores/pointsStore', () => ({
-  usePointsStore: () => ({ earn: jest.fn() }),
+  usePointsStore: () => ({ earn: mockEarn }),
 }));
 jest.mock('@/stores/authStore', () => ({
   useAuthStore: (sel: any) => sel({ user: { id: 'u-me' } }),
@@ -384,5 +385,49 @@ describe('<PostCard /> variants (PWA parity)', () => {
     };
     const { getByText } = render(<PostCard post={reel} />);
     expect(getByText('▶ Reel • 0:45')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sponsored earning actions — view_sponsored fires after 2s visible; the
+// Claim Offer bar tap fires click_sponsored_cta. Both dedupe (view once per
+// lifetime; click every tap). Non-sponsored posts never fire view_sponsored.
+// ---------------------------------------------------------------------------
+describe('<PostCard /> sponsored earning', () => {
+  beforeEach(() => {
+    mockEarn.mockClear();
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  const sponsoredPost = {
+    ...variantBase,
+    ugcBadge: null,
+    isSponsored: true,
+    sponsorName: 'Kashi Bakes',
+    sponsorBusinessId: 'b1',
+    offerUrl: '/business/b1',
+    pointsEarnedOnView: 15,
+  };
+
+  it('fires earn("view_sponsored", id) after 2s when isActive + sponsored', () => {
+    render(<PostCard post={sponsoredPost} isActive={true} />);
+    act(() => { jest.advanceTimersByTime(2100); });
+    expect(mockEarn).toHaveBeenCalledWith('view_sponsored', sponsoredPost.id);
+  });
+
+  it('does NOT fire view_sponsored for a non-sponsored post', () => {
+    const nonSponsored = { ...variantBase };
+    render(<PostCard post={nonSponsored} isActive={true} />);
+    act(() => { jest.advanceTimersByTime(5000); });
+    expect(mockEarn).not.toHaveBeenCalledWith('view_sponsored', expect.anything());
+  });
+
+  it('fires earn("click_sponsored_cta", id) when the Claim Offer bar is tapped', () => {
+    const { getByRole } = render(<PostCard post={sponsoredPost} isActive={true} />);
+    fireEvent.press(getByRole('button', { name: /Claim Offer/i }));
+    expect(mockEarn).toHaveBeenCalledWith('click_sponsored_cta', sponsoredPost.id);
   });
 });

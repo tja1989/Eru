@@ -16,6 +16,7 @@ import { colors, spacing } from '../constants/theme';
 import { contentService } from '../services/contentService';
 import { usePointsStore } from '../stores/pointsStore';
 import { useAuthStore } from '../stores/authStore';
+import { useImpressionTimer } from '../hooks/useImpressionTimer';
 import { PollCard } from './PollCard';
 import { ThreadView } from './ThreadView';
 import { pickVideoUrl } from '@eru/shared';
@@ -98,6 +99,14 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
     }
   }, [isActive, videoUrl, player]);
 
+  // Credit view_sponsored +2 once after 2s of continuous visibility on a
+  // sponsored post. Dedupe is inside useImpressionTimer (once per mount).
+  useImpressionTimer({
+    enabled: !!post.isSponsored && isActive,
+    thresholdMs: 2000,
+    onImpression: () => earn('view_sponsored', post.id),
+  });
+
   const handleLike = async () => {
     if (liked) {
       setLiked(false); setLikeCount((c: number) => c - 1);
@@ -172,6 +181,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   };
 
   const claimOffer = () => {
+    earn('click_sponsored_cta', post.id);
     if (post.sponsorBusinessId) {
       router.push({ pathname: '/business/[id]', params: { id: post.sponsorBusinessId } });
     }
