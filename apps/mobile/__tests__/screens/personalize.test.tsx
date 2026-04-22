@@ -35,6 +35,14 @@ jest.mock('@/services/locationsService', () => ({
   },
 }));
 
+// Pre-fill the name field with a meaningful value so existing tests exercise
+// the interests/languages logic without having to type a name every time.
+// The "empty name blocks Continue" case gets its own explicit test below.
+jest.mock('@/stores/authStore', () => ({
+  useAuthStore: (sel: any) =>
+    sel({ user: { id: 'u-me', name: 'Test User', username: 'tst', phone: '+9199', tier: 'explorer', currentBalance: 0 } }),
+}));
+
 describe('<Personalize /> (P5 F3 pixel parity)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -116,12 +124,32 @@ describe('<Personalize /> (P5 F3 pixel parity)', () => {
     await waitFor(() => {
       expect(userService.updateSettings).toHaveBeenCalledWith(
         expect.objectContaining({
+          name: 'Test User',
           interests: expect.arrayContaining(['food', 'tech', 'travel', 'books', 'fitness']),
           contentLanguages: expect.arrayContaining(['en']),
         }),
       );
       expect(mockReplace).toHaveBeenCalledWith('/(auth)/tutorial');
     });
+  });
+
+  it('Continue stays disabled when name is empty, even with 5+ interests', async () => {
+    const { getByLabelText, getByTestId } = render(<Personalize />);
+    await act(async () => {});
+
+    // Clear the pre-filled name so we can test the empty-name case.
+    fireEvent.changeText(getByTestId('name-input'), '');
+
+    ['food', 'tech', 'travel', 'books', 'fitness'].forEach((key) =>
+      fireEvent.press(getByLabelText(`interest-pill-${key}`)),
+    );
+
+    const continueBtn = getByTestId('continue-btn');
+    expect(continueBtn.props.accessibilityState?.disabled).toBe(true);
+
+    // Typing a name flips Continue back to enabled.
+    fireEvent.changeText(getByTestId('name-input'), 'Abraham T J');
+    expect(continueBtn.props.accessibilityState?.disabled).toBe(false);
   });
 
   it('still routes to /(auth)/tutorial even if updateSettings fails (non-blocking)', async () => {

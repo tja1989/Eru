@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -19,11 +20,18 @@ import {
 import { ProgressSteps } from '@/components/ProgressSteps';
 import { userService } from '@/services/userService';
 import { locationsService } from '@/services/locationsService';
+import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/constants/theme';
 
 export default function Personalize() {
   const router = useRouter();
+  const storeUser = useAuthStore((s) => s.user);
 
+  // Treat the auto-register placeholder "New User" as empty so the field
+  // doesn't pre-fill with meaningless filler. Returning users who already
+  // picked a real name see it pre-filled and don't need to retype.
+  const initialName = storeUser?.name && storeUser.name !== 'New User' ? storeUser.name : '';
+  const [name, setName] = useState<string>(initialName);
   const [interests, setInterests] = useState<string[]>([]);
   const [languages, setLanguages] = useState<string[]>(['en']);
   const [pincode, setPincode] = useState<string | null>(null);
@@ -75,7 +83,8 @@ export default function Personalize() {
       prev.includes(code) ? prev.filter((x) => x !== code) : [...prev, code],
     );
 
-  const canContinue = interests.length >= PERSONALIZE_BONUS_THRESHOLD;
+  const trimmedName = name.trim();
+  const canContinue = trimmedName.length > 0 && interests.length >= PERSONALIZE_BONUS_THRESHOLD;
   const showBonus = interests.length >= PERSONALIZE_BONUS_THRESHOLD;
 
   const handleNext = async () => {
@@ -84,6 +93,7 @@ export default function Personalize() {
     setSaveError(null);
     try {
       await userService.updateSettings({
+        name: trimmedName,
         ...(pincode ? { primaryPincode: pincode } : {}),
         interests,
         contentLanguages: languages,
@@ -121,6 +131,24 @@ export default function Personalize() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {/* Name — captured here rather than in a separate screen so onboarding
+            stays 4 steps. Required; drives follow/search discoverability in
+            Explore since the phone-derived username alone isn't memorable. */}
+        <Text style={styles.sectionTitle}>👤 Your name</Text>
+        <Text style={styles.sectionHint}>So friends can find you in Explore</Text>
+        <TextInput
+          testID="name-input"
+          style={styles.nameInput}
+          placeholder="Full name"
+          placeholderTextColor={colors.g400}
+          value={name}
+          onChangeText={setName}
+          maxLength={100}
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="done"
+        />
+
         {/* Location */}
         <Text style={styles.sectionTitle}>📍 Your location</Text>
         <View style={styles.locationCard}>
@@ -287,6 +315,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.g500,
     marginBottom: 10,
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderColor: colors.g200,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    color: colors.g800,
+    backgroundColor: '#fff',
+    marginBottom: 4,
   },
   locationCard: {
     flexDirection: 'row',
