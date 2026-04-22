@@ -1,44 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
-import { setAuthToken } from '../../services/api';
-import { feedService } from '../../services/feedService';
-import { isFirebaseConfigured, signInWithPhoneNumber } from '../../services/firebase';
+import { signInWithPhoneNumber } from '../../services/firebase';
 import { setPendingConfirmation } from '../../services/pendingConfirmation';
 import { whatsappAuthService } from '../../services/whatsappAuthService';
-import { colors, spacing } from '../../constants/theme';
+import { ProgressSteps } from '../../components/ProgressSteps';
+import { colors } from '../../constants/theme';
 
+// Matches Eru_Consumer_PWA.html #screen-otp (lines 292-337). The PWA visually
+// merges phone entry + 6-digit code on one screen; the native app splits them
+// into /login (this) and /otp so we can funnel a real Firebase confirmation
+// result through setPendingConfirmation between them. The chrome — header,
+// step-1-of-4 progress bar, navy CTA, legal text — matches the PWA so the
+// two screens read as a single "Verify Phone" flow.
 export default function LoginScreen() {
   const router = useRouter();
-  const { setToken } = useAuthStore();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [useWhatsApp, setUseWhatsApp] = useState(false);
-
-  // If the Firebase config block in app.json still has placeholder values we
-  // fall through to the dev-token bypass so the simulator / Expo Go flow keeps
-  // working. Once real Firebase credentials are wired in, the OTP path engages
-  // automatically without a code change.
-  const firebaseReady = isFirebaseConfigured();
-
-  const handleDevBypass = async (formattedPhone: string) => {
-    const firebaseUid = 'dev-' + formattedPhone.replace(/[^0-9]/g, '');
-    // Probe /wallet/summary with the dev token — 200 means the user exists,
-    // 401 means we need to send them through onboarding.
-    setAuthToken(firebaseUid);
-    try {
-      await feedService.getWalletSummary();
-      setToken(firebaseUid);
-    } catch (err: any) {
-      setAuthToken(null);
-      if (err?.response?.status === 401) {
-        router.push({ pathname: '/(auth)/onboarding', params: { phone: formattedPhone } });
-      } else {
-        Alert.alert('Error', err?.response?.data?.error || err?.message || 'Login failed');
-      }
-    }
-  };
 
   const handleWhatsAppOtp = async (formattedPhone: string) => {
     await whatsappAuthService.send(formattedPhone);
@@ -49,10 +38,10 @@ export default function LoginScreen() {
   };
 
   const handleFirebaseOtp = async (formattedPhone: string) => {
-    // Native SDK path — Play Integrity (Android) or APNs silent push (iOS)
-    // handles verification invisibly, no reCAPTCHA. We stash the
-    // ConfirmationResult in a module-level ref because expo-router's typed
-    // routes can't serialise the Firebase object through search params.
+    // Native SDK — Play Integrity (Android) or APNs silent push (iOS) handle
+    // verification invisibly. ConfirmationResult stashed in a module-level ref
+    // because expo-router's typed routes can't serialise a Firebase object
+    // through search params.
     const confirmation = await signInWithPhoneNumber(formattedPhone);
     setPendingConfirmation(confirmation);
     router.push({
@@ -61,17 +50,19 @@ export default function LoginScreen() {
     });
   };
 
-  const handleLogin = async () => {
-    if (!phone || phone.length < 10) return Alert.alert('Enter a valid phone number');
+  const handleContinue = async () => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length !== 10) {
+      Alert.alert('Enter a valid 10-digit mobile number');
+      return;
+    }
     setLoading(true);
     try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+      const formattedPhone = `+91${digits}`;
       if (useWhatsApp) {
         await handleWhatsAppOtp(formattedPhone);
-      } else if (firebaseReady) {
-        await handleFirebaseOtp(formattedPhone);
       } else {
-        await handleDevBypass(formattedPhone);
+        await handleFirebaseOtp(formattedPhone);
       }
     } catch (error: any) {
       Alert.alert('Could not send code', error?.message ?? 'Please try again');
@@ -80,66 +71,184 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.logo}>Eru</Text>
-      <Text style={styles.subtitle}>Your attention has value</Text>
-      {!firebaseReady ? (
-        <View style={styles.devBanner}>
-          <Text style={styles.devBannerText}>
-            Dev mode — OTP bypassed. Configure Firebase in app.json to enable SMS.
-          </Text>
-        </View>
-      ) : null}
-      <Text style={styles.label}>Phone number</Text>
-      <TextInput
-        testID="phone-input"
-        style={styles.input}
-        placeholder="e.g., 9876543210"
-        placeholderTextColor={colors.g400}
-        keyboardType="phone-pad"
-        value={phone}
-        onChangeText={setPhone}
-        maxLength={15}
-      />
-      <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>Send via WhatsApp</Text>
-        <Switch
-          testID="whatsapp-toggle"
-          value={useWhatsApp}
-          onValueChange={setUseWhatsApp}
-          trackColor={{ false: colors.g200, true: colors.green }}
-          thumbColor={colors.card}
-        />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Header bar */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Back">
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Verify Phone</Text>
+        <View style={{ width: 16 }} />
       </View>
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Continue'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.googleButton}>
-        <Text style={styles.googleText}>Sign in with Google</Text>
-      </TouchableOpacity>
-    </View>
+
+      {/* Step 1 of 4 progress */}
+      <View style={styles.progressWrap}>
+        <ProgressSteps current={1} total={4} caption="Step 1 of 4" />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Your mobile number</Text>
+        <Text style={styles.subtitle}>We'll send a one-time password to verify</Text>
+
+        {/* Country pill + phone input */}
+        <View style={styles.inputRow}>
+          <View style={styles.countryPill}>
+            <Text style={styles.countryFlag}>🇮🇳</Text>
+            <Text style={styles.countryCode}>+91</Text>
+          </View>
+          <TextInput
+            testID="phone-input"
+            style={styles.phoneInput}
+            placeholder="98432 15678"
+            placeholderTextColor={colors.g400}
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+            maxLength={12}
+            autoFocus
+          />
+        </View>
+
+        {/* WhatsApp toggle card — teal-tinted per PWA line 317 */}
+        <TouchableOpacity
+          testID="whatsapp-toggle"
+          style={styles.toggleCard}
+          onPress={() => setUseWhatsApp((v) => !v)}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: useWhatsApp }}
+        >
+          <View style={[styles.toggleTrack, useWhatsApp && styles.toggleTrackActive]}>
+            <View style={[styles.toggleThumb, useWhatsApp && styles.toggleThumbActive]} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleTitle}>Send via WhatsApp</Text>
+            <Text style={styles.toggleSubtitle}>Faster delivery. No SMS needed.</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.continueBtn, loading && styles.continueBtnDisabled]}
+          onPress={handleContinue}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Verify and continue"
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.continueText}>Verify &amp; Continue →</Text>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.legalText}>
+          By continuing you agree to Eru's <Text style={styles.legalLink}>Terms</Text> and{' '}
+          <Text style={styles.legalLink}>Privacy Policy</Text>. We never share your number with
+          advertisers.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: spacing.xl },
-  logo: { fontSize: 48, fontWeight: '800', fontStyle: 'italic', color: colors.g800, textAlign: 'center', fontFamily: 'Georgia' },
-  subtitle: { fontSize: 16, color: colors.g500, textAlign: 'center', marginBottom: 24, marginTop: 8 },
-  devBanner: {
-    backgroundColor: '#FFF4CE',
-    borderColor: '#D4A017',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 16,
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: 4,
+    paddingBottom: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
   },
-  devBannerText: { fontSize: 12, color: '#7A5C00', textAlign: 'center' },
-  label: { fontSize: 14, fontWeight: '600', color: colors.g800, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: colors.g200, borderRadius: 12, padding: 16, fontSize: 16, marginBottom: 12, backgroundColor: '#fff' },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  toggleLabel: { fontSize: 14, color: colors.g700, fontWeight: '500' },
-  button: { backgroundColor: colors.blue, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  googleButton: { borderWidth: 1, borderColor: colors.g200, borderRadius: 12, padding: 16, alignItems: 'center' },
-  googleText: { fontSize: 16, fontWeight: '600', color: colors.g700 },
+  backIcon: { fontSize: 16, color: colors.g800 },
+  headerTitle: { fontSize: 16, fontWeight: '800', color: colors.g800 },
+  progressWrap: {
+    paddingHorizontal: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
+  },
+  body: { padding: 16, flexGrow: 1 },
+  title: { fontSize: 22, fontWeight: '800', color: colors.g800 },
+  subtitle: { fontSize: 13, color: colors.g500, marginTop: 4, marginBottom: 24 },
+  inputRow: { flexDirection: 'row', gap: 8 },
+  countryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.g200,
+    borderRadius: 10,
+    backgroundColor: colors.g50,
+  },
+  countryFlag: { fontSize: 16 },
+  countryCode: { fontSize: 14, fontWeight: '600', color: colors.g800 },
+  phoneInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.g200,
+    borderRadius: 10,
+    fontSize: 16,
+    letterSpacing: 1,
+    color: colors.g800,
+  },
+  toggleCard: {
+    marginTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(16,185,129,0.04)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(16,185,129,0.15)',
+    borderRadius: 10,
+  },
+  toggleTrack: {
+    width: 40,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.g200,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleTrackActive: { backgroundColor: colors.green },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    // alignSelf flips on active — approximates the PWA thumb sliding right.
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  toggleThumbActive: { alignSelf: 'flex-end' },
+  toggleTitle: { fontSize: 12, fontWeight: '600', color: colors.g800 },
+  toggleSubtitle: { fontSize: 10, color: colors.g500, marginTop: 2 },
+  continueBtn: {
+    marginTop: 24,
+    paddingVertical: 14,
+    backgroundColor: colors.navy,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  continueBtnDisabled: { opacity: 0.5 },
+  continueText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  legalText: {
+    marginTop: 16,
+    fontSize: 10,
+    color: colors.g400,
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  legalLink: { color: colors.blue },
 });
