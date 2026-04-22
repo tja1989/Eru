@@ -353,10 +353,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
         )
       ) : (
         post.text && (
-          <Text style={styles.caption}>
-            <Text style={styles.captionUser}>{post.user?.username} </Text>
-            {post.text}
-          </Text>
+          <Text style={styles.caption}>{post.text}</Text>
         )
       )}
       {post.commentCount > 0 && (

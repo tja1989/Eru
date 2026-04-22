@@ -8,7 +8,13 @@ jest.mock('@/hooks/useNotifications', () => ({
 
 jest.mock('expo-router', () => {
   const { View } = require('react-native');
-  return { Slot: () => <View testID="slot" /> };
+  return {
+    Slot: () => <View testID="slot" />,
+    Stack: Object.assign(
+      ({ children }: any) => <View testID="stack">{children}</View>,
+      { Screen: () => null },
+    ),
+  };
 });
 
 jest.mock('@/components/PointsToast', () => ({

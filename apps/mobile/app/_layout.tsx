@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PointsToast } from '../components/PointsToast';
@@ -42,7 +42,11 @@ export default function RootLayout() {
   return (
     <View style={{ flex: 1 }}>
       <StatusBar style="dark" />
-      <Slot />
+      {/* Root Stack — required so router.push() from inside a group (e.g.
+          /(tabs)/profile → /my-content) has a navigator to push onto.
+          With a bare <Slot /> there's no stack and cross-group pushes
+          silently fall back to the initial tab route. */}
+      <Stack screenOptions={{ headerShown: false }} />
       <PointsToast />
       {notificationsReady ? <NotificationsInitializer /> : null}
     </View>
