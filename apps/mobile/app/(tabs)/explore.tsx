@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -8,12 +8,23 @@ import {
   TouchableOpacity,
   RefreshControl,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { exploreService } from '../../services/exploreService';
 import { MediaGrid } from '../../components/MediaGrid';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { colors, spacing, radius } from '../../constants/theme';
+
+type UserResult = {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl?: string | null;
+  isVerified?: boolean;
+  tier?: string;
+  bio?: string | null;
+};
 
 const CATEGORIES = [
   { key: 'all', label: 'For You' },
@@ -27,9 +38,11 @@ const CATEGORIES = [
 ];
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [items, setItems] = useState<any[]>([]);
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -37,8 +50,10 @@ export default function ExploreScreen() {
     try {
       const data = await exploreService.getExplore(cat);
       setItems(data.data ?? []);
+      setUserResults([]); // user results only appear for text search, not category browse
     } catch {
       setItems([]);
+      setUserResults([]);
     }
   }, [category]);
 
@@ -58,8 +73,11 @@ export default function ExploreScreen() {
     try {
       const data = await exploreService.search(query.trim());
       setItems(data.posts ?? []);
+      // Users section only renders in the search state; category browse hides it.
+      setUserResults((data.users ?? []) as UserResult[]);
     } catch {
       setItems([]);
+      setUserResults([]);
     } finally {
       setLoading(false);
     }
@@ -131,15 +149,47 @@ export default function ExploreScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {items.length === 0 ? (
+          {userResults.length > 0 && (
+            <View style={styles.peopleSection}>
+              <Text style={styles.sectionHeader}>People</Text>
+              {userResults.map((u) => (
+                <TouchableOpacity
+                  key={u.id}
+                  testID={`user-result-${u.id}`}
+                  style={styles.userRow}
+                  activeOpacity={0.7}
+                  onPress={() => router.push({ pathname: '/users/[id]', params: { id: u.id } } as any)}
+                >
+                  {u.avatarUrl ? (
+                    <Image source={{ uri: u.avatarUrl }} style={styles.userAvatar} />
+                  ) : (
+                    <View style={[styles.userAvatar, styles.userAvatarFallback]}>
+                      <Text style={styles.userAvatarInitial}>{(u.name || u.username || '?').slice(0, 1).toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.userName} numberOfLines={1}>
+                      {u.name}
+                      {u.isVerified ? ' ✓' : ''}
+                    </Text>
+                    <Text style={styles.userHandle} numberOfLines={1}>@{u.username}</Text>
+                  </View>
+                  <Text style={styles.userChevron}>›</Text>
+                </TouchableOpacity>
+              ))}
+              {items.length > 0 ? <Text style={[styles.sectionHeader, { marginTop: 16 }]}>Posts</Text> : null}
+            </View>
+          )}
+
+          {items.length === 0 && userResults.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>🔭</Text>
               <Text style={styles.emptyTitle}>Nothing here yet</Text>
               <Text style={styles.emptySubtitle}>Try a different category or search term</Text>
             </View>
-          ) : (
+          ) : items.length > 0 ? (
             <MediaGrid items={items} />
-          )}
+          ) : null}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -198,4 +248,27 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.g800 },
   emptySubtitle: { fontSize: 14, color: colors.g500 },
+  peopleSection: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.g700,
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
+  },
+  userAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.g200 },
+  userAvatarFallback: { alignItems: 'center', justifyContent: 'center' },
+  userAvatarInitial: { fontSize: 18, fontWeight: '700', color: colors.g600 },
+  userName: { fontSize: 14, fontWeight: '700', color: colors.g800 },
+  userHandle: { fontSize: 12, color: colors.g500, marginTop: 2 },
+  userChevron: { fontSize: 22, color: colors.g400 },
 });
