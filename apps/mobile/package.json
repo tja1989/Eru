@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "eas-build-post-install": "npm run build --workspace=@eru/shared"
   },
   "dependencies": {
     "@eru/shared": "*",
