@@ -15,20 +15,38 @@ export async function authRoutes(app: FastifyInstance) {
 
     const { firebaseUid, phone, name, username } = parsed.data;
 
-    const existing = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { firebaseUid },
-          { phone },
-          { username },
-        ],
-      },
-    });
+    // Username collision — always a hard conflict.
+    const byUsername = await prisma.user.findUnique({ where: { username } });
+    if (byUsername && byUsername.phone !== phone) {
+      throw Errors.conflict('Username already taken');
+    }
 
-    if (existing) {
-      if (existing.firebaseUid === firebaseUid) throw Errors.conflict('User already registered');
-      if (existing.phone === phone) throw Errors.conflict('Phone number already in use');
-      if (existing.username === username) throw Errors.conflict('Username already taken');
+    // firebaseUid already in use but for a different phone — genuine duplicate.
+    const byUid = await prisma.user.findUnique({ where: { firebaseUid } });
+    if (byUid) throw Errors.conflict('User already registered');
+
+    // Phone already in use — adopt the existing record instead of failing.
+    // Covers the "changed auth provider" case: a user who first registered via
+    // the dev-token bypass and is now signing in via Firebase with a fresh
+    // UID. Firebase Phone Auth has verified the phone, so the caller is the
+    // account owner. We update firebaseUid + let them re-assert name/username.
+    const byPhone = await prisma.user.findUnique({ where: { phone } });
+    if (byPhone) {
+      const updated = await prisma.user.update({
+        where: { id: byPhone.id },
+        data: { firebaseUid, name, username },
+      });
+      return reply.status(200).send({
+        user: {
+          id: updated.id,
+          name: updated.name,
+          username: updated.username,
+          phone: updated.phone,
+          tier: updated.tier,
+          currentBalance: updated.currentBalance,
+          createdAt: updated.createdAt.toISOString(),
+        },
+      });
     }
 
     const user = await prisma.user.create({

@@ -114,16 +114,53 @@ describe('<LoginScreen /> — PWA-style phone entry', () => {
     });
   });
 
-  it('rejects phone numbers shorter than 10 digits', async () => {
-    const alertSpy = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation();
-    const { getByTestId, getByText } = render(<LoginScreen />);
+  it('CTA is disabled until a valid 10-digit number is entered', () => {
+    const { getByTestId, getByRole } = render(<LoginScreen />);
+    const cta = getByRole('button', { name: /Verify and continue/i });
+    expect(cta.props.accessibilityState?.disabled).toBe(true);
+
     fireEvent.changeText(getByTestId('phone-input'), '98765');
+    expect(cta.props.accessibilityState?.disabled).toBe(true);
+
+    fireEvent.changeText(getByTestId('phone-input'), '9876543210');
+    expect(cta.props.accessibilityState?.disabled).toBe(false);
+  });
+
+  it('strips a leading 91 country code if the user types it', async () => {
+    (signInWithPhoneNumber as jest.Mock).mockResolvedValue({ confirm: jest.fn() });
+    const { getByTestId, getByText } = render(<LoginScreen />);
+
+    // User pastes "+91 9876543210" or types "919876543210" — we should still
+    // end up sending +919876543210 (no doubled country code).
+    fireEvent.changeText(getByTestId('phone-input'), '919876543210');
     fireEvent.press(getByText(/Verify & Continue/));
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/10-digit/));
+      expect(signInWithPhoneNumber).toHaveBeenCalledWith('+919876543210');
     });
-    expect(signInWithPhoneNumber).not.toHaveBeenCalled();
-    alertSpy.mockRestore();
+  });
+
+  it('strips a leading 0 (STD prefix) if the user types it', async () => {
+    (signInWithPhoneNumber as jest.Mock).mockResolvedValue({ confirm: jest.fn() });
+    const { getByTestId, getByText } = render(<LoginScreen />);
+
+    fireEvent.changeText(getByTestId('phone-input'), '09876543210');
+    fireEvent.press(getByText(/Verify & Continue/));
+
+    await waitFor(() => {
+      expect(signInWithPhoneNumber).toHaveBeenCalledWith('+919876543210');
+    });
+  });
+
+  it('formats the display value as "98765 43210" with a single space after 5 digits', () => {
+    const { getByTestId } = render(<LoginScreen />);
+    const input = getByTestId('phone-input');
+    fireEvent.changeText(input, '9876543210');
+    expect(input.props.value).toBe('98765 43210');
+  });
+
+  it('shows the helper text telling users +91 is already set', () => {
+    const { getByText } = render(<LoginScreen />);
+    expect(getByText(/already set \+91 for you/i)).toBeTruthy();
   });
 });

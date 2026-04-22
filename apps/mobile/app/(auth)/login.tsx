@@ -50,9 +50,27 @@ export default function LoginScreen() {
     });
   };
 
+  // Strip anything that isn't a digit. If the user typed a 12-digit number
+  // starting with 91 (the country code), drop the prefix so we always submit
+  // a clean 10-digit body. Also drop a leading 0 (India's STD-style prefix).
+  const normalize = (raw: string): string => {
+    let d = raw.replace(/\D/g, '');
+    if (d.length === 12 && d.startsWith('91')) d = d.slice(2);
+    if (d.length === 11 && d.startsWith('0')) d = d.slice(1);
+    return d.slice(0, 10);
+  };
+
+  // Display "98432 15678" with a single space after 5 digits. Cosmetic only —
+  // normalize() strips the space before we submit.
+  const formatForDisplay = (d: string) => (d.length <= 5 ? d : `${d.slice(0, 5)} ${d.slice(5)}`);
+
+  const digits = normalize(phone);
+  const isValid = digits.length === 10;
+
+  const handleChangePhone = (raw: string) => setPhone(formatForDisplay(normalize(raw)));
+
   const handleContinue = async () => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length !== 10) {
+    if (!isValid) {
       Alert.alert('Enter a valid 10-digit mobile number');
       return;
     }
@@ -101,13 +119,20 @@ export default function LoginScreen() {
             style={styles.phoneInput}
             placeholder="98432 15678"
             placeholderTextColor={colors.g400}
-            keyboardType="phone-pad"
+            keyboardType="number-pad"
             value={phone}
-            onChangeText={setPhone}
-            maxLength={12}
+            onChangeText={handleChangePhone}
+            maxLength={11}
             autoFocus
+            textContentType="telephoneNumber"
+            autoComplete="tel"
           />
         </View>
+        {/* Tiny helper so users know what to type — the +91 pill already
+            shows the country code, so we don't want them to type it again. */}
+        <Text style={styles.helperText}>
+          Enter your 10-digit mobile number. We've already set +91 for you.
+        </Text>
 
         {/* WhatsApp toggle card — teal-tinted per PWA line 317 */}
         <TouchableOpacity
@@ -127,11 +152,12 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.continueBtn, loading && styles.continueBtnDisabled]}
+          style={[styles.continueBtn, (!isValid || loading) && styles.continueBtnDisabled]}
           onPress={handleContinue}
-          disabled={loading}
+          disabled={!isValid || loading}
           accessibilityRole="button"
           accessibilityLabel="Verify and continue"
+          accessibilityState={{ disabled: !isValid || loading }}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -197,6 +223,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.g800,
   },
+  helperText: { marginTop: 8, fontSize: 11, color: colors.g500 },
   toggleCard: {
     marginTop: 14,
     flexDirection: 'row',

@@ -27,6 +27,7 @@ export async function resolveUserFromToken(token: string): Promise<ResolvedUser 
   if (!token) return null;
 
   let firebaseUid: string;
+  let phoneNumber: string | null = null;
   try {
     const allowDev = process.env.ALLOW_DEV_TOKENS === 'true';
     if (allowDev && token.startsWith('dev-')) {
@@ -34,15 +35,38 @@ export async function resolveUserFromToken(token: string): Promise<ResolvedUser 
     } else {
       const decoded = await verifyFirebaseToken(token);
       firebaseUid = decoded.uid;
+      // Firebase Phone Auth tokens carry the verified E.164 number in the
+      // `phone_number` claim; other providers (email, Google) omit it.
+      phoneNumber = (decoded as any).phone_number ?? null;
     }
   } catch {
     return null;
   }
 
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { firebaseUid },
     select: { id: true, role: true, deletedAt: true },
   });
+
+  // Silent provider migration: if we got a fresh Firebase UID but an Eru user
+  // already exists for this verified phone number (created earlier via the
+  // dev-token path, or via a prior Firebase project), adopt that existing
+  // account and update its firebaseUid. Safe because Firebase Phone Auth has
+  // already proved the caller controls the phone number — the phone IS the
+  // identity. Without this, swapping auth providers strands the user's data.
+  if (!user && phoneNumber) {
+    const byPhone = await prisma.user.findUnique({
+      where: { phone: phoneNumber },
+      select: { id: true, role: true, deletedAt: true },
+    });
+    if (byPhone && byPhone.deletedAt === null) {
+      await prisma.user.update({
+        where: { id: byPhone.id },
+        data: { firebaseUid },
+      });
+      user = byPhone;
+    }
+  }
 
   if (!user || user.deletedAt !== null) return null;
   return { id: user.id, role: user.role };
