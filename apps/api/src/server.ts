@@ -26,10 +26,20 @@ import { buildApp } from './app.js';
 import { getConfig } from './config/index.js';
 import { startCronJobs } from './jobs/index.js';
 import { initGateway } from './ws/gateway.js';
+import { ensurePlaceholderContent } from './utils/placeholderContent.js';
 
 async function start() {
   const config = getConfig();
   const app = buildApp();
+
+  // Self-heal the ContentMedia FK anchor. Any DB wipe removes this row; without
+  // it POST /media/upload crashes with a P2003 FK violation before the user's
+  // first upload even starts. Idempotent upsert — safe to run every boot.
+  try {
+    await ensurePlaceholderContent();
+  } catch (err) {
+    app.log.error({ err }, 'ensurePlaceholderContent failed at boot');
+  }
 
   try {
     await app.listen({ port: config.PORT, host: '0.0.0.0' });

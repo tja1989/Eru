@@ -5,8 +5,8 @@ import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
 import { generatePresignedUploadUrl } from '../services/mediaService.js';
 import { Errors } from '../utils/errors.js';
+import { PLACEHOLDER_CONTENT_ID } from '../utils/placeholderContent.js';
 
-const PLACEHOLDER_CONTENT_ID = '00000000-0000-0000-0000-000000000000';
 const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024; // 300 MB
 
 const uploadSchema = z.object({

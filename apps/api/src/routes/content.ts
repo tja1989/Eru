@@ -7,6 +7,7 @@ import { Errors } from '../utils/errors.js';
 import { triggerTranscode } from '../services/transcodeService.js';
 import { extractS3Key } from '../utils/s3.js';
 import { earnPoints } from '../services/pointsEngine.js';
+import { PLACEHOLDER_CONTENT_ID } from '../utils/placeholderContent.js';
 
 export async function contentRoutes(app: FastifyInstance) {
   // All routes in this plugin require authentication
@@ -99,7 +100,7 @@ export async function contentRoutes(app: FastifyInstance) {
         where: {
           id: { in: mediaIds },
           // Only allow linking media that is still using the placeholder contentId
-          contentId: '00000000-0000-0000-0000-000000000000',
+          contentId: PLACEHOLDER_CONTENT_ID,
         },
         data: { contentId: content.id },
       });

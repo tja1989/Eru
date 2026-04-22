@@ -1,6 +1,7 @@
 import { prisma } from '../../src/utils/prisma.js';
+import { PLACEHOLDER_CONTENT_ID, ensurePlaceholderContent } from '../../src/utils/placeholderContent.js';
 
-export const PLACEHOLDER_CONTENT_ID = '00000000-0000-0000-0000-000000000000';
+export { PLACEHOLDER_CONTENT_ID, ensurePlaceholderContent };
 
 export function fakeMediaConvertCompletionEvent(mediaId: string, outputPrefix: string) {
   return {
@@ -95,33 +96,3 @@ export async function cleanupOrphanTestMedia() {
   });
 }
 
-/**
- * The /content/create endpoint links pre-uploaded media by `updateMany` against
- * `contentId = PLACEHOLDER_CONTENT_ID`. The FK on content_media.content_id requires
- * that placeholder row to actually exist before any media row can reference it.
- * Production seeds it once; tests recreate it after each cleanup.
- */
-export async function ensurePlaceholderContent() {
-  const placeholderUser = await prisma.user.upsert({
-    where: { firebaseUid: 'dev-test-placeholder-mc' },
-    update: {},
-    create: {
-      firebaseUid: 'dev-test-placeholder-mc',
-      phone: '+919999999998',
-      username: 'tplaceholdermc',
-      name: 'Placeholder MC',
-      primaryPincode: '000000',
-    },
-  });
-  await prisma.content.upsert({
-    where: { id: PLACEHOLDER_CONTENT_ID },
-    update: {},
-    create: {
-      id: PLACEHOLDER_CONTENT_ID,
-      userId: placeholderUser.id,
-      type: 'post',
-      text: 'placeholder',
-      moderationStatus: 'pending',
-    },
-  });
-}

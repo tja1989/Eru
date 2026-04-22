@@ -12,6 +12,7 @@
  * exits, so you can audit before committing to the delete.
  */
 import { PrismaClient } from '@prisma/client';
+import { ensurePlaceholderContent } from '../utils/placeholderContent.js';
 
 const prisma = new PrismaClient();
 
@@ -153,6 +154,8 @@ async function main() {
   console.log('⚠️  Wiping ALL users and related data...');
   console.log();
   await wipe();
+  // Re-seed the ContentMedia FK anchor — /media/upload crashes without it.
+  await ensurePlaceholderContent();
   console.log();
   console.log('✅ Wipe complete. Post-wipe counts:');
   console.table(await counts());
