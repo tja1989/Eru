@@ -11,7 +11,6 @@ const ONBOARDING_ROUTES = new Set([
   'welcome',
   'login',
   'otp',
-  'onboarding',
   'personalize',
   'tutorial',
 ]);
@@ -51,7 +50,7 @@ export default function AuthLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
-      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="otp" />
       <Stack.Screen name="welcome" />
       <Stack.Screen name="personalize" />
       <Stack.Screen name="tutorial" />

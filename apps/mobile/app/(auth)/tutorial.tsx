@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/authService';
 import { ProgressSteps } from '@/components/ProgressSteps';
@@ -87,15 +88,23 @@ export default function Tutorial() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        {/* Welcome bonus banner — purple gradient effect via solid w/ orange accent */}
-        <View style={styles.welcomeBanner}>
+        {/* Welcome bonus banner — purple gradient + decorative orange accent
+            circle (PWA lines 424-430). overflow:hidden clips the circle at
+            the rounded edges of the banner. */}
+        <LinearGradient
+          colors={['#1E1145', '#3B2A8A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.welcomeBanner}
+        >
+          <View style={styles.welcomeAccent} pointerEvents="none" />
           <Text style={styles.welcomeLabel}>WELCOME BONUS</Text>
           <View style={styles.welcomeRow}>
             <Text style={styles.welcomePts}>+250</Text>
             <Text style={styles.welcomePtsLabel}>pts</Text>
           </View>
           <Text style={styles.welcomeSub}>= ₹2.50 already in your wallet! 🎉</Text>
-        </View>
+        </LinearGradient>
 
         <Text style={styles.section}>🪙 25 ways to earn every day</Text>
 
@@ -163,11 +172,23 @@ const styles = StyleSheet.create({
   },
   body: { padding: 14 },
   welcomeBanner: {
-    backgroundColor: '#1E1145',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     marginBottom: 14,
+    overflow: 'hidden',
+  },
+  // Decorative floating circle — PWA line 427-429. Absolutely-positioned,
+  // clipped by the banner's overflow:hidden. Pointer-events: none so it never
+  // intercepts taps.
+  welcomeAccent: {
+    position: 'absolute',
+    top: -20,
+    right: -20,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(232,121,43,0.15)',
   },
   welcomeLabel: {
     color: colors.orange,
@@ -210,7 +231,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 11,
     color: colors.g600,
-    lineHeight: 17,
+    lineHeight: 16.5,
   },
   tierCard: {
     marginTop: 8,
@@ -222,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   tierTitle: { fontSize: 12, fontWeight: '700', color: colors.orange, marginBottom: 6 },
-  tierBody: { fontSize: 11, color: colors.g600, lineHeight: 17 },
+  tierBody: { fontSize: 11, color: colors.g600, lineHeight: 16.5 },
   primary: {
     backgroundColor: colors.orange,
     paddingVertical: 15,

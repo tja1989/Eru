@@ -19,6 +19,7 @@ jest.mock('@/services/authService', () => ({
   authService: {
     checkRegistered: jest.fn(),
     getOnboardingStatus: jest.fn().mockResolvedValue({ complete: true }),
+    autoRegister: jest.fn(),
   },
 }));
 
@@ -71,7 +72,7 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
   it('when channel=whatsapp, submitting calls whatsappAuthService.verify then signInWithCustomToken', async () => {
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
-      user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
+      user: { uid: 'fb-uid-xyz', getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
     });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(true);
 
@@ -94,7 +95,7 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
   it('when channel=whatsapp and registered + onboarding complete, navigates to /(tabs)', async () => {
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
-      user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
+      user: { uid: 'fb-uid-xyz', getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
     });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(true);
     (authService.getOnboardingStatus as jest.Mock).mockResolvedValue({ complete: true });
@@ -114,10 +115,10 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     });
   });
 
-  it('when registered but onboarding NOT complete, navigates to /(auth)/tutorial', async () => {
+  it('when registered but onboarding NOT complete, navigates to /(auth)/personalize', async () => {
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
-      user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
+      user: { uid: 'fb-uid-xyz', getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
     });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(true);
     (authService.getOnboardingStatus as jest.Mock).mockResolvedValue({ complete: false });
@@ -133,16 +134,17 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     fireEvent.press(getByTestId('otp-verify'));
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/(auth)/tutorial');
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/personalize');
     });
   });
 
-  it('when channel=whatsapp and NOT registered, navigates to onboarding', async () => {
+  it('when channel=whatsapp and NOT registered, auto-registers then navigates to /(auth)/personalize', async () => {
     (whatsappAuthService.verify as jest.Mock).mockResolvedValue('custom-token-abc');
     (signInWithCustomToken as jest.Mock).mockResolvedValue({
-      user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
+      user: { uid: 'fb-uid-xyz', getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
     });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(false);
+    (authService.autoRegister as jest.Mock).mockResolvedValue({ user: { id: 'u-1' } });
 
     const { useLocalSearchParams } = require('expo-router');
     (useLocalSearchParams as jest.Mock).mockReturnValue({
@@ -155,15 +157,14 @@ describe('<OtpScreen /> — WhatsApp channel', () => {
     fireEvent.press(getByTestId('otp-verify'));
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith(
-        expect.objectContaining({ pathname: '/(auth)/onboarding' }),
-      );
+      expect(authService.autoRegister).toHaveBeenCalledWith('fb-uid-xyz', '+919876543210');
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/personalize');
     });
   });
 
   it('when channel=sms (default), uses native confirmation.confirm and NOT whatsappAuthService', async () => {
     const mockConfirm = jest.fn().mockResolvedValue({
-      user: { getIdToken: jest.fn().mockResolvedValue('id-token-sms') },
+      user: { uid: 'fb-sms', getIdToken: jest.fn().mockResolvedValue('id-token-sms') },
     });
     (getPendingConfirmation as jest.Mock).mockReturnValue({ confirm: mockConfirm });
     (authService.checkRegistered as jest.Mock).mockResolvedValue(true);

@@ -1,6 +1,8 @@
 describe('JS engine config', () => {
-  it('app.json declares jsEngine = "hermes"', () => {
-    const appJson = require('../../app.json');
-    expect(appJson.expo.jsEngine).toBe('hermes');
+  it('app.config.js declares jsEngine = "hermes"', () => {
+    // app.config.js is the dynamic Expo config (replaced app.json when we
+    // wired @react-native-firebase + the GOOGLE_SERVICES_JSON secret env).
+    const config = require('../../app.config.js');
+    expect(config.jsEngine).toBe('hermes');
   });
 });

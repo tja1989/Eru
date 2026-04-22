@@ -82,10 +82,12 @@ export default function OtpScreen() {
     setError(null);
     try {
       let idToken: string;
+      let firebaseUid: string;
       if (isWhatsApp) {
         const customToken = await whatsappAuthService.verify(String(phone), full);
         const userCred = await signInWithCustomToken(customToken);
         idToken = await userCred.user.getIdToken();
+        firebaseUid = userCred.user.uid;
       } else {
         // Native Firebase: confirm the pending phone-auth session with the
         // 6-digit code. The module-level ref was populated on /login.
@@ -96,30 +98,46 @@ export default function OtpScreen() {
         const userCred = await confirmation.confirm(full);
         if (!userCred) throw new Error('Verification returned no user.');
         idToken = await userCred.user.getIdToken();
+        firebaseUid = userCred.user.uid;
         clearPendingConfirmation();
       }
+
+      // Attach the real Firebase ID token to axios before ANY user-scoped API
+      // call. Everything downstream (checkRegistered, autoRegister, the feed
+      // load on /(tabs)) relies on this token to authenticate.
+      const store = useAuthStore.getState();
+      store.setToken(idToken);
+
       const registered = await authService.checkRegistered(idToken);
       if (registered) {
-        const store = useAuthStore.getState();
-        store.setToken(idToken);
-        // Server-truth check: did this user already collect their welcome
-        // bonus? If yes, skip onboarding; if no, route to tutorial so they
-        // complete the flow. Prevents a returning user (or one who switched
-        // phone numbers on the same device install) from being stuck with
-        // a stale hasCompletedOnboarding flag persisted from earlier.
+        // Returning user — let the auth gate decide tutorial vs home based on
+        // whether they've already claimed their welcome bonus.
         try {
           const status = await authService.getOnboardingStatus();
           store.setOnboardingComplete(status.complete);
-          router.replace(status.complete ? '/(tabs)' : '/(auth)/tutorial');
+          router.replace(status.complete ? '/(tabs)' : '/(auth)/personalize');
         } catch {
           store.setOnboardingComplete(false);
-          router.replace('/(auth)/tutorial');
+          router.replace('/(auth)/personalize');
         }
       } else {
-        router.replace({
-          pathname: '/(auth)/onboarding',
-          params: { phone: String(phone ?? ''), token: idToken },
-        });
+        // First-time user — silently create the Eru row keyed on the REAL
+        // Firebase UID (not a synthesised dev-* placeholder) then enter the
+        // personalize→tutorial flow. Name/username are placeholders; the user
+        // edits them in Settings after landing on the feed.
+        try {
+          await authService.autoRegister(firebaseUid, String(phone));
+        } catch (e: any) {
+          // The register endpoint adopts a phone-collision silently, so 409
+          // on username (rare — would require two phones colliding on the
+          // same auto-generated username prefix) is the only real failure
+          // shape. Surface it inline so the user can retry.
+          throw new Error(
+            e?.response?.data?.error || 'Could not create your account — try again.',
+          );
+        }
+        store.setOnboardingComplete(false);
+        router.replace('/(auth)/personalize');
       }
     } catch (e: any) {
       const msg = typeof e?.message === 'string' ? e.message : '';

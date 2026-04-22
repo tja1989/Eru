@@ -1,10 +1,15 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import Personalize from '@/app/(auth)/personalize';
 import { INTERESTS, LANGUAGES } from '@eru/shared';
+import { userService } from '@/services/userService';
+import { locationsService } from '@/services/locationsService';
+
+const mockPush = jest.fn();
+const mockReplace = jest.fn();
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 jest.mock('expo-location', () => ({
@@ -15,7 +20,19 @@ jest.mock('expo-location', () => ({
 
 jest.mock('@/services/api', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: jest.fn(), put: jest.fn() },
+}));
+
+jest.mock('@/services/userService', () => ({
+  userService: {
+    updateSettings: jest.fn().mockResolvedValue({}),
+  },
+}));
+
+jest.mock('@/services/locationsService', () => ({
+  locationsService: {
+    search: jest.fn().mockResolvedValue([]),
+  },
 }));
 
 describe('<Personalize /> (P5 F3 pixel parity)', () => {
@@ -80,24 +97,14 @@ describe('<Personalize /> (P5 F3 pixel parity)', () => {
   });
 
   it('Skip button is present and routes to /(auth)/tutorial (PWA line 346)', async () => {
-    const push = jest.fn();
-    jest
-      .spyOn(require('expo-router'), 'useRouter')
-      .mockReturnValue({ push, replace: jest.fn() });
-
     const { getByText } = render(<Personalize />);
     await act(async () => {});
 
     fireEvent.press(getByText('Skip'));
-    expect(push).toHaveBeenCalledWith('/(auth)/tutorial');
+    expect(mockPush).toHaveBeenCalledWith('/(auth)/tutorial');
   });
 
-  it('Continue navigates to /(auth)/tutorial when 5+ interests are selected', async () => {
-    const push = jest.fn();
-    jest
-      .spyOn(require('expo-router'), 'useRouter')
-      .mockReturnValue({ push, replace: jest.fn() });
-
+  it('Continue saves interests+languages via userService.updateSettings then replaces to /(auth)/tutorial', async () => {
     const { getByLabelText, getByTestId } = render(<Personalize />);
     await act(async () => {});
 
@@ -105,6 +112,46 @@ describe('<Personalize /> (P5 F3 pixel parity)', () => {
       fireEvent.press(getByLabelText(`interest-pill-${key}`)),
     );
     fireEvent.press(getByTestId('continue-btn'));
-    expect(push).toHaveBeenCalledWith('/(auth)/tutorial');
+
+    await waitFor(() => {
+      expect(userService.updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          interests: expect.arrayContaining(['food', 'tech', 'travel', 'books', 'fitness']),
+          contentLanguages: expect.arrayContaining(['en']),
+        }),
+      );
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/tutorial');
+    });
+  });
+
+  it('still routes to /(auth)/tutorial even if updateSettings fails (non-blocking)', async () => {
+    (userService.updateSettings as jest.Mock).mockRejectedValueOnce(new Error('network'));
+    const { getByLabelText, getByTestId } = render(<Personalize />);
+    await act(async () => {});
+
+    ['food', 'tech', 'travel', 'books', 'fitness'].forEach((key) =>
+      fireEvent.press(getByLabelText(`interest-pill-${key}`)),
+    );
+    fireEvent.press(getByTestId('continue-btn'));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/(auth)/tutorial');
+    });
+  });
+
+  it('looks up the locality name via locationsService when a pincode is resolved', async () => {
+    (locationsService.search as jest.Mock).mockResolvedValue([
+      { pincode: '682016', area: 'Ernakulam Central', district: 'Ernakulam', state: 'Kerala' },
+    ]);
+    const Location = require('expo-location');
+    (Location.requestForegroundPermissionsAsync as jest.Mock).mockResolvedValueOnce({ status: 'granted' });
+    (Location.getCurrentPositionAsync as jest.Mock).mockResolvedValueOnce({
+      coords: { latitude: 9.97, longitude: 76.28 },
+    });
+    (Location.reverseGeocodeAsync as jest.Mock).mockResolvedValueOnce([{ postalCode: '682016' }]);
+
+    const { findByText } = render(<Personalize />);
+    // The card text concatenates "682016 • Ernakulam Central" — match partially.
+    expect(await findByText(/Ernakulam Central/)).toBeTruthy();
   });
 });

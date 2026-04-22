@@ -73,7 +73,7 @@ describe('<OtpScreen />', () => {
 
   it('on Verify, calls confirmation.confirm with concatenated digits', async () => {
     const fakeUserCred = {
-      user: { getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
+      user: { uid: 'fb-uid-xyz', getIdToken: jest.fn().mockResolvedValue('id-token-xyz') },
     };
     mockConfirm.mockResolvedValue(fakeUserCred);
     (getPendingConfirmation as jest.Mock).mockReturnValue({ confirm: mockConfirm });

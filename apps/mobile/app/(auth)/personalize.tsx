@@ -17,6 +17,8 @@ import {
   PERSONALIZE_BONUS_POINTS,
 } from '@eru/shared';
 import { ProgressSteps } from '@/components/ProgressSteps';
+import { userService } from '@/services/userService';
+import { locationsService } from '@/services/locationsService';
 import { colors } from '@/constants/theme';
 
 export default function Personalize() {
@@ -25,7 +27,10 @@ export default function Personalize() {
   const [interests, setInterests] = useState<string[]>([]);
   const [languages, setLanguages] = useState<string[]>(['en']);
   const [pincode, setPincode] = useState<string | null>(null);
+  const [locality, setLocality] = useState<string | null>(null);
   const [locationLoading, setLocationLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -37,7 +42,20 @@ export default function Personalize() {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
           });
-          setPincode(geo[0]?.postalCode ?? null);
+          const detected = geo[0]?.postalCode ?? null;
+          setPincode(detected);
+          // Reverse-lookup the locality name from our own pincode table so the
+          // card reads "682016 • Ernakulam Central" (matches PWA line 357).
+          // Silent failure — an unknown pincode just shows the raw number.
+          if (detected) {
+            try {
+              const results = await locationsService.search(detected);
+              const match = results.find((r) => r.pincode === detected) ?? results[0];
+              if (match?.area) setLocality(match.area);
+            } catch {
+              // keep locality null; UI falls back to pincode-only
+            }
+          }
         }
       } catch {
         // ignore — banner shows fallback
@@ -59,6 +77,27 @@ export default function Personalize() {
 
   const canContinue = interests.length >= PERSONALIZE_BONUS_THRESHOLD;
   const showBonus = interests.length >= PERSONALIZE_BONUS_THRESHOLD;
+
+  const handleNext = async () => {
+    if (!canContinue || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await userService.updateSettings({
+        ...(pincode ? { primaryPincode: pincode } : {}),
+        interests,
+        contentLanguages: languages,
+      });
+      router.replace('/(auth)/tutorial');
+    } catch (e: any) {
+      // Non-blocking: log the error but still proceed to tutorial so the user
+      // doesn't get trapped. They can edit these fields in Settings later.
+      setSaveError(e?.response?.data?.error || 'Could not save preferences — you can edit in Settings later');
+      router.replace('/(auth)/tutorial');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -93,8 +132,16 @@ export default function Personalize() {
               <ActivityIndicator size="small" color={colors.teal} />
             ) : pincode ? (
               <>
-                <Text style={styles.locationLine1}>{pincode}</Text>
-                <Text style={styles.locationLine2}>Auto-detected via GPS</Text>
+                <Text style={styles.locationLine1}>
+                  {pincode}{locality ? ` • ${locality}` : ''}
+                </Text>
+                {/* TODO(P+1): swap the static "Join the community" copy for a
+                    live user-count once we have enough users per pincode that
+                    the number (e.g. "12,000") reads credibly. Until then we
+                    don't want to expose "3 Eru users here" during the pilot. */}
+                <Text style={styles.locationLine2}>
+                  Auto-detected via GPS • Join the community
+                </Text>
               </>
             ) : (
               <>
@@ -161,6 +208,7 @@ export default function Personalize() {
                 key={code}
                 style={[
                   styles.pill,
+                  styles.langPill,
                   selected && { backgroundColor: 'rgba(26,60,110,0.08)', borderColor: colors.navy },
                 ]}
                 onPress={() => toggleLanguage(code)}
@@ -176,16 +224,22 @@ export default function Personalize() {
           })}
         </View>
 
+        {saveError ? <Text style={styles.saveError}>{saveError}</Text> : null}
+
         {/* Continue */}
         <TouchableOpacity
           testID="continue-btn"
-          style={[styles.primary, !canContinue && styles.primaryDisabled]}
-          onPress={() => canContinue && router.push('/(auth)/tutorial')}
+          style={[styles.primary, (!canContinue || saving) && styles.primaryDisabled]}
+          onPress={handleNext}
           accessibilityRole="button"
-          accessibilityState={{ disabled: !canContinue }}
-          disabled={!canContinue}
+          accessibilityState={{ disabled: !canContinue || saving }}
+          disabled={!canContinue || saving}
         >
-          <Text style={styles.primaryText}>Next: How You Earn →</Text>
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryText}>Next: How You Earn →</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -270,6 +324,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     backgroundColor: '#fff',
+  },
+  // PWA language chips are slightly tighter than interest chips (PWA line 395).
+  langPill: { paddingHorizontal: 13, paddingVertical: 7 },
+  saveError: {
+    fontSize: 11,
+    color: colors.orange,
+    marginTop: 12,
+    textAlign: 'center',
   },
   pillText: {
     fontSize: 12,
