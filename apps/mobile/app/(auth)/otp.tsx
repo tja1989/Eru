@@ -136,6 +136,12 @@ export default function OtpScreen() {
             e?.response?.data?.error || 'Could not create your account — try again.',
           );
         }
+        // Re-assert the Firebase ID token on axios — belt-and-braces in case
+        // any stray interceptor wiped it during the register round-trip.
+        // Without this we'd navigate to /personalize with an empty Bearer
+        // header and the first API call there (PATCH /users/me/settings)
+        // would 401 → infinite loop back to /welcome.
+        store.setToken(idToken);
         store.setOnboardingComplete(false);
         router.replace('/(auth)/personalize');
       }

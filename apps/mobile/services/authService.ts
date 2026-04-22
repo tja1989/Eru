@@ -25,11 +25,15 @@ export const authService = {
 
   // Pings an authenticated endpoint to see whether the Firebase-verified user
   // already has a row in our DB. 200 → existing user, 401 → needs onboarding.
+  // `skipAuthReset` tells the axios response interceptor to NOT treat our
+  // intentional 401 as "session expired" (which would wipe the Zustand token
+  // and loop the user back to /welcome). See services/api.ts for the flag.
   async checkRegistered(idToken: string): Promise<boolean> {
     try {
       await api.get('/wallet/summary', {
         headers: { Authorization: `Bearer ${idToken}` },
-      });
+        skipAuthReset: true,
+      } as any);
       return true;
     } catch (err: any) {
       if (err?.response?.status === 401) return false;

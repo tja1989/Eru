@@ -33,10 +33,14 @@ api.interceptors.request.use((req) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Either the token expired or the persisted auth blob is stale from
-      // a previous install. Drop the local session — the auth gate will
-      // route the user to /welcome on next render.
+    // Some call sites USE a 401 as a signal rather than a failure — most
+    // notably the OTP screen probing `/wallet/summary` to decide whether a
+    // Firebase-verified user is already registered in our own DB. Those
+    // callers pass `skipAuthReset: true` on their request config so the
+    // global "wipe auth state" side-effect below is suppressed. For every
+    // other 401 it still fires — that's how we self-heal stale tokens.
+    const skip = (error.config as any)?.skipAuthReset === true;
+    if (error.response?.status === 401 && !skip) {
       authToken = null;
       onUnauthorized?.();
     }
