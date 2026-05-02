@@ -5,3 +5,6 @@ dist/
 .env.local
 *.log
 .turbo/
+
+# Apple .p8 private keys (App Store Connect API + APNs) — never commit
+*.p8
