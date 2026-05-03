@@ -18,7 +18,11 @@ module.exports = {
   icon: './assets/icon.png',
   scheme: 'eru',
   userInterfaceStyle: 'light',
-  newArchEnabled: true,
+  // newArchEnabled left off for now — @react-native-firebase v24 + Expo SDK 54
+  // + ios useFrameworks: 'static' produces non-modular-header errors when
+  // RNFBApp's framework module is built under the new architecture. We can
+  // revisit when rnfb publishes a fix.
+  newArchEnabled: false,
   jsEngine: 'hermes',
   splash: {
     image: './assets/splash-icon.png',
@@ -54,13 +58,6 @@ module.exports = {
         },
         ios: {
           useFrameworks: 'static',
-          // @react-native-firebase v24 bridges to React-Core via headers that
-          // need to be modular when packaged inside a static framework. Without
-          // this, Xcode emits -Wnon-modular-include-in-framework-module errors
-          // on RNFBApp's RCTConvert/RCTBridgeModule includes.
-          extraPods: [
-            { name: 'React-Core', modular_headers: true },
-          ],
         },
       },
     ],
