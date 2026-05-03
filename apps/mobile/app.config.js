@@ -29,6 +29,9 @@ module.exports = {
     supportsTablet: false,
     bundleIdentifier: 'app.eru.consumer',
     googleServicesFile: process.env.GOOGLE_SERVICES_INFO_PLIST ?? './GoogleService-Info.plist',
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     adaptiveIcon: {
