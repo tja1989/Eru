@@ -54,6 +54,13 @@ module.exports = {
         },
         ios: {
           useFrameworks: 'static',
+          // @react-native-firebase v24 bridges to React-Core via headers that
+          // need to be modular when packaged inside a static framework. Without
+          // this, Xcode emits -Wnon-modular-include-in-framework-module errors
+          // on RNFBApp's RCTConvert/RCTBridgeModule includes.
+          extraPods: [
+            { name: 'React-Core', modular_headers: true },
+          ],
         },
       },
     ],
