@@ -31,6 +31,14 @@ module.exports = {
     googleServicesFile: process.env.GOOGLE_SERVICES_INFO_PLIST ?? './GoogleService-Info.plist',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      // Required for Firebase Phone Auth silent-push verification on iOS.
+      // Without remote-notification in UIBackgroundModes, iOS won't wake the
+      // app to receive APNs silent pushes, forcing Firebase to fall back to
+      // reCAPTCHA — which then misroutes the OAuth callback through expo-router
+      // and breaks OTP delivery. See:
+      //   https://github.com/invertase/react-native-firebase/issues/7577
+      //   https://docs.expo.dev/versions/latest/sdk/notifications/
+      UIBackgroundModes: ['remote-notification'],
     },
   },
   android: {
