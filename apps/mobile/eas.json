@@ -19,10 +19,6 @@
       "android": {
         "buildType": "apk"
       },
-      "ios": {
-        "simulator": false,
-        "resourceClass": "m-medium"
-      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://eruapi-production.up.railway.app"
       }
@@ -30,6 +26,10 @@
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://eruapi-production.up.railway.app"
