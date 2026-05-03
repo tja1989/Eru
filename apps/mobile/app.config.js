@@ -42,10 +42,12 @@ module.exports = {
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
   },
   plugins: [
-    'expo-router',
-    'expo-video',
-    'expo-dev-client',
-    '@react-native-firebase/app',
+    // expo-build-properties MUST be first so its forceStaticLinking takes
+    // effect before @react-native-firebase/app autolinks. Per the rnfb
+    // maintainer's recommended setup for Expo SDK 54+ with new architecture
+    // and useFrameworks: 'static':
+    //   https://github.com/invertase/react-native-firebase/issues/8657#issuecomment-3764209769
+    //   https://github.com/expo/expo/issues/39607#issuecomment-3337284928
     [
       'expo-build-properties',
       {
@@ -54,9 +56,20 @@ module.exports = {
         },
         ios: {
           useFrameworks: 'static',
+          // Tells expo-build-properties to set $RNFirebaseAsStaticFramework
+          // and emit static_framework => true for these RNFB pods, which is
+          // what lets RNFB's framework module legally include React-Core
+          // headers under the new architecture without -Wnon-modular-include
+          // errors. List MUST contain every @react-native-firebase/<module>
+          // we depend on; update when adding/removing rnfb packages.
+          forceStaticLinking: ['RNFBApp', 'RNFBAuth'],
         },
       },
     ],
+    'expo-router',
+    'expo-video',
+    'expo-dev-client',
+    '@react-native-firebase/app',
   ],
   experiments: {
     typedRoutes: true,
