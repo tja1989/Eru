@@ -18,11 +18,7 @@ module.exports = {
   icon: './assets/icon.png',
   scheme: 'eru',
   userInterfaceStyle: 'light',
-  // newArchEnabled left off for now — @react-native-firebase v24 + Expo SDK 54
-  // + ios useFrameworks: 'static' produces non-modular-header errors when
-  // RNFBApp's framework module is built under the new architecture. We can
-  // revisit when rnfb publishes a fix.
-  newArchEnabled: false,
+  newArchEnabled: true,
   jsEngine: 'hermes',
   splash: {
     image: './assets/splash-icon.png',
