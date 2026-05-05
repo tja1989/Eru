@@ -125,8 +125,7 @@ export default function ProfileScreen() {
 
   if (loading) return <LoadingSpinner />;
 
-  const rawUsername = profile?.username ?? user?.username ?? '';
-  const username = rawUsername ? `@${rawUsername}` : '';
+  const username = profile?.username ?? user?.username ?? '';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

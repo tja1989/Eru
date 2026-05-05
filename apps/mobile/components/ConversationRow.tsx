@@ -24,7 +24,7 @@ function timeAgo(iso: string | null | undefined): string {
 
 export function ConversationRow({ conversation, onPress }: ConversationRowProps) {
   const { otherUser, lastMessage, lastMessageAt } = conversation;
-  const username = otherUser?.username ? `@${otherUser.username}` : 'Unknown';
+  const username = otherUser?.username ?? 'Unknown';
   const preview = lastMessage?.text ?? '';
   // MVP unread heuristic: last message came from otherUser and has no readAt.
   const isUnread =

@@ -55,7 +55,7 @@ export function StoryRow({ stories = [] }: { stories: any[] }) {
             </View>
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>
-                {story.user?.username ? `@${story.user.username}` : ''}
+                {story.user?.username}
               </Text>
               {story.user?.isVerified ? <Text style={styles.verified}> ✓</Text> : null}
             </View>
