@@ -20,6 +20,21 @@ module.exports = {
   userInterfaceStyle: 'light',
   newArchEnabled: true,
   jsEngine: 'hermes',
+  // EAS Update — over-the-air JS bundle delivery.
+  // The "fingerprint" runtime version policy hashes the native code; OTA
+  // updates only ship to apps with the same fingerprint, so a JS-only
+  // update cannot break a binary that has different native modules. When
+  // we add/remove a native dep (e.g. a new react-native-firebase module),
+  // the fingerprint changes automatically and the next EAS update is
+  // gated until a fresh binary build is shipped — exactly what we want.
+  runtimeVersion: { policy: 'fingerprint' },
+  updates: {
+    url: 'https://u.expo.dev/5fb96f5e-8595-40ac-a854-07f89029aa07',
+    // Fall back to embedded bundle on launch if update fetch is slow,
+    // then check for newer updates in the background; user sees fresh JS
+    // on the SECOND launch after a publish (standard IG / Twitter pattern).
+    fallbackToCacheTimeout: 0,
+  },
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
