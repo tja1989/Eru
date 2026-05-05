@@ -170,7 +170,15 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
     }
   };
 
-  const authorLabel: string = post.isSponsored && post.sponsorName ? post.sponsorName : post.user?.username ?? '';
+  // Sponsored posts surface the brand display name (no `@`); UGC posts use
+  // the IG-style `@handle` so the header reads as a human handle, not a
+  // raw username string. Phone-derived `user_9072025557` style handles in
+  // particular felt like exposed phone numbers without the `@` framing.
+  const authorLabel: string = post.isSponsored && post.sponsorName
+    ? post.sponsorName
+    : post.user?.username
+      ? `@${post.user.username}`
+      : '';
   const isSponsoredRow = !!post.isSponsored && !!post.sponsorName;
 
   return (
@@ -283,7 +291,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
         )
       ) : post.text ? (
         <Text style={styles.captionWrap} numberOfLines={2} ellipsizeMode="tail">
-          <Text style={styles.captionUser}>{post.user?.username ?? ''}</Text>
+          <Text style={styles.captionUser}>{post.user?.username ? `@${post.user.username}` : ''}</Text>
           <Text style={styles.caption}> {post.text}</Text>
         </Text>
       ) : null}
