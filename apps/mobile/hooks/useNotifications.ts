@@ -16,7 +16,6 @@ const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 type NotificationsModule = typeof import('expo-notifications');
 let Notifications: NotificationsModule | null = null;
 if (!IS_EXPO_GO) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications') as NotificationsModule;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({

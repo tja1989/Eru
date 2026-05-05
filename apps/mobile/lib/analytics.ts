@@ -20,7 +20,6 @@ let cachedSentry: typeof import('@sentry/react-native') | null = null;
 function getSentry(): typeof import('@sentry/react-native') | null {
   if (cachedSentry !== null) return cachedSentry;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     cachedSentry = require('@sentry/react-native');
   } catch {
     cachedSentry = null;

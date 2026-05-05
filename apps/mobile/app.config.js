@@ -63,6 +63,7 @@ module.exports = {
     },
     package: 'app.eru.consumer',
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    edgeToEdgeEnabled: true,
   },
   plugins: [
     // expo-build-properties MUST be first so its forceStaticLinking takes

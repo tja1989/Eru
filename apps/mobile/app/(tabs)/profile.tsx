@@ -23,6 +23,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { usePointsStore } from '../../stores/pointsStore';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
 import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
+import { formatHandle } from '../../utils/formatHandle';
 
 const GRID_TABS = [
   { key: 'posts', icon: '⊞', label: 'Posts' },
@@ -95,7 +96,6 @@ export default function ProfileScreen() {
       Promise.all([loadProfile(), loadContent(gridTab)]).finally(() =>
         setLoading(false),
       );
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 
@@ -179,7 +179,7 @@ export default function ProfileScreen() {
 
           {/* Name + username */}
           <Text style={styles.displayName}>{profile?.name ?? user?.name ?? 'You'}</Text>
-          <Text style={styles.username}>@{profile?.username ?? user?.username}</Text>
+          <Text style={styles.username}>{formatHandle(profile?.username ?? user?.username)}</Text>
 
           {/* Bio */}
           {profile?.bio ? (

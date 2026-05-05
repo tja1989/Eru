@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { userService } from '../services/userService';
+import { formatHandle } from '../utils/formatHandle';
 import { colors, spacing, radius } from '../constants/theme';
 
 const MAX_TAGS = 10;
@@ -101,7 +102,7 @@ export function UserTagPicker({ initialSelected, onConfirm, onCancel }: UserTagP
         >
           {selected.map((u) => (
             <View key={u.id} style={styles.chip}>
-              <Text style={styles.chipText}>@{u.username}</Text>
+              <Text style={styles.chipText}>{formatHandle(u.username)}</Text>
               <TouchableOpacity
                 onPress={() => removeChip(u.id)}
                 accessibilityLabel={`Remove ${u.username}`}
@@ -148,7 +149,7 @@ export function UserTagPicker({ initialSelected, onConfirm, onCancel }: UserTagP
             <TouchableOpacity
               style={[styles.resultRow, sel && styles.resultRowSelected]}
               onPress={() => toggleUser(item)}
-              accessibilityLabel={`${item.name} @${item.username}`}
+              accessibilityLabel={`${item.name} ${formatHandle(item.username)}`}
               accessibilityState={{ selected: sel }}
             >
               {item.avatarUrl ? (
@@ -162,7 +163,7 @@ export function UserTagPicker({ initialSelected, onConfirm, onCancel }: UserTagP
               )}
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{item.name}</Text>
-                <Text style={styles.userHandle}>@{item.username}</Text>
+                <Text style={styles.userHandle}>{formatHandle(item.username)}</Text>
               </View>
               {sel && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>

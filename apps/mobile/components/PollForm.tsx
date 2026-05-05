@@ -22,7 +22,6 @@ export function PollForm({
     if (options.length === 0) {
       onOptionsChange(['', '']);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addOption = () => {

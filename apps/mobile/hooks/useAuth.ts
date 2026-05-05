@@ -10,9 +10,11 @@ export function useAuth() {
   );
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((s) => s.hasCompletedOnboarding);
-  // True if the server told us the username is still a `pending_*` placeholder.
-  // Drives the route gate that bounces the user back to Personalize.
-  const needsHandleChoice = useAuthStore((s) => s.user?.needsHandleChoice ?? false);
+  // Default to true so a partial-onboarding crash (token persisted before
+  // user record fully populated) bounces the user back to Personalize
+  // rather than letting them slip into the tabs with no handle. The flag
+  // gets cleared the moment they pick a real handle.
+  const needsHandleChoice = useAuthStore((s) => s.user?.needsHandleChoice ?? true);
 
   useEffect(() => {
     if (useAuthStore.persist.hasHydrated()) {

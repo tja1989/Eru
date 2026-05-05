@@ -1,6 +1,7 @@
 import React from 'react';
 import { Share, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { usePointsStore } from '../stores/pointsStore';
+import { formatHandle } from '../utils/formatHandle';
 
 interface ShareButtonProps {
   contentId: string;
@@ -32,7 +33,8 @@ export function ShareButton({
 }: ShareButtonProps) {
   const handlePress = async () => {
     const url = `https://eru.app/post/${contentId}`;
-    const message = `@${creatorUsername} on Eru: ${caption ?? ''}\n${url}`;
+    const handle = formatHandle(creatorUsername) || '@unknown';
+    const message = `${handle} on Eru: ${caption ?? ''}\n${url}`;
     try {
       const result = await Share.share({ url, message });
       if (result.action === Share.sharedAction) {

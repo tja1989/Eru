@@ -44,6 +44,7 @@ export default function TabLayout() {
       tabBarInactiveTintColor: colors.g400,
       tabBarShowLabel: true,
       tabBarLabelStyle: styles.label,
+      tabBarHideOnKeyboard: true,
       lazy: true,
     }}>
       <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🏠</Text> }} />

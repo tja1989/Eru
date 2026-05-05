@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { formatHandle } from '../utils/formatHandle';
 
 type PodiumEntry = {
   rank: number;
@@ -49,7 +50,7 @@ function PodiumBar({
       {crown ? <Text style={styles.crown}>👑</Text> : null}
       <Text style={styles.medal}>{medal}</Text>
       <Text style={styles.username} numberOfLines={1}>
-        @{entry.username}
+        {formatHandle(entry.username)}
       </Text>
       <View style={[styles.bar, { height }]} testID={`${testID}-bar`}>
         <Text style={styles.points}>{entry.pointsThisWeek.toLocaleString('en-IN')}</Text>

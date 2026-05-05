@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatHandle } from '../../utils/formatHandle';
 import {
   View,
   Text,
@@ -334,7 +335,7 @@ export default function CreateScreen() {
           >
             <Text style={styles.taggedChipText}>
               {'👥 Tagged: '}
-              {taggedUsers.slice(0, 2).map((u) => `@${u.username}`).join(', ')}
+              {taggedUsers.slice(0, 2).map((u) => formatHandle(u.username)).filter(Boolean).join(', ')}
               {taggedUsers.length > 2 ? ` +${taggedUsers.length - 2}` : ''}
             </Text>
           </TouchableOpacity>
