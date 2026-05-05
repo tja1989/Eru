@@ -40,3 +40,11 @@ export const tierColors: Record<string, string> = {
 };
 
 export const storyRingGradient = ['#F58529', '#DD2A7B', '#8134AF', '#515BD4'];
+
+// Re-exports for the new theme system. Existing consumers keep using `colors`
+// (which equals lightColors). New consumers should `import { useTheme } from
+// '@/hooks/useTheme'` and read colors from there. PR-A.1 through PR-A.4 will
+// migrate the existing consumers in batches.
+export { lightColors, darkColors, type ThemeColors } from './themeColors';
+export { useTheme } from '../hooks/useTheme';
+export { useThemedStyles } from '../hooks/useThemedStyles';
