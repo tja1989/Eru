@@ -96,7 +96,6 @@ export default function ProfileScreen() {
       Promise.all([loadProfile(), loadContent(gridTab)]).finally(() =>
         setLoading(false),
       );
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 

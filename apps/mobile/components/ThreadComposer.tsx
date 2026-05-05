@@ -43,7 +43,6 @@ export function ThreadComposer({ parts, onPartsChange, disabled }: ThreadCompose
       skipNextSync.current = true;
       onPartsChange(['', '']);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync when the parent replaces the parts array from outside (e.g. reset).
@@ -54,7 +53,6 @@ export function ThreadComposer({ parts, onPartsChange, disabled }: ThreadCompose
       return;
     }
     setInternalParts(stringsToInternal(parts));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parts]);
 
   // Propagate internal changes up, keeping the external API as string[].

@@ -7,6 +7,9 @@ const tsParser = require('@typescript-eslint/parser');
 /** @type {import('eslint').Linter.Config[]} */
 module.exports = [
   {
+    ignores: ['.expo/**', 'node_modules/**', 'dist/**', 'coverage/**', '**/*.d.ts'],
+  },
+  {
     files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
       parser: tsParser,

@@ -15,7 +15,6 @@ export function initSentry(): void {
 
   // Dynamic require so jest test environments without @sentry/react-native
   // installed (or platform-specific code paths) don't crash on import.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Sentry = require('@sentry/react-native');
 
   Sentry.init({
