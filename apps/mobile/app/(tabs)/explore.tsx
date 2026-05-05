@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { exploreService } from '../../services/exploreService';
+import { formatHandle } from '../../utils/formatHandle';
 import { MediaGrid } from '../../components/MediaGrid';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { colors, spacing, radius } from '../../constants/theme';
@@ -172,7 +173,7 @@ export default function ExploreScreen() {
                       {u.name}
                       {u.isVerified ? ' ✓' : ''}
                     </Text>
-                    <Text style={styles.userHandle} numberOfLines={1}>@{u.username}</Text>
+                    <Text style={styles.userHandle} numberOfLines={1}>{formatHandle(u.username)}</Text>
                   </View>
                   <Text style={styles.userChevron}>›</Text>
                 </TouchableOpacity>

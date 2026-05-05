@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatHandle } from '../../utils/formatHandle';
 import {
   View,
   Text,
@@ -612,7 +613,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.infoRow}>
             <Text style={styles.fieldLabel}>Username</Text>
-            <Text style={styles.infoValue}>@{user?.username ?? '—'}</Text>
+            <Text style={styles.infoValue}>{formatHandle(user?.username) || '—'}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>

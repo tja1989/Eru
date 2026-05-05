@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FollowButton } from '../../components/FollowButton';
+import { formatHandle } from '../../utils/formatHandle';
 import { userService } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, spacing, radius, tierColors } from '../../constants/theme';
@@ -85,7 +86,7 @@ export default function UserProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Back">
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>@{profile.username}</Text>
+        <Text style={styles.headerTitle}>{formatHandle(profile.username)}</Text>
         <View style={{ width: 16 }} />
       </View>
 
@@ -108,7 +109,7 @@ export default function UserProfileScreen() {
           {profile.name}
           {profile.isVerified ? ' ✓' : ''}
         </Text>
-        <Text style={styles.handle}>@{profile.username}</Text>
+        <Text style={styles.handle}>{formatHandle(profile.username)}</Text>
         {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
         {/* Stats row */}

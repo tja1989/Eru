@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { formatHandle } from '../../utils/formatHandle';
 import {
   View,
   Text,
@@ -220,7 +221,7 @@ function ReelItem({
       {/* Bottom overlay: creator info + caption */}
       <View style={styles.bottomOverlay}>
         <View style={styles.creatorRow}>
-          <Text style={styles.creatorName}>@{item.user?.username ?? 'unknown'}</Text>
+          <Text style={styles.creatorName}>{formatHandle(item.user?.username) || 'unknown'}</Text>
           {item.user?.id && currentUserId && item.user.id !== currentUserId ? (
             <FollowButton
               targetUserId={item.user.id}
