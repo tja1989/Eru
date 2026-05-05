@@ -1,15 +1,27 @@
+// apps/mobile/app/(tabs)/_layout.tsx
+// IG-fidelity tab bar.
+//   • White bar, 50px tall, hairline top border
+//   • 5 tabs: Home, Search, Create (+ outlined square), Reels, Profile
+//   • Active = solid black icon, inactive = outlined gray
+//   • NO labels (IG hides them on mobile)
+//   • Center "Create" is the same shape as other tabs — NO orange disc
+
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 
-// Tells expo-router which tab is the cold-boot focus target. Combined with
-// `lazy: true` below, only `index` runs its initial fetch on cold start;
-// the other tabs mount on first navigation.
-export const unstable_settings = {
-  initialRouteName: 'index',
-};
+export const unstable_settings = { initialRouteName: 'index' };
+
+// Glyph icons — switch to lucide / SF Symbols / @expo/vector-icons later;
+// these match IG's stroke style at 26pt with `fontWeight 200/700` for
+// active/inactive distinction.
+const TabIcon = ({ glyph, active }: { glyph: string; active: boolean }) => (
+  <Text style={{ fontSize: 26, color: active ? colors.g900 : colors.g600, fontWeight: active ? '700' : '300' }}>
+    {glyph}
+  </Text>
+);
 
 export default function TabLayout() {
   const { initializing, isAuthenticated } = useAuth();
@@ -21,35 +33,32 @@ export default function TabLayout() {
       </View>
     );
   }
-
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
 
   return (
     <Tabs screenOptions={{
       headerShown: false,
       tabBarStyle: styles.tabBar,
-      tabBarActiveTintColor: colors.g800,
-      tabBarInactiveTintColor: colors.g400,
-      tabBarShowLabel: true,
-      tabBarLabelStyle: styles.label,
+      tabBarActiveTintColor: colors.g900,
+      tabBarInactiveTintColor: colors.g600,
+      tabBarShowLabel: false,
       lazy: true,
     }}>
-      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🏠</Text> }} />
-      <Tabs.Screen name="explore" options={{ title: 'Explore', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🔍</Text> }} />
-      <Tabs.Screen name="create" options={{
-        title: 'Create',
-        tabBarIcon: () => <View style={styles.createBtn}><Text style={{ fontSize: 24, color: '#fff' }}>+</Text></View>,
-        tabBarLabel: () => null,
-      }} />
-      <Tabs.Screen name="reels" options={{ title: 'Reels', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🎬</Text> }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>👤</Text> }} />
+      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon glyph="⌂" active={focused} /> }} />
+      <Tabs.Screen name="explore" options={{ tabBarIcon: ({ focused }) => <TabIcon glyph="⌕" active={focused} /> }} />
+      <Tabs.Screen name="create" options={{ tabBarIcon: ({ focused }) => <TabIcon glyph="⊞" active={focused} /> }} />
+      <Tabs.Screen name="reels" options={{ tabBarIcon: ({ focused }) => <TabIcon glyph="▶" active={focused} /> }} />
+      <Tabs.Screen name="profile" options={{ tabBarIcon: ({ focused }) => <TabIcon glyph="○" active={focused} /> }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  splash: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  tabBar: { height: 56, borderTopWidth: 0.5, borderTopColor: colors.g200, backgroundColor: '#fff' },
-  label: { fontSize: 10, fontWeight: '600' },
-  createBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.orange, alignItems: 'center', justifyContent: 'center', marginBottom: 8, shadowColor: colors.orange, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 4 },
+  splash: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  tabBar: {
+    height: 50,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.g200,
+    backgroundColor: '#fff',
+  },
 });
