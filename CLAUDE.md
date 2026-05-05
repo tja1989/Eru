@@ -26,6 +26,7 @@ The repo root has `package.json` workspaces + `turbo.json`. Turbo pipelines (`tu
 | `npm run db:push` | Apply `schema.prisma` to the live dev DB — **this project uses `db push`, not `migrate dev`** |
 | `npm run db:generate` | Regenerate the Prisma client after schema edits |
 | `npm run db:seed` / `db:seed-reels` / `db:seed-rewards` / `db:pincodes` | One-off data loaders; the pincodes script reads `apps/api/src/data/raw-pincodes.csv` |
+| `npx tsx src/scripts/<name>.ts` | One-off maintenance scripts under `apps/api/src/scripts/`: `clear-demo-media`, `backfill-{hls,media,transcodes}`, `fix-reel-urls`, `prewarm-trending`, `download-pincodes`, `seed`, `seed-reels`, `seed-rewards` |
 
 ### Mobile (`cd apps/mobile`)
 
@@ -88,6 +89,17 @@ All screens use `expo-router`'s `useRouter` + `useLocalSearchParams`. SafeArea f
 The auth/onboarding gate is layered: `(tabs)/_layout.tsx` bounces unauthenticated users to `/(auth)/login`; `(auth)/_layout.tsx` then routes them to `/welcome` if they haven't completed onboarding — with a `useSegments()` check so the gate skips re-routing when the user is *already* on welcome/personalize/tutorial (otherwise it loops to a blank screen).
 
 ## Project-specific conventions
+
+### Shared types = API contract (field-drift lockdown, 2026-04-21)
+
+Thirteen routes are contract-locked against types in [packages/shared/src/types/](packages/shared/src/types/): `/leaderboard`, `/leaderboard/me`, `/season/current`, `/users/:id/profile`, `/users/:id/content`, `/wallet`, `/wallet/history`, `/wallet/expiring`, `/explore`, `/search`, `/reels`, `/trending`, `/quests/weekly`.
+
+- API handlers are annotated `async (): Promise<SharedType> => {...}` — any field rename fails the TypeScript build on both sides.
+- Mobile services import the same shared types, so consumers can't read a nonexistent field.
+- When changing any response field on these routes: update `@eru/shared` first, then API + mobile in the **same commit**. Run `npx tsc --noEmit` in both `apps/api` and `apps/mobile` before claiming done.
+- **Never re-introduce defensive fallback chains** like `data.items ?? data.posts ?? data.content ?? []` on mobile — the lockdown removed them specifically because they hid silent drift (unmatched keys collapsed to `[]` so bugs looked like empty states). Read fields directly; if the field is missing, the build should fail.
+- Routes audited clean but not yet lockdowned: `/messages`, `/badges`, `/offers`, `/sponsorship`, `/highlights` — moving their types to `@eru/shared` would be a consistency refactor, not a bug fix. Safe to add shared types if you're already touching them.
+- Full list of bugs this caught and strategy rationale: [GapFix/Eru_Field_Drift_Lockdown.md](GapFix/Eru_Field_Drift_Lockdown.md).
 
 ### Prisma
 
@@ -152,3 +164,7 @@ From `Notes.md`:
 | Expo / EAS | `eru_aflo` (`aflolabs@gmail.com`) |
 
 `apps/api/.env` holds the secrets; there is no `.env.example`. Required keys include `DATABASE_URL`, `DIRECT_URL`, Firebase admin JSON, AWS keys, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and (for WhatsApp OTP, not yet configured) `GUPSHUP_API_KEY` / `GUPSHUP_SOURCE`.
+
+Optional env flags:
+- `ALLOW_DEV_TOKENS=true` — enables the `dev-test-*` bearer-token auth path (required for Vitest runs; never set in prod).
+- `AUTO_APPROVE_CONTENT=true` — bypasses the moderation queue and publishes new posts immediately (see [apps/api/src/routes/content.ts:116](apps/api/src/routes/content.ts#L116); dev/demo only).
