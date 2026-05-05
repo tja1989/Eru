@@ -29,7 +29,6 @@ export function StoryRow({ stories = [] }: { stories: any[] }) {
       {stories.map((story: any) => {
         const seen = (story.views?.length ?? 0) > 0;
         const isLive = !!story.isLive;
-        const ringStyle = isLive ? styles.ringLive : seen ? styles.ringSeen : styles.ringUnseen;
         return (
           <TouchableOpacity
             key={story.id}
@@ -37,13 +36,22 @@ export function StoryRow({ stories = [] }: { stories: any[] }) {
             style={styles.story}
             onPress={() => router.push(`/stories/${story.id}`)}
           >
-            <View testID={`story-ring-${story.id}`} style={[styles.ring, ringStyle]}>
-              <Avatar uri={story.user?.avatarUrl} size={58} tier={story.user?.tier} />
+            <View testID={`story-ring-${story.id}`} style={styles.ringWrap}>
               {isLive ? (
-                <View style={styles.liveBadge}>
-                  <Text style={styles.liveText}>LIVE</Text>
+                <View style={[styles.ring, styles.ringLive]}>
+                  <Avatar uri={story.user?.avatarUrl} size={58} />
+                  <View style={styles.liveBadge}>
+                    <Text style={styles.liveText}>LIVE</Text>
+                  </View>
                 </View>
-              ) : null}
+              ) : (
+                <Avatar
+                  uri={story.user?.avatarUrl}
+                  size={58}
+                  hasStory
+                  storyViewed={seen}
+                />
+              )}
             </View>
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>
@@ -80,9 +88,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addText: { fontSize: 12, color: '#fff', fontWeight: '800' },
+  ringWrap: { position: 'relative' },
   ring: { width: 68, height: 68, borderRadius: 34, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  ringUnseen: { borderColor: colors.orange },
-  ringSeen: { borderColor: colors.g300 },
   ringLive: { borderColor: colors.red },
   liveBadge: {
     position: 'absolute',

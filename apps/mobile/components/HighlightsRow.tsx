@@ -1,3 +1,8 @@
+// apps/mobile/components/HighlightsRow.tsx
+// IG-fidelity highlights — gray circle with a thin g200 border, NO emoji
+// inside (IG shows a cropped image; we render a clean monogram fallback).
+// Title is centered below in g800 12px.
+
 import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
@@ -5,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { highlightsService, Highlight } from '@/services/highlightsService';
 import { colors, spacing } from '@/constants/theme';
@@ -32,7 +38,16 @@ export function HighlightsRow({ userId, onSelect, onAddNew, editable = false }: 
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      {highlights.map((h) => (
+      {editable && (
+        <TouchableOpacity style={styles.item} onPress={onAddNew}>
+          <View style={[styles.circle, styles.addCircle]}>
+            <Text style={styles.addIcon}>+</Text>
+          </View>
+          <Text style={styles.title} numberOfLines={1}>New</Text>
+        </TouchableOpacity>
+      )}
+
+      {highlights.map((h: any) => (
         <TouchableOpacity
           key={h.id}
           testID={`highlight-${h.id}`}
@@ -40,69 +55,51 @@ export function HighlightsRow({ userId, onSelect, onAddNew, editable = false }: 
           onPress={() => onSelect(h)}
         >
           <View style={styles.circle}>
-            <Text style={styles.emoji}>{h.emoji}</Text>
+            {h.coverUrl ? (
+              <Image source={{ uri: h.coverUrl }} style={styles.cover} />
+            ) : (
+              <Text style={styles.monogram}>
+                {(h.title?.[0] ?? '·').toUpperCase()}
+              </Text>
+            )}
           </View>
           <Text style={styles.title} numberOfLines={1}>{h.title}</Text>
         </TouchableOpacity>
       ))}
-
-      {editable && (
-        <TouchableOpacity style={styles.item} onPress={onAddNew}>
-          <View style={[styles.circle, styles.addCircle]}>
-            <Text style={styles.addIcon}>+</Text>
-          </View>
-          <Text style={styles.title}>+ New</Text>
-        </TouchableOpacity>
-      )}
     </ScrollView>
   );
 }
 
-const CIRCLE_SIZE = 68;
+const CIRCLE = 64;
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.card,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.g100,
-  },
+  container: { backgroundColor: colors.card },
   content: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.lg,
   },
-  item: {
-    alignItems: 'center',
-    width: CIRCLE_SIZE + 8,
-  },
+  item: { alignItems: 'center', width: CIRCLE + 8 },
   circle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: colors.g100,
-    borderWidth: 2,
+    width: CIRCLE,
+    height: CIRCLE,
+    borderRadius: CIRCLE / 2,
+    backgroundColor: colors.g50,
+    borderWidth: 1,
     borderColor: colors.g200,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  addCircle: {
-    borderStyle: 'dashed',
-    borderColor: colors.g400,
-    backgroundColor: colors.bg,
-  },
-  emoji: {
-    fontSize: 28,
-  },
-  addIcon: {
-    fontSize: 24,
-    color: colors.g500,
-    fontWeight: '300',
-  },
+  cover: { width: CIRCLE, height: CIRCLE, borderRadius: CIRCLE / 2 },
+  addCircle: { borderStyle: 'dashed', borderColor: colors.g300, backgroundColor: '#fff' },
+  addIcon: { fontSize: 26, color: colors.g600, fontWeight: '300' },
+  monogram: { fontSize: 22, color: colors.g500, fontWeight: '500' },
   title: {
-    fontSize: 10.5,
+    fontSize: 12,
     color: colors.g800,
-    marginTop: 4,
-    maxWidth: CIRCLE_SIZE + 8,
+    marginTop: 6,
+    maxWidth: CIRCLE + 8,
     textAlign: 'center',
   },
 });
