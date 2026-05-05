@@ -26,12 +26,22 @@ import { colors } from '@/constants/theme';
 export default function Personalize() {
   const router = useRouter();
   const storeUser = useAuthStore((s) => s.user);
+  const setStoreUser = useAuthStore((s) => s.setUser);
 
   // Treat the auto-register placeholder "New User" as empty so the field
   // doesn't pre-fill with meaningless filler. Returning users who already
   // picked a real name see it pre-filled and don't need to retype.
   const initialName = storeUser?.name && storeUser.name !== 'New User' ? storeUser.name : '';
   const [name, setName] = useState<string>(initialName);
+  // Handle: empty if the stored value is still a server-side placeholder, so
+  // the user has to actively pick one. Returning users with a real handle
+  // see it pre-filled and just hit Continue.
+  const initialHandle = storeUser?.username && !storeUser.username.startsWith('pending_') ? storeUser.username : '';
+  const [handle, setHandle] = useState<string>(initialHandle);
+  const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
+    initialHandle ? 'available' : 'idle',
+  );
+  const [handleError, setHandleError] = useState<string | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
   const [languages, setLanguages] = useState<string[]>(['en']);
   const [pincode, setPincode] = useState<string | null>(null);
@@ -73,6 +83,50 @@ export default function Personalize() {
     })();
   }, []);
 
+  // Debounced live availability check on the handle. 400ms feels responsive
+  // without firing a request on every keystroke. The check ALSO surfaces
+  // validator failures (reserved word, bad chars, leading period, etc.) via
+  // the `reason` field — that's what `invalid` status represents.
+  useEffect(() => {
+    if (handle.length === 0) {
+      setHandleStatus('idle');
+      setHandleError(null);
+      return;
+    }
+    // Same handle as already on the user — skip the API call.
+    if (handle === initialHandle) {
+      setHandleStatus('available');
+      setHandleError(null);
+      return;
+    }
+    setHandleStatus('checking');
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await userService.checkHandleAvailable(handle);
+        if (cancelled) return;
+        if (res.available) {
+          setHandleStatus('available');
+          setHandleError(null);
+        } else if (res.reason) {
+          setHandleStatus('invalid');
+          setHandleError(res.reason);
+        } else {
+          setHandleStatus('taken');
+          setHandleError('Already taken — try another');
+        }
+      } catch {
+        if (cancelled) return;
+        setHandleStatus('invalid');
+        setHandleError('Could not check availability');
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [handle, initialHandle]);
+
   const toggleInterest = (key: string) =>
     setInterests((prev) =>
       prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
@@ -84,7 +138,10 @@ export default function Personalize() {
     );
 
   const trimmedName = name.trim();
-  const canContinue = trimmedName.length > 0 && interests.length >= PERSONALIZE_BONUS_THRESHOLD;
+  const canContinue =
+    trimmedName.length > 0 &&
+    interests.length >= PERSONALIZE_BONUS_THRESHOLD &&
+    handleStatus === 'available';
   const showBonus = interests.length >= PERSONALIZE_BONUS_THRESHOLD;
 
   const handleNext = async () => {
@@ -92,18 +149,69 @@ export default function Personalize() {
     setSaving(true);
     setSaveError(null);
     try {
+      const sendUsername = !!(handle && handle !== initialHandle);
       await userService.updateSettings({
         name: trimmedName,
+        // Only send username if it's actually changing — sending the same
+        // value back fires the unique-constraint check needlessly.
+        ...(sendUsername ? { username: handle } : {}),
         ...(pincode ? { primaryPincode: pincode } : {}),
         interests,
         contentLanguages: languages,
       });
+      // Reflect the handle change in the auth store so the route gate stops
+      // bouncing the user to Personalize. Also update the username locally so
+      // post cards on the next screen show the new value immediately.
+      if (storeUser && sendUsername) {
+        setStoreUser({ ...storeUser, name: trimmedName, username: handle, needsHandleChoice: false });
+      } else if (storeUser) {
+        setStoreUser({ ...storeUser, name: trimmedName });
+      }
       router.replace('/(auth)/tutorial');
     } catch (e: any) {
-      // Non-blocking: log the error but still proceed to tutorial so the user
-      // doesn't get trapped. They can edit these fields in Settings later.
-      setSaveError(e?.response?.data?.error || 'Could not save preferences — you can edit in Settings later');
-      router.replace('/(auth)/tutorial');
+      // Username collision (409) must NOT proceed — the user has to pick
+      // another. Surface the error and stop. Other errors are non-blocking
+      // (location, interests, etc. can be edited in Settings later).
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.error;
+      if (status === 409) {
+        setHandleStatus('taken');
+        setHandleError(msg || 'Username already taken');
+        setSaveError(null);
+      } else {
+        setSaveError(msg || 'Could not save preferences — you can edit in Settings later');
+        router.replace('/(auth)/tutorial');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Skip route — bypasses interests/languages but MUST still persist the
+  // chosen handle. Without this, hitting Skip with a `pending_*` placeholder
+  // would leave the user on it, and the route gate would bounce them back.
+  const handleSkip = async () => {
+    if (handleStatus !== 'available' || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const sendUsername = !!(handle && handle !== initialHandle);
+      if (sendUsername) {
+        await userService.updateSettings({ username: handle });
+      }
+      if (storeUser && sendUsername) {
+        setStoreUser({ ...storeUser, username: handle, needsHandleChoice: false });
+      }
+      router.push('/(auth)/tutorial');
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.error;
+      if (status === 409) {
+        setHandleStatus('taken');
+        setHandleError(msg || 'Username already taken');
+      } else {
+        setSaveError(msg || 'Could not save handle');
+      }
     } finally {
       setSaving(false);
     }
@@ -117,12 +225,17 @@ export default function Personalize() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Personalize</Text>
+        {/* Skip bypasses interest/language selection but NOT the handle.
+            Disabled until the handle is valid + available; keeps the user
+            from leaving on a `pending_*` placeholder. */}
         <TouchableOpacity
-          onPress={() => router.push('/(auth)/tutorial')}
+          onPress={handleSkip}
+          disabled={handleStatus !== 'available' || saving}
           accessibilityRole="button"
           accessibilityLabel="Skip"
+          accessibilityState={{ disabled: handleStatus !== 'available' || saving }}
         >
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, (handleStatus !== 'available' || saving) && { opacity: 0.3 }]}>Skip</Text>
         </TouchableOpacity>
       </View>
 
@@ -148,6 +261,34 @@ export default function Personalize() {
           autoCorrect={false}
           returnKeyType="done"
         />
+
+        {/* Handle — required and Instagram-style. Continue is gated on a
+            valid + available handle so users never post under a placeholder. */}
+        <Text style={styles.sectionTitle}>@ Your handle</Text>
+        <Text style={styles.sectionHint}>
+          How friends find and tag you. 3–30 chars; lowercase letters, numbers, _ or .
+        </Text>
+        <View style={styles.handleRow}>
+          <Text style={styles.atPrefix}>@</Text>
+          <TextInput
+            testID="handle-input"
+            style={styles.handleInput}
+            placeholder="yourname"
+            placeholderTextColor={colors.g400}
+            value={handle}
+            onChangeText={(t) => setHandle(t.toLowerCase().trim())}
+            maxLength={30}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+          />
+          {handleStatus === 'checking' && <ActivityIndicator size="small" color={colors.teal} />}
+          {handleStatus === 'available' && <Text style={styles.handleOk}>✓</Text>}
+          {(handleStatus === 'taken' || handleStatus === 'invalid') && (
+            <Text style={styles.handleErr}>✗</Text>
+          )}
+        </View>
+        {handleError ? <Text style={styles.handleErrText}>{handleError}</Text> : null}
 
         {/* Location */}
         <Text style={styles.sectionTitle}>📍 Your location</Text>
@@ -325,6 +466,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.g800,
     backgroundColor: '#fff',
+    marginBottom: 4,
+  },
+  handleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.g200,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    marginBottom: 4,
+  },
+  atPrefix: {
+    fontSize: 16,
+    color: colors.g500,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  handleInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingRight: 8,
+    fontSize: 16,
+    color: colors.g800,
+  },
+  handleOk: { fontSize: 16, color: colors.green, fontWeight: '700' },
+  handleErr: { fontSize: 16, color: colors.orange, fontWeight: '700' },
+  handleErrText: {
+    fontSize: 11,
+    color: colors.orange,
+    marginTop: 2,
     marginBottom: 4,
   },
   locationCard: {

@@ -35,7 +35,7 @@ describe('<MessagesListScreen />', () => {
     ]);
 
     const { findByText } = render(<MessagesListScreen />);
-    expect(await findByText('alice')).toBeTruthy();
+    expect(await findByText('@alice')).toBeTruthy();
     expect(await findByText('hi there')).toBeTruthy();
   });
 
@@ -50,7 +50,7 @@ describe('<MessagesListScreen />', () => {
     ]);
 
     const { findByText } = render(<MessagesListScreen />);
-    const row = await findByText('alice');
+    const row = await findByText('@alice');
     fireEvent.press(row);
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith('/messages/c1');

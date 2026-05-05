@@ -1,10 +1,44 @@
 import { z } from 'zod';
 
+// Reserved handles — banned to prevent impersonation of staff/system accounts
+// and to keep namespaces like /me, /api free for routing.
+const RESERVED_HANDLES = new Set([
+  'admin', 'administrator', 'root', 'support', 'help', 'eru',
+  'official', 'staff', 'team', 'moderator', 'mod', 'api', 'www',
+  'mail', 'email', 'login', 'signup', 'signin', 'register',
+  'undefined', 'null', 'user', 'users', 'me', 'self',
+]);
+
+// Instagram-style handle: lowercase letters, digits, underscore, period.
+// Disallow leading/trailing/consecutive periods (matches IG behaviour) and
+// the internal `pending_` prefix that the server uses for placeholders so a
+// user can't squat that namespace.
+export const usernameSchema = z
+  .string()
+  .min(3)
+  .max(30)
+  .regex(/^[a-z0-9._]+$/, 'Use lowercase letters, numbers, underscore, period')
+  .refine((s) => !s.startsWith('.') && !s.endsWith('.'), {
+    message: "Can't start or end with a period",
+  })
+  .refine((s) => !s.includes('..'), {
+    message: "Can't have consecutive periods",
+  })
+  .refine((s) => !RESERVED_HANDLES.has(s), {
+    message: 'That handle is reserved',
+  })
+  .refine((s) => !s.startsWith('pending_'), {
+    message: 'That handle is reserved',
+  });
+
 export const registerSchema = z.object({
   firebaseUid: z.string().min(1),
   phone: z.string().regex(/^\+\d{10,15}$/, 'Invalid phone format'),
   name: z.string().min(1).max(100),
-  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+  // The server overwrites this with a `pending_*` placeholder regardless,
+  // so we accept any non-empty string here. The real validation happens on
+  // PATCH /users/me when the user picks their final handle.
+  username: z.string().min(1).max(50).optional(),
 });
 
 export const createContentSchema = z.object({
@@ -74,7 +108,7 @@ export const earnSchema = z.object({
 
 export const updateSettingsSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores').optional(),
+  username: usernameSchema.optional(),
   bio: z.string().max(500).optional(),
   avatarUrl: z.string().url().optional(),
   gender: z.enum(['male', 'female', 'other']).optional(),

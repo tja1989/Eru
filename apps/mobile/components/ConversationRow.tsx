@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Avatar } from './Avatar';
+import { formatHandle } from '../utils/formatHandle';
 import type { ConversationSummary } from '@/services/messagesService';
 
 interface ConversationRowProps {
@@ -24,7 +25,7 @@ function timeAgo(iso: string | null | undefined): string {
 
 export function ConversationRow({ conversation, onPress }: ConversationRowProps) {
   const { otherUser, lastMessage, lastMessageAt } = conversation;
-  const username = otherUser?.username ?? 'Unknown';
+  const username = otherUser?.username ? formatHandle(otherUser.username) : 'Unknown';
   const preview = lastMessage?.text ?? '';
   // MVP unread heuristic: last message came from otherUser and has no readAt.
   const isUnread =

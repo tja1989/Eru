@@ -21,7 +21,7 @@ describe('<ConversationRow />', () => {
     const { getByText } = render(
       <ConversationRow conversation={baseConversation} onPress={() => {}} />,
     );
-    expect(getByText('alice')).toBeTruthy();
+    expect(getByText('@alice')).toBeTruthy();
   });
 
   it('renders the last message preview text', () => {

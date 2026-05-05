@@ -10,6 +10,9 @@ export function useAuth() {
   );
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((s) => s.hasCompletedOnboarding);
+  // True if the server told us the username is still a `pending_*` placeholder.
+  // Drives the route gate that bounces the user back to Personalize.
+  const needsHandleChoice = useAuthStore((s) => s.user?.needsHandleChoice ?? false);
 
   useEffect(() => {
     if (useAuthStore.persist.hasHydrated()) {
@@ -22,5 +25,5 @@ export function useAuth() {
     return unsub;
   }, []);
 
-  return { initializing, isAuthenticated, hasCompletedOnboarding };
+  return { initializing, isAuthenticated, hasCompletedOnboarding, needsHandleChoice };
 }

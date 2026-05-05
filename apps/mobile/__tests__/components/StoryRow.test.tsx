@@ -36,8 +36,8 @@ describe('<StoryRow />', () => {
 
   it('renders a username for each story', () => {
     const { getByText } = render(<StoryRow stories={[unseenStory, seenStory]} />);
-    expect(getByText('tj')).toBeTruthy();
-    expect(getByText('alex')).toBeTruthy();
+    expect(getByText('@tj')).toBeTruthy();
+    expect(getByText('@alex')).toBeTruthy();
   });
 
   it('tapping a story pushes to /stories/:id', () => {

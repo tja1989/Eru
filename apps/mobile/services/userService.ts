@@ -17,6 +17,9 @@ export const userService = {
   getFollowing: (id: string, page = 1) => api.get(`/users/${id}/following`, { params: { page } }).then((r) => r.data),
   getSettings: () => api.get('/users/me/settings').then((r) => r.data),
   updateSettings: (data: Record<string, any>) => api.put('/users/me/settings', data).then((r) => r.data),
+  checkHandleAvailable: (handle: string) =>
+    api.get('/users/handle-available', { params: { handle } })
+      .then((r) => r.data as { available: boolean; reason?: string }),
   getMyContentSummary: async () => {
     const res = await api.get('/users/me/content-summary');
     return res.data.summary as { published: number; pending: number; declined: number; totalLikes: number };

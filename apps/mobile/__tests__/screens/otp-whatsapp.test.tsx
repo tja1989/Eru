@@ -42,6 +42,8 @@ jest.mock('@/stores/authStore', () => ({
     getState: () => ({
       setToken: jest.fn(),
       setOnboardingComplete: jest.fn(),
+      setUser: jest.fn(),
+      user: null,
     }),
     setState: jest.fn(),
   },

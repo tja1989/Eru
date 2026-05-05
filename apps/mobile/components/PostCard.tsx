@@ -20,6 +20,7 @@ import { useImpressionTimer } from '../hooks/useImpressionTimer';
 import { PollCard } from './PollCard';
 import { ThreadView } from './ThreadView';
 import { pickVideoUrl } from '@eru/shared';
+import { formatHandle } from '../utils/formatHandle';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -188,7 +189,12 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   };
 
   // Author label: business name when sponsored, else the creator's username.
-  const authorLabel: string = post.isSponsored && post.sponsorName ? post.sponsorName : post.user?.username ?? '';
+  // Sponsored posts surface the brand display name (no `@`); UGC posts use
+  // the IG-style `@handle` so the header reads as a human handle, not a
+  // raw username string.
+  const authorLabel: string = post.isSponsored && post.sponsorName
+    ? post.sponsorName
+    : formatHandle(post.user?.username);
   const isSponsoredRow = !!post.isSponsored && !!post.sponsorName;
 
   return (

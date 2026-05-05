@@ -48,10 +48,10 @@ describe('<StoryViewer />', () => {
   it('tapping the overlay advances to the next story', async () => {
     const { findByTestId, findByText } = render(<StoryViewer />);
     const tap = await findByTestId('story-skip');
-    expect(await findByText('tj')).toBeTruthy();
+    expect(await findByText('@tj')).toBeTruthy();
     await act(async () => {
       fireEvent.press(tap);
     });
-    expect(await findByText('alex')).toBeTruthy();
+    expect(await findByText('@alex')).toBeTruthy();
   });
 });

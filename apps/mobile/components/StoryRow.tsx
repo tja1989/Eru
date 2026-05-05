@@ -3,6 +3,7 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 import { Avatar } from './Avatar';
 import { colors } from '../constants/theme';
+import { formatHandle } from '../utils/formatHandle';
 
 export function StoryRow({ stories = [] }: { stories: any[] }) {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function StoryRow({ stories = [] }: { stories: any[] }) {
             </View>
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>
-                {story.user?.username}
+                {formatHandle(story.user?.username)}
               </Text>
               {story.user?.isVerified ? <Text style={styles.verified}> ✓</Text> : null}
             </View>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { storiesService, Story } from '@/services/storiesService';
+import { formatHandle } from '@/utils/formatHandle';
 
 const STORY_DURATION_MS = 5000;
 
@@ -43,7 +44,7 @@ export default function StoryViewer() {
       <TouchableOpacity style={styles.close} onPress={() => router.back()}>
         <Text style={styles.closeText}>×</Text>
       </TouchableOpacity>
-      <Text style={styles.username}>{current.user.username}</Text>
+      <Text style={styles.username}>{formatHandle(current.user.username)}</Text>
       <Image source={{ uri: current.mediaUrl }} style={styles.media} resizeMode="contain" />
       <TouchableOpacity
         testID="story-skip"

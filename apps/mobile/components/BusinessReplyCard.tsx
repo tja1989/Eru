@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Avatar } from './Avatar';
 import { RelativeTime } from './RelativeTime';
 import { colors, spacing, radius } from '../constants/theme';
+import { formatHandle } from '../utils/formatHandle';
 
 interface Props {
   id: string;
@@ -21,7 +22,7 @@ export function BusinessReplyCard({ text, createdAt, user, verified }: Props) {
       <Avatar uri={user.avatarUrl} size={26} />
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.username}>{user.username}</Text>
+          <Text style={styles.username}>{formatHandle(user.username)}</Text>
           {verified ? <Text style={styles.verified}>✓</Text> : null}
           <View style={styles.timeWrap}>
             <RelativeTime iso={createdAt} />

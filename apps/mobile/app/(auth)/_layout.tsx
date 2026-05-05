@@ -16,7 +16,7 @@ const ONBOARDING_ROUTES = new Set([
 ]);
 
 export default function AuthLayout() {
-  const { initializing, isAuthenticated, hasCompletedOnboarding } = useAuth();
+  const { initializing, isAuthenticated, hasCompletedOnboarding, needsHandleChoice } = useAuth();
   const segments = useSegments();
   // Within the (auth) group, the last segment is the current screen name
   // (e.g. 'welcome', 'login'). Group segments like '(auth)' are filtered out.
@@ -31,6 +31,13 @@ export default function AuthLayout() {
     );
   }
 
+  // Handle gate — if the server says the user is on a `pending_*` placeholder
+  // username, force them to Personalize regardless of where they tried to go.
+  // This catches the "killed app between OTP and Personalize submission" case.
+  if (isAuthenticated && needsHandleChoice && currentRoute !== 'personalize') {
+    return <Redirect href="/(auth)/personalize" />;
+  }
+
   // Authenticated users who haven't finished onboarding (e.g. killed the app
   // after login but before the tutorial) land on the tutorial page — they
   // already have a token so the welcome/login flow would loop them.
@@ -39,7 +46,7 @@ export default function AuthLayout() {
     return <Redirect href="/(auth)/tutorial" />;
   }
 
-  if (isAuthenticated && hasCompletedOnboarding) return <Redirect href="/(tabs)" />;
+  if (isAuthenticated && hasCompletedOnboarding && !needsHandleChoice) return <Redirect href="/(tabs)" />;
 
   // First-time users who haven't completed onboarding go to the welcome screen,
   // unless they're already somewhere in the onboarding flow.

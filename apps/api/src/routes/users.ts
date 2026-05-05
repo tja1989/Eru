@@ -3,7 +3,7 @@ import type { GetUserProfileResponse, GetUserContentResponse } from '@eru/shared
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { rateLimitByUser } from '../middleware/rateLimit.js';
-import { updateSettingsSchema, paginationSchema } from '../utils/validators.js';
+import { updateSettingsSchema, paginationSchema, usernameSchema } from '../utils/validators.js';
 import { Errors } from '../utils/errors.js';
 import { ACTION_CONFIGS } from '@eru/shared';
 
@@ -410,6 +410,13 @@ export async function userRoutes(app: FastifyInstance) {
       updateData.dob = new Date(dob);
     }
 
+    // Picking a real handle is the single chokepoint where placeholders
+    // become real. Centralising the flag flip here means we never have to
+    // remember to clear needsHandleChoice in two places.
+    if (rest.username !== undefined) {
+      updateData.needsHandleChoice = false;
+    }
+
     let user;
     try {
       user = await prisma.user.update({
@@ -459,14 +466,45 @@ export async function userRoutes(app: FastifyInstance) {
   // tutorial? "Complete" is proxied via the existence of a welcome_bonus
   // ledger entry (created exactly once by POST onboarding/complete). Drives
   // the mobile auth gate's decision to route returning users past the
-  // welcome/tutorial screens.
+  // welcome/tutorial screens. Also surfaces needsHandleChoice so the gate
+  // can route users with placeholder usernames back to Personalize.
   app.get('/users/me/onboarding-status', async (request) => {
-    const existing = await prisma.pointsLedger.findFirst({
-      where: { userId: request.userId, actionType: 'welcome_bonus' },
-      select: { id: true },
-    });
-    return { complete: existing !== null };
+    const [existing, user] = await Promise.all([
+      prisma.pointsLedger.findFirst({
+        where: { userId: request.userId, actionType: 'welcome_bonus' },
+        select: { id: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: request.userId },
+        select: { needsHandleChoice: true },
+      }),
+    ]);
+    return {
+      complete: existing !== null,
+      needsHandleChoice: user?.needsHandleChoice ?? false,
+    };
   });
+
+  // GET /users/handle-available?handle=foo — live availability check for the
+  // Personalize handle picker. Returns { available, reason? } so the UI can
+  // show ✓ for free, ✗ for taken, and a specific message for invalid input
+  // (reserved word, bad chars, leading period, etc.). Rate-limited per user
+  // to prevent enumeration of which handles are taken.
+  app.get<{ Querystring: { handle?: string } }>(
+    '/users/handle-available',
+    { preHandler: [rateLimitByUser(20, '1 m')] },
+    async (request) => {
+      const parsed = usernameSchema.safeParse(request.query?.handle);
+      if (!parsed.success) {
+        return { available: false, reason: parsed.error.issues[0].message };
+      }
+      const existing = await prisma.user.findUnique({
+        where: { username: parsed.data },
+        select: { id: true },
+      });
+      return { available: !existing };
+    },
+  );
 
   // POST /users/me/onboarding/complete — credit welcome bonus + first daily check-in.
   // Idempotent at the lifetime level: if a `welcome_bonus` ledger entry already

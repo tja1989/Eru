@@ -13,7 +13,7 @@ describe('<BusinessReplyCard />', () => {
 
   it('renders the username + body', () => {
     const { getByText } = render(<BusinessReplyCard {...base} />);
-    expect(getByText('KashiBakes')).toBeTruthy();
+    expect(getByText('@KashiBakes')).toBeTruthy();
     expect(getByText(/Thanks for the kind words/i)).toBeTruthy();
   });
 

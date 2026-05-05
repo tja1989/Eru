@@ -122,6 +122,7 @@ model User {
   notifyWatchlistOffers Boolean @default(true) @map("notify_watchlist_offers")
   isPrivate           Boolean   @default(false) @map("is_private")
   shareDataWithBrands Boolean   @default(false) @map("share_data_with_brands")
+  needsHandleChoice   Boolean   @default(true) @map("needs_handle_choice")
   fcmToken            String?   @map("fcm_token")
   role                UserRole  @default(user)
   creatorScore        Decimal   @default(50) @db.Decimal(5, 2) @map("creator_score")

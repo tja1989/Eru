@@ -68,10 +68,11 @@ type AuthState = {
   initializing: boolean;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
+  needsHandleChoice?: boolean;
 };
 
 function setup(state: AuthState, segments: string[] = ['(auth)', 'login']) {
-  mockedUseAuth.mockReturnValue(state);
+  mockedUseAuth.mockReturnValue({ needsHandleChoice: false, ...state });
   mockSegments = segments;
 }
 

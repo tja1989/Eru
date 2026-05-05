@@ -5,7 +5,7 @@ import { setAuthToken, registerOnUnauthorized } from '../services/api';
 import { authService } from '../services/authService';
 
 interface AuthState {
-  user: { id: string; name: string; username: string; phone: string; tier: string; currentBalance: number; avatarUrl?: string | null; lifetimePoints?: number; creatorScore?: number } | null;
+  user: { id: string; name: string; username: string; phone: string; tier: string; currentBalance: number; avatarUrl?: string | null; lifetimePoints?: number; creatorScore?: number; needsHandleChoice?: boolean } | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;

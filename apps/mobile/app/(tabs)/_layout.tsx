@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -12,7 +13,11 @@ export const unstable_settings = {
 };
 
 export default function TabLayout() {
-  const { initializing, isAuthenticated } = useAuth();
+  const { initializing, isAuthenticated, needsHandleChoice } = useAuth();
+  // SDK 54 enables Android edge-to-edge by default; the system nav bar would
+  // otherwise overlap the tab row on Samsung phones. Reading insets.bottom
+  // and growing the bar by that amount reserves a safe strip beneath the icons.
+  const insets = useSafeAreaInsets();
 
   if (initializing) {
     return (
@@ -23,11 +28,18 @@ export default function TabLayout() {
   }
 
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
+  // If the user somehow lands on tabs while still on a placeholder username
+  // (e.g. pre-existing token from before this build shipped), bounce to
+  // Personalize so they pick a real handle before they can post.
+  if (needsHandleChoice) return <Redirect href="/(auth)/personalize" />;
 
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarStyle: styles.tabBar,
+      tabBarStyle: [
+        styles.tabBar,
+        { height: 56 + insets.bottom, paddingBottom: insets.bottom },
+      ],
       tabBarActiveTintColor: colors.g800,
       tabBarInactiveTintColor: colors.g400,
       tabBarShowLabel: true,

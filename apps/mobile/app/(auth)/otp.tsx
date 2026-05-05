@@ -111,11 +111,21 @@ export default function OtpScreen() {
       const registered = await authService.checkRegistered(idToken);
       if (registered) {
         // Returning user — let the auth gate decide tutorial vs home based on
-        // whether they've already claimed their welcome bonus.
+        // whether they've already claimed their welcome bonus. Also propagate
+        // needsHandleChoice into the user object so the route gate can bounce
+        // them to Personalize if they're still on a `pending_*` placeholder.
         try {
           const status = await authService.getOnboardingStatus();
           store.setOnboardingComplete(status.complete);
-          router.replace(status.complete ? '/(tabs)' : '/(auth)/personalize');
+          const currentUser = store.user;
+          if (currentUser) {
+            store.setUser({ ...currentUser, needsHandleChoice: status.needsHandleChoice });
+          }
+          if (status.needsHandleChoice) {
+            router.replace('/(auth)/personalize');
+          } else {
+            router.replace(status.complete ? '/(tabs)' : '/(auth)/personalize');
+          }
         } catch {
           store.setOnboardingComplete(false);
           router.replace('/(auth)/personalize');
@@ -123,10 +133,13 @@ export default function OtpScreen() {
       } else {
         // First-time user — silently create the Eru row keyed on the REAL
         // Firebase UID (not a synthesised dev-* placeholder) then enter the
-        // personalize→tutorial flow. Name/username are placeholders; the user
-        // edits them in Settings after landing on the feed.
+        // personalize→tutorial flow. The server returns a `pending_*`
+        // placeholder username; the user picks their real handle on the
+        // Personalize screen.
         try {
-          await authService.autoRegister(firebaseUid, String(phone));
+          const result = await authService.autoRegister(firebaseUid, String(phone));
+          // Store the user object so the route gate sees needsHandleChoice.
+          if (result?.user) store.setUser(result.user);
         } catch (e: any) {
           // The register endpoint adopts a phone-collision silently, so 409
           // on username (rare — would require two phones colliding on the
