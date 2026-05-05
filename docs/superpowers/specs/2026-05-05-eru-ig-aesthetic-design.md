@@ -382,13 +382,11 @@ Per PR:
 - **PR-D**: Reels right-rail with counts. Explore flat grid. Profile shows lifetime points + Creator Score. Messages filter pills work. Notifications time-bucketed.
 - **PR-E**: Settings sectioned list maps every old setting. Appearance toggle. Username migration prompt fires once for `user_<10 digits>` accounts and never again.
 
-## Open questions for TJ
+## Locked decisions (resolved 2026-05-05 with TJ)
 
-These three I left for the spec review (small enough to decide quickly):
-
-1. **Wallet / Leaderboard / MyContent surface treatment** — apply IG-grayscale (black/white surfaces) but keep coin-orange tokens, or full Eru warm-orange surfaces? Recommend: IG-grayscale surfaces, coin-orange accents only.
-2. **DM list — Notes feature** — IG has it, Eru doesn't have a "Note" data model. Add it as a new feature, or omit the Notes row entirely? Recommend: omit (less is more, can add later).
-3. **Coin pill in home header** — small chip with `🪙 375 🔥1` always visible (always-on rewards visibility), or hidden behind a wallet button (cleaner header)? Recommend: always visible — Eru's rewards loop is its identity.
+1. **Wallet / Leaderboard / MyContent surface treatment** → **IG-grayscale surfaces, coin-orange accents only.** The rewards loop reads as premium quality (gold/coin warmth on neutral surfaces), not loud (orange-on-orange).
+2. **DM list — Notes feature** → **Omit.** No Notes row, no Map row. Keeps Eru's DM inbox cleaner; can add later if data model grows.
+3. **Home header coin pill** → **Always visible.** `🪙 375 🔥1` permanently in the top-right group alongside the heart and paper plane. Eru's rewards loop is its identity — hiding it behind a wallet tap weakens the always-on engagement signal.
 
 ## What this design DOES NOT do
 
