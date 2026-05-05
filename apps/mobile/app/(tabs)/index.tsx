@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { PostCard } from '../../components/PostCard';
@@ -11,13 +11,45 @@ import { useFeed } from '../../hooks/useFeed';
 import { usePointsStore } from '../../stores/pointsStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { feedService } from '../../services/feedService';
-import { colors } from '../../constants/theme';
+import { useThemedStyles } from '../../constants/theme';
+import type { ThemeColors } from '../../constants/theme';
+
+// Style factory hoisted outside the component so its reference is stable
+// across renders — useThemedStyles' useMemo hits, no per-render
+// StyleSheet.create. This is the canonical migration pattern; other
+// screens in PR-A.2 through PR-A.4 follow the same shape.
+const stylesFactory = (c: ThemeColors) => ({
+  safe: { flex: 1 as const, backgroundColor: c.bg },
+  appHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: c.card,
+    borderBottomWidth: 0.5,
+    borderBottomColor: c.g100,
+  },
+  logo: {
+    fontSize: 26,
+    fontWeight: '800' as const,
+    fontStyle: 'italic' as const,
+    color: c.g800,
+    fontFamily: 'Georgia',
+  },
+  headerActions: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 12,
+  },
+});
 
 export default function HomeFeedScreen() {
   const router = useRouter();
   const { posts, loading, refreshing, refresh, loadMore, loadFeed } = useFeed();
   const { refreshSummary, earn } = usePointsStore();
   const refreshNotifications = useNotificationStore((s) => s.refresh);
+  const styles = useThemedStyles(stylesFactory);
   const [stories, setStories] = useState<any[]>([]);
   // Index of the post currently most in view — only that post's video plays.
   const [activeIndex, setActiveIndex] = useState(0);
@@ -81,9 +113,3 @@ export default function HomeFeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  appHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#fff', borderBottomWidth: 0.5, borderBottomColor: colors.g100 },
-  logo: { fontSize: 26, fontWeight: '800', fontStyle: 'italic', color: colors.g800, fontFamily: 'Georgia' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-});
