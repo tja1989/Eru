@@ -140,7 +140,7 @@ export default function ExploreScreen() {
                   )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.userHandle} numberOfLines={1}>
-                      {u.username}
+                      {u.username ? `@${u.username}` : ''}
                       {u.isVerified ? '  ✓' : ''}
                     </Text>
                     <Text style={styles.userName} numberOfLines={1}>{u.name}</Text>

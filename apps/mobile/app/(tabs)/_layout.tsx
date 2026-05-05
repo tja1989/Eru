@@ -9,6 +9,7 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -25,6 +26,12 @@ const TabIcon = ({ glyph, active }: { glyph: string; active: boolean }) => (
 
 export default function TabLayout() {
   const { initializing, isAuthenticated } = useAuth();
+  // Android phones with gesture navigation reserve a bottom inset; without
+  // adding it to the tab bar, the system gesture bar sits ON TOP of our
+  // icons. Lifting the bar by `insets.bottom` keeps the icons reachable on
+  // every device shape (iPhone with home indicator, Android with gestures,
+  // Android with 3-button nav, iPad).
+  const insets = useSafeAreaInsets();
 
   if (initializing) {
     return (
@@ -38,7 +45,11 @@ export default function TabLayout() {
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarStyle: styles.tabBar,
+      tabBarStyle: {
+        ...styles.tabBar,
+        height: 50 + insets.bottom,
+        paddingBottom: insets.bottom,
+      },
       tabBarActiveTintColor: colors.g900,
       tabBarInactiveTintColor: colors.g600,
       tabBarShowLabel: false,

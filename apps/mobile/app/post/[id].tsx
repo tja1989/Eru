@@ -54,7 +54,7 @@ function CommentRow({ comment }: { comment: Comment }) {
       )}
       <View style={{ flex: 1 }}>
         <Text style={styles.commentBody}>
-          <Text style={styles.commentUsername}>{comment.user?.username} </Text>
+          <Text style={styles.commentUsername}>{comment.user?.username ? `@${comment.user.username} ` : ''}</Text>
           {comment.text}
         </Text>
         <View style={styles.commentMeta}>

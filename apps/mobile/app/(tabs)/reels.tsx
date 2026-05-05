@@ -179,7 +179,7 @@ function ReelItem({
       {/* Bottom overlay: creator info + caption */}
       <View style={reelStyles.bottomOverlay}>
         <View style={reelStyles.creatorRow}>
-          <Text style={reelStyles.creatorName}>{item.user?.username ?? 'unknown'}</Text>
+          <Text style={reelStyles.creatorName}>{item.user?.username ? `@${item.user.username}` : 'unknown'}</Text>
           {item.user?.id && currentUserId && item.user.id !== currentUserId ? (
             <View style={reelStyles.followWrap}>
               <Text style={reelStyles.creatorDot}>·</Text>
