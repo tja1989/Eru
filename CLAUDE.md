@@ -132,7 +132,9 @@ Thirteen routes are contract-locked against types in [packages/shared/src/types/
 
 `feat(api): add X`, `feat(mobile): add Y`, `fix(api|mobile): ...`, `test(...)`, `chore(...)`, `style(...)`. Scope each commit tightly — one route or one component per commit where practical. Commit message body explains *why* more often than *what*.
 
-When staging, **never use `git add -A` or `.`**. Name specific files. The repo intentionally excludes from every commit: `.DS_Store`, `.claude/`, `.expo/`, `Notes.md`, `app.json` at repo root (the mobile one is `apps/mobile/app.json`), `tsconfig.json` at repo root (app-level `tsconfig.json`s are committed), `DesignSystem/`, `Eru_Business_Dashboard.html`, `Eru_Consumer_PWA.html`, `DeferredWork/` (local scratch).
+When staging, **never use `git add -A` or `.`**. Name specific files. The repo intentionally excludes from every commit: `.DS_Store`, `.claude/`, `.expo/`, `Notes.md` (account secrets), `app.json` at repo root (the mobile one is `apps/mobile/app.json`), `tsconfig.json` at repo root (app-level `tsconfig.json`s are committed), `DesignSystem/`, `DeferredWork/` (local scratch).
+
+The two design-mockup HTMLs at the repo root — `Eru_Business_Dashboard.html` and `Eru_Consumer_PWA.html` — are tracked from 2026-05-05 onward so they're available to remote agents (Claude.ai/code) for design rework. Update them in-place when iterating on the visual spec; they remain the source of truth for pixel-parity work referenced by `GapFix/README_P4_P10.md`.
 
 Commits land on `main` directly — no feature-branch convention in this repo. `main` is currently ~150 commits ahead of `origin`; don't push without asking.
 

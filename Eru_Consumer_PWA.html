@@ -92,8 +92,10 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
 .carousel-dots .dot{width:6px;height:6px;border-radius:3px;background:var(--g300);}
 .carousel-dots .dot.active{background:var(--blue);}
 .post-actions{padding:6px 14px 2px;display:flex;align-items:center;}
-.post-actions .left{display:flex;gap:14px;flex:1;}
-.post-actions button{background:none;border:none;font-size:26px;cursor:pointer;padding:0;}
+.post-actions .left{display:flex;gap:12px;flex:1;align-items:center;}
+.post-actions button{background:none;border:none;font-size:24px;cursor:pointer;padding:0;}
+.post-actions button.dislike{font-size:22px;opacity:0.55;}
+.post-actions button.dislike:hover{opacity:1;}
 .post-likes{padding:2px 14px 4px;font-size:13px;font-weight:600;color:var(--g800);}
 .post-caption{padding:0 14px 4px;font-size:13px;color:var(--g800);line-height:1.45;}
 .post-caption .user{font-weight:600;}
@@ -214,6 +216,11 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
 </div>
 
 <div class="screen-nav" id="screenNav">
+  <button onclick="showScreen('welcome')" style="background:rgba(232,121,43,0.15);color:#E8792B;">🚪 Welcome</button>
+  <button onclick="showScreen('otp')" style="background:rgba(232,121,43,0.08);color:#E8792B;">📱 Sign Up</button>
+  <button onclick="showScreen('personalize')" style="background:rgba(232,121,43,0.08);color:#E8792B;">🎯 Setup</button>
+  <button onclick="showScreen('tutorial')" style="background:rgba(232,121,43,0.08);color:#E8792B;">🎓 Tutorial</button>
+  <span style="width:1px;height:16px;background:rgba(255,255,255,0.1);margin:0 4px;align-self:center;"></span>
   <button class="active" onclick="showScreen('home')">Home Feed</button>
   <button onclick="showScreen('create')">Create</button>
   <button onclick="showScreen('moderation')">My Content</button>
@@ -226,6 +233,11 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
   <button onclick="showScreen('settings')">⚙️ Profile Details</button>
   <button onclick="showScreen('leaderboard')">🏆 Leaderboard</button>
   <button onclick="showScreen('creatorbiz')">💼 Creator × Biz</button>
+  <span style="width:1px;height:16px;background:rgba(255,255,255,0.1);margin:0 4px;align-self:center;"></span>
+  <button onclick="showScreen('storefront')" style="background:rgba(13,148,136,0.15);color:#0D9488;">🏪 Storefront</button>
+  <button onclick="showScreen('notifications')" style="background:rgba(124,58,237,0.15);color:#7C3AED;">🔔 Notifications</button>
+  <button onclick="showScreen('messages')" style="background:rgba(37,99,235,0.15);color:#2563EB;">💌 Messages</button>
+  <button onclick="showScreen('postdetail')" style="background:rgba(236,72,153,0.15);color:#EC4899;">📄 Post Detail</button>
 </div>
 
 <div class="phone">
@@ -236,6 +248,236 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
     <div class="icons">
       <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="8" width="3" height="4" rx="0.5" fill="#262626"/><rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="#262626"/><rect x="9" y="2" width="3" height="10" rx="0.5" fill="#262626"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#DBDBDB"/></svg>
       <div style="width:25px;height:12px;border:1.5px solid #262626;border-radius:3px;position:relative;"><div style="position:absolute;right:1.5px;top:1.5px;bottom:1.5px;left:28%;background:#10B981;border-radius:1.5px;"></div></div>
+    </div>
+  </div>
+
+  <!-- ===== WELCOME / LANDING ===== -->
+  <div class="screen" id="screen-welcome">
+    <div class="content" style="background:linear-gradient(160deg,#1E1145 0%,#2D1B69 40%,#E8792B 150%);display:flex;flex-direction:column;justify-content:space-between;padding:40px 24px;">
+      <div>
+        <div style="text-align:center;margin-top:30px;">
+          <div style="display:inline-block;width:72px;height:72px;background:rgba(255,255,255,0.1);border-radius:18px;backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;">
+            <div style="font-family:Georgia,serif;font-size:42px;font-style:italic;font-weight:700;color:#fff;">E</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:36px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:4px;color:var(--orange);text-transform:uppercase;">Consume. Earn. Connect.</div>
+          <h1 style="font-size:32px;font-weight:800;color:#fff;margin-top:14px;line-height:1.15;">Your attention<br><em style="color:var(--orange);font-family:Georgia,serif;">has value.</em></h1>
+          <p style="font-size:14px;color:rgba(255,255,255,0.75);margin-top:14px;line-height:1.5;">India's first super content app where every scroll, share, and review earns you real rewards.</p>
+        </div>
+        <!-- Value props -->
+        <div style="margin-top:32px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">🪙</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#fff;">Earn real rewards</div><div style="font-size:11px;color:rgba(255,255,255,0.6);">25 earning actions. 193 pts/day avg.</div></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(232,121,43,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">🎁</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#fff;">Redeem locally</div><div style="font-size:11px;color:rgba(255,255,255,0.6);">500+ partner stores. Free coffee, discounts, gifts.</div></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 14px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,58,237,0.25);display:flex;align-items:center;justify-content:center;font-size:18px;">✍️</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#fff;">Create &amp; get paid</div><div style="font-size:11px;color:rgba(255,255,255,0.6);">Tag businesses, earn 20% commission on boosted posts.</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button style="width:100%;padding:14px;background:var(--orange);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" onclick="showScreen('otp')">Get Started →</button>
+        <button style="width:100%;margin-top:10px;padding:14px;background:rgba(255,255,255,0.08);color:#fff;border:0.5px solid rgba(255,255,255,0.2);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;" onclick="showScreen('otp')">I already have an account</button>
+        <div style="text-align:center;margin-top:14px;font-size:10px;color:rgba(255,255,255,0.4);">🇮🇳 Made in Kerala • 500 pincodes live</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PHONE / OTP ===== -->
+  <div class="screen" id="screen-otp">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('welcome')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Verify Phone</span>
+        <span style="width:16px;"></span>
+      </div>
+      <!-- Progress -->
+      <div style="padding:10px 14px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <div style="display:flex;gap:4px;margin-bottom:4px;">
+          <div style="flex:1;height:3px;background:var(--orange);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--g200);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--g200);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--g200);border-radius:2px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--g400);">Step 1 of 4</div>
+      </div>
+      <div style="padding:20px 16px;">
+        <h2 style="font-size:22px;font-weight:800;color:var(--g800);">Your mobile number</h2>
+        <p style="font-size:13px;color:var(--g500);margin-top:4px;">We'll send a one-time password to verify</p>
+        <div style="margin-top:24px;display:flex;gap:8px;">
+          <div style="padding:12px 14px;border:1px solid var(--g200);border-radius:10px;display:flex;align-items:center;gap:6px;background:var(--g50);"><span style="font-size:16px;">🇮🇳</span><span style="font-size:14px;font-weight:600;">+91</span></div>
+          <input class="inp" style="flex:1;padding:12px 14px;border:1px solid var(--g200);border-radius:10px;font-size:16px;letter-spacing:1px;outline:none;font-family:inherit;" type="tel" value="98432 15678">
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;padding:10px 12px;background:rgba(16,185,129,0.04);border:0.5px solid rgba(16,185,129,0.15);border-radius:10px;">
+          <div style="width:40px;height:24px;border-radius:12px;background:var(--green);position:relative;"><div style="width:20px;height:20px;border-radius:10px;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">Send via WhatsApp</div><div style="font-size:10px;color:var(--g500);">Faster delivery. No SMS needed.</div></div>
+        </div>
+        <!-- OTP -->
+        <div style="margin-top:24px;padding-top:20px;border-top:0.5px dashed var(--g200);">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:8px;">Enter 6-digit code</div>
+          <div style="display:flex;gap:8px;justify-content:space-between;margin-bottom:6px;">
+            <input style="width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--navy);border-radius:10px;background:rgba(26,60,110,0.04);outline:none;font-family:inherit;color:var(--g800);" maxlength="1" value="2">
+            <input style="width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--navy);border-radius:10px;background:rgba(26,60,110,0.04);outline:none;font-family:inherit;color:var(--g800);" maxlength="1" value="7">
+            <input style="width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--navy);border-radius:10px;background:rgba(26,60,110,0.04);outline:none;font-family:inherit;color:var(--g800);" maxlength="1" value="4">
+            <input style="width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--navy);border-radius:10px;background:rgba(26,60,110,0.04);outline:none;font-family:inherit;color:var(--g800);" maxlength="1" value="8">
+            <input style="width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--navy);border-radius:10px;background:rgba(26,60,110,0.04);outline:none;font-family:inherit;color:var(--g800);" maxlength="1" value="1">
+            <input style="width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--navy);border-radius:10px;background:rgba(26,60,110,0.04);outline:none;font-family:inherit;color:var(--g800);" maxlength="1" value="6">
+          </div>
+          <div style="font-size:11px;color:var(--g400);">Didn't receive? <span style="color:var(--blue);font-weight:600;cursor:pointer;">Resend in 18s</span></div>
+        </div>
+        <button style="width:100%;padding:14px;margin-top:24px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;" onclick="showScreen('personalize')">Verify &amp; Continue →</button>
+        <div style="margin-top:16px;text-align:center;font-size:10px;color:var(--g400);line-height:1.5;">By continuing you agree to Eru's <span style="color:var(--blue);">Terms</span> and <span style="color:var(--blue);">Privacy Policy</span>. We never share your number with advertisers.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PERSONALIZE (Interests + Pincode + Language) ===== -->
+  <div class="screen" id="screen-personalize">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('otp')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Personalize</span>
+        <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;">Skip</span>
+      </div>
+      <div style="padding:10px 14px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <div style="display:flex;gap:4px;margin-bottom:4px;">
+          <div style="flex:1;height:3px;background:var(--green);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--green);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--orange);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--g200);border-radius:2px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--g400);">Step 2 of 4 • Tell us what you love</div>
+      </div>
+      <div style="padding:16px;">
+        <!-- Pincode -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:8px;">📍 Your location</div>
+          <div style="background:rgba(13,148,136,0.05);border:1.5px solid var(--teal);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;">📍</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--g800);">682016 • Ernakulam Central</div><div style="font-size:11px;color:var(--g500);">Auto-detected via GPS • 12,000 Eru users here</div></div>
+            <span style="font-size:11px;color:var(--blue);font-weight:600;cursor:pointer;">Change</span>
+          </div>
+        </div>
+        <!-- Interests -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:4px;">🎯 Pick 5+ interests</div>
+          <div style="font-size:11px;color:var(--g500);margin-bottom:10px;">Personalises your feed. Earn 2x points on matched content.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(232,121,43,0.08);color:var(--orange);border:1px solid rgba(232,121,43,0.2);">🍜 Food ✓</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(37,99,235,0.06);color:var(--blue);border:1px solid rgba(37,99,235,0.15);">💻 Tech ✓</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(13,148,136,0.06);color:var(--teal);border:1px solid rgba(13,148,136,0.15);">✈️ Travel ✓</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(124,58,237,0.06);color:var(--purple);border:1px solid rgba(124,58,237,0.15);">📚 Books ✓</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(16,185,129,0.06);color:var(--green);border:1px solid rgba(16,185,129,0.15);">🏋️ Fitness ✓</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🎬 Cinema</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🎵 Music</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🏏 Cricket</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">📷 Photography</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🎨 Art</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🏡 Lifestyle</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">💰 Finance</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">👗 Fashion</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🎮 Gaming</span>
+            <span style="padding:8px 14px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">🧘 Wellness</span>
+          </div>
+          <div style="font-size:10px;color:var(--green);margin-top:8px;font-weight:600;">✓ 5 selected — unlocks +50 pts</div>
+        </div>
+        <!-- Language -->
+        <div style="margin-bottom:24px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:4px;">🌐 Content languages</div>
+          <div style="font-size:11px;color:var(--g500);margin-bottom:10px;">Select all languages you read or watch</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span style="padding:7px 13px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(26,60,110,0.08);color:var(--navy);border:1px solid rgba(26,60,110,0.2);">English ✓</span>
+            <span style="padding:7px 13px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(26,60,110,0.08);color:var(--navy);border:1px solid rgba(26,60,110,0.2);">മലയാളം ✓</span>
+            <span style="padding:7px 13px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">हिन्दी</span>
+            <span style="padding:7px 13px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">தமிழ்</span>
+            <span style="padding:7px 13px;border-radius:20px;font-size:12px;color:var(--g600);border:1px solid var(--g200);">ಕನ್ನಡ</span>
+          </div>
+        </div>
+        <button style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;" onclick="showScreen('tutorial')">Next: How You Earn →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TUTORIAL: HOW TO EARN ===== -->
+  <div class="screen" id="screen-tutorial">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('personalize')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">How You Earn</span>
+        <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;" onclick="showScreen('home')">Skip</span>
+      </div>
+      <div style="padding:10px 14px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <div style="display:flex;gap:4px;margin-bottom:4px;">
+          <div style="flex:1;height:3px;background:var(--green);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--green);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--green);border-radius:2px;"></div>
+          <div style="flex:1;height:3px;background:var(--orange);border-radius:2px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--g400);">Step 4 of 4 • 193 pts/day average</div>
+      </div>
+      <!-- Welcome bonus banner -->
+      <div style="margin:12px;background:linear-gradient(135deg,#1E1145,#3B2A8A);border-radius:16px;padding:16px;text-align:center;color:#fff;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:60px;background:rgba(232,121,43,0.15);"></div>
+        <div style="font-size:10px;letter-spacing:2px;color:var(--orange);font-weight:700;position:relative;">WELCOME BONUS</div>
+        <div style="display:flex;justify-content:center;align-items:baseline;gap:6px;margin-top:6px;position:relative;">
+          <span style="font-size:42px;font-weight:800;">+250</span>
+          <span style="font-size:16px;color:var(--orange);font-weight:600;">pts</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;position:relative;">= ₹2.50 already in your wallet! 🎉</div>
+      </div>
+      <!-- Action cards -->
+      <div style="padding:0 14px 14px;">
+        <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:10px;">🪙 25 ways to earn every day</div>
+        <!-- Content -->
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;overflow:hidden;margin-bottom:8px;">
+          <div style="padding:10px 14px;background:rgba(13,148,136,0.05);border-bottom:0.5px solid rgba(13,148,136,0.1);display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">📖</span><span style="font-size:13px;font-weight:700;color:var(--teal);">Consume Content</span></div>
+            <span style="font-size:11px;color:var(--g500);">up to 170 pts/day</span>
+          </div>
+          <div style="padding:10px 14px;font-size:11px;color:var(--g600);line-height:1.5;">Read article (+4) • Watch video (+6) • View reel (+3) • Listen podcast (+5) • Read thread (+3)</div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;overflow:hidden;margin-bottom:8px;">
+          <div style="padding:10px 14px;background:rgba(232,121,43,0.05);border-bottom:0.5px solid rgba(232,121,43,0.1);display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">💬</span><span style="font-size:13px;font-weight:700;color:var(--orange);">Engage</span></div>
+            <span style="font-size:11px;color:var(--g500);">up to 140 pts/day</span>
+          </div>
+          <div style="padding:10px 14px;font-size:11px;color:var(--g600);line-height:1.5;">Like (+1) • Comment (+3) • Share (+2) • Save (+1) • Follow (+2)</div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;overflow:hidden;margin-bottom:8px;">
+          <div style="padding:10px 14px;background:rgba(124,58,237,0.05);border-bottom:0.5px solid rgba(124,58,237,0.1);display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">📊</span><span style="font-size:13px;font-weight:700;color:var(--purple);">Give Opinions</span></div>
+            <span style="font-size:11px;color:var(--g500);">up to 200 pts/day</span>
+          </div>
+          <div style="padding:10px 14px;font-size:11px;color:var(--g600);line-height:1.5;">Vote poll (+5) • Short survey (+15) • Long survey (+40) • Review (+10) • Rate biz (+5)</div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;overflow:hidden;margin-bottom:8px;">
+          <div style="padding:10px 14px;background:rgba(16,185,129,0.05);border-bottom:0.5px solid rgba(16,185,129,0.1);display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">🛒</span><span style="font-size:13px;font-weight:700;color:var(--green);">Shop &amp; Claim</span></div>
+            <span style="font-size:11px;color:var(--g500);">up to 130 pts/day</span>
+          </div>
+          <div style="padding:10px 14px;font-size:11px;color:var(--g600);line-height:1.5;">View sponsored (+2) • Click CTA (+5) • Claim offer (+10) • Redeem QR (+25) • Purchase (+15)</div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;overflow:hidden;margin-bottom:14px;">
+          <div style="padding:10px 14px;background:rgba(217,119,6,0.05);border-bottom:0.5px solid rgba(217,119,6,0.1);display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">🚀</span><span style="font-size:13px;font-weight:700;color:var(--gold);">Big Wins</span></div>
+            <span style="font-size:11px;color:var(--g500);">bonus boosts</span>
+          </div>
+          <div style="padding:10px 14px;font-size:11px;color:var(--g600);line-height:1.5;">Refer friend (+100) • Create post (+30) • Trending (+200) • Daily check-in (+25)</div>
+        </div>
+        <!-- Tier teaser -->
+        <div style="background:linear-gradient(135deg,rgba(232,121,43,0.06),rgba(217,119,6,0.04));border:1px solid rgba(232,121,43,0.2);border-radius:12px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:6px;">🔥 Level up your earnings</div>
+          <div style="font-size:11px;color:var(--g600);line-height:1.5;">Explorer 1.0x → Engager 1.2x → Influencer 1.5x → Champion 2.0x. The more you engage, the faster you earn.</div>
+        </div>
+        <button style="width:100%;padding:15px;background:var(--orange);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" onclick="showScreen('home')">Start Earning 🚀</button>
+        <div style="text-align:center;margin-top:10px;font-size:10px;color:var(--g400);">Your first login earns you +25 pts (daily check-in)</div>
+      </div>
     </div>
   </div>
 
@@ -251,8 +493,8 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
             <span class="pts">4,820</span>
             <span class="streak">🔥24</span>
           </div>
-          <span style="font-size:22px;cursor:pointer;">🤍</span>
-          <span style="font-size:22px;cursor:pointer;">✉️</span>
+          <span style="font-size:22px;cursor:pointer;position:relative;" onclick="showScreen('notifications')">🔔<span style="position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--red);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--card);">5</span></span>
+          <span style="font-size:22px;cursor:pointer;" onclick="showScreen('messages')">✉️</span>
         </div>
       </div>
 
@@ -294,7 +536,7 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
           </div>
           <span class="ugc-badge" style="position:absolute;top:12px;left:12px;">✓ CREATOR</span>
         </div>
-        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button class="dislike" title="Not for me — helps us improve your feed and affects creator score">👎</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
         <div class="post-likes">5,124 likes</div>
         <div class="post-caption"><span class="user">KeralaDiaries</span> Monsoon mornings in Munnar hit different. This is why we live here. ☕🌧️ <span class="tags">#KeralaMonsoon #Munnar #GodOwnCountry</span></div>
         <div class="post-comment"><span class="user">travel.kl</span> This is absolutely magical! 😍</div>
@@ -320,7 +562,7 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
           <div class="duration">4:32</div>
           <span class="ugc-badge" style="position:absolute;top:12px;left:12px;">✓ CREATOR</span>
         </div>
-        <div class="post-actions"><div class="left"><button>❤️</button><button>💬</button><button>📤</button></div><button>🔖</button></div>
+        <div class="post-actions"><div class="left"><button>❤️</button><button class="dislike" title="Not for me — helps us improve your feed and affects creator score">👎</button><button>💬</button><button>📤</button></div><button>🔖</button></div>
         <div class="post-likes">12,400 likes</div>
         <div class="post-caption"><span class="user">ChefRaju</span> Kerala fish curry the way my grandmother made it 🐟 Secret ingredient revealed at the end! <span class="tags">#KeralaCooking #FishCurry</span></div>
         <div class="post-comment"><span class="user">foodie.kochi</span> Made this yesterday, family loved it! 🔥</div>
@@ -330,8 +572,8 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
       <!-- POST 3: Sponsored -->
       <div class="post">
         <div class="post-header">
-          <div class="post-avi img-3" style="border-radius:50%;"><span style="font-size:16px;">🍰</span></div>
-          <div class="post-info">
+          <div class="post-avi img-3" style="border-radius:50%;cursor:pointer;" onclick="showScreen('storefront')"><span style="font-size:16px;">🍰</span></div>
+          <div class="post-info" style="cursor:pointer;" onclick="showScreen('storefront')">
             <div class="post-user">Kashi Bakes <span class="sponsored">• Sponsored</span></div>
             <div class="post-loc">📍 682016 • 0.8 km</div>
           </div>
@@ -344,7 +586,7 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
           </div>
           <div class="cta-bar"><button class="cta-btn">Claim Offer →</button></div>
         </div>
-        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button class="dislike" title="Not for me — helps us improve your feed and affects creator score">👎</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
         <div class="post-likes">890 likes</div>
         <div class="post-caption"><span class="user">Kashi Bakes</span> Weekend Cake Fest! 🎂 20% off ALL cakes this Fri-Sun. Tag someone who deserves a treat!</div>
         <div class="post-comment"><span class="user">priya.m</span> Their black forest is the best in town! 🖤</div>
@@ -371,7 +613,7 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
           </div>
         </div>
         <div class="carousel-dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div>
-        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button class="dislike" title="Not for me — helps us improve your feed and affects creator score">👎</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
         <div class="post-likes">234 likes</div>
         <div class="post-caption"><span class="user">Meera Nair</span> First time visiting Cherai Beach and I'm in love! The sunset was unreal 🌅✨ Anyone else been here? <span class="tags">#CheraiBeach #KeralaTravel #WeekendVibes</span></div>
         <div class="post-comment"><span class="user">arjun.s</span> Cherai is underrated! Try the seafood shack near the lighthouse 🦐</div>
@@ -408,7 +650,7 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
           </div>
           <div class="poll-total">4,200 votes • <span class="post-pts" style="display:inline;">🪙 +25 earned</span></div>
         </div>
-        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button class="dislike" title="Not for me — helps us improve your feed and affects creator score">👎</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
         <div class="post-likes">4,200 likes</div>
         <div class="post-comments">View all 890 comments</div>
       </div>
@@ -434,7 +676,7 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
           <div class="play-btn"><div class="play-tri"></div></div>
           <div class="badge type-badge" style="top:12px;left:12px;">▶ Reel • 0:45</div>
         </div>
-        <div class="post-actions"><div class="left"><button>🤍</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
+        <div class="post-actions"><div class="left"><button>🤍</button><button class="dislike" title="Not for me — helps us improve your feed and affects creator score">👎</button><button>💬</button><button>📤</button></div><button>🏷️</button></div>
         <div class="post-likes">1,890 likes</div>
         <div class="post-caption"><span class="user">Rohit Menon</span> Hidden coffee spots in Fort Kochi that tourists don't know about ☕🤫 <span class="more">...more</span></div>
         <div class="post-comments">View all 234 comments</div>
@@ -465,6 +707,81 @@ body{font-family:'Inter',sans-serif;background:#0A0A12;display:flex;flex-directi
         <button>📊 Poll</button>
         <button>📖 Thread</button>
       </div>
+
+      <!-- Content Type / Purpose -->
+      <div style="padding:10px 14px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);">📋 What type of content?</div>
+          <span style="font-size:10px;color:var(--g400);">Shapes reach &amp; earnings</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <!-- Selected -->
+          <div style="background:rgba(232,121,43,0.06);border:1.5px solid var(--orange);border-radius:10px;padding:8px 10px;cursor:pointer;position:relative;">
+            <div style="position:absolute;top:5px;right:5px;width:14px;height:14px;border-radius:7px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;">✓</div>
+            <div style="font-size:16px;margin-bottom:2px;">⭐</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Review</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Rate a business or product</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">💡</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Recommendation</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Suggest a place or product</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">🎬</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Vlog / Day-in-Life</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Behind-the-scenes, experience</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">📸</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Photo Story</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Visual carousel or album</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">📖</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Tutorial / How-to</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Step-by-step guide or lesson</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">🆚</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Comparison</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">A vs B side-by-side</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">📦</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Unboxing / First Try</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Trying something new</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">🎪</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Event Coverage</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Festival, pop-up, opening</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">🔥</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Hot Take / Opinion</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Discussion starter, debate</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">😂</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Meme / Fun</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Humor, entertainment</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">🍳</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Recipe</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Food recipe or cooking guide</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--g200);border-radius:10px;padding:8px 10px;cursor:pointer;">
+            <div style="font-size:16px;margin-bottom:2px;">📍</div>
+            <div style="font-size:11px;font-weight:700;color:var(--g800);">Local Guide</div>
+            <div style="font-size:9px;color:var(--g500);margin-top:1px;">Hidden gems, neighbourhood walks</div>
+          </div>
+        </div>
+        <div style="background:rgba(13,148,136,0.04);border:0.5px solid rgba(13,148,136,0.12);border-radius:8px;padding:6px 10px;">
+          <div style="font-size:10px;color:var(--teal);"><strong>⭐ Review selected:</strong> Tag a business with @name to earn 20% commission if they boost your content. Reviews get 3x more reach from local users.</div>
+        </div>
+      </div>
       <div class="create-body" style="flex:1;">
         <div style="display:flex;gap:10px;align-items:flex-start;">
           <div style="width:36px;height:36px;border-radius:18px;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">😊</div>
@@ -493,6 +810,20 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
           <span style="font-size:16px;">📍</span>
           <span style="font-size:14px;color:var(--g800);">Fort Kochi, 682001</span>
           <span style="font-size:11px;color:var(--g400);margin-left:auto;">Change</span>
+        </div>
+        <!-- Business tag (highlighted for Review type) -->
+        <div style="margin-top:4px;background:rgba(232,121,43,0.04);border:1px solid rgba(232,121,43,0.15);border-radius:10px;padding:10px 12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:14px;">🏪</span>
+            <span style="font-size:12px;font-weight:700;color:var(--orange);">Tag a Business</span>
+            <span style="margin-left:auto;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(16,185,129,0.1);color:var(--green);">+20% commission</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;background:var(--card);border:1px solid var(--g200);border-radius:8px;padding:8px 10px;">
+            <span style="font-size:14px;color:var(--g400);">@</span>
+            <span style="font-size:13px;font-weight:600;color:var(--orange);cursor:pointer;" onclick="showScreen('storefront')">PageTurnerKochi</span>
+            <span style="font-size:11px;color:var(--g400);margin-left:auto;">✕</span>
+          </div>
+          <div style="font-size:10px;color:var(--g500);margin-top:6px;line-height:1.4;">The business will see your content. If they boost it as sponsored, you earn 20% of their spend — real money, not just points!</div>
         </div>
         <!-- Moderation notice -->
         <div style="margin-top:8px;background:rgba(217,119,6,0.06);border:0.5px solid rgba(217,119,6,0.15);border-radius:10px;padding:12px;">
@@ -569,6 +900,49 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
         </div>
       </div>
 
+      <!-- Creator Score -->
+      <div style="margin:0 8px 8px;background:var(--card);border-radius:14px;border:0.5px solid var(--g200);overflow:hidden;">
+        <div style="padding:14px;background:linear-gradient(135deg,rgba(16,185,129,0.04),rgba(232,121,43,0.04));">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:10px;color:var(--g400);letter-spacing:1px;font-weight:600;">CREATOR SCORE</div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:2px;">
+                <span style="font-size:28px;font-weight:800;color:var(--green);">87</span>
+                <span style="font-size:14px;color:var(--g500);">/ 100</span>
+                <span style="padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;background:rgba(16,185,129,0.1);color:var(--green);">⬆ +3 this week</span>
+              </div>
+              <div style="font-size:11px;color:var(--g500);margin-top:2px;">🔥 Influencer tier • Unlocks 1.5x point multiplier</div>
+            </div>
+            <div style="width:72px;height:72px;border-radius:36px;background:conic-gradient(var(--green) 0 87%, var(--g200) 87% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <div style="width:60px;height:60px;border-radius:30px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:22px;">🔥</div>
+            </div>
+          </div>
+          <!-- Thumbs ratio bar -->
+          <div style="margin-top:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+              <span style="color:var(--green);font-weight:600;">👍 8,420 likes</span>
+              <span style="color:var(--red);font-weight:600;">👎 127 dislikes</span>
+            </div>
+            <div style="height:6px;background:var(--g200);border-radius:3px;overflow:hidden;display:flex;">
+              <div style="flex:98.5;background:var(--green);"></div>
+              <div style="flex:1.5;background:var(--red);"></div>
+            </div>
+            <div style="font-size:10px;color:var(--g400);margin-top:4px;">98.5% positive ratio • Keep it above 90% for tier benefits</div>
+          </div>
+        </div>
+        <!-- How score works -->
+        <div style="padding:10px 14px;background:var(--g50);border-top:0.5px solid var(--g100);">
+          <div style="font-size:11px;font-weight:700;color:var(--g700);margin-bottom:4px;">📊 How your score changes</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;">
+            <span style="color:var(--green);">👍 Like: +0.1</span>
+            <span style="color:var(--orange);">💬 Comment: +0.3</span>
+            <span style="color:var(--gold);">🔥 Trending: +5</span>
+            <span style="color:var(--red);">👎 Dislike: -0.5</span>
+            <span style="color:var(--red);">🚫 Report: -5</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Pending review -->
       <div class="mod-panel">
         <div class="mod-header"><h3>⏳ Pending Review</h3><span style="font-size:11px;color:var(--gold);font-weight:600;">2 posts</span></div>
@@ -597,7 +971,7 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
           <div class="mod-thumb img-8" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🏖️</span></div>
           <div class="mod-info">
             <div class="mod-title">Cherai Beach sunset 🌅</div>
-            <div class="mod-meta">2h ago • 234 likes • 45 comments • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
+            <div class="mod-meta">2h ago • 234 👍 • 3 👎 • 45 💬 • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
           </div>
           <span class="moderation-badge mod-approved">✓ LIVE</span>
         </div>
@@ -605,7 +979,7 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
           <div class="mod-thumb img-9" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">☕</span></div>
           <div class="mod-info">
             <div class="mod-title">Hidden coffee spots Fort Kochi</div>
-            <div class="mod-meta">4h ago • 1,890 likes • 234 comments • <span style="color:var(--orange);font-weight:600;">🔥 TRENDING +200</span></div>
+            <div class="mod-meta">4h ago • 1,890 👍 • 18 👎 • 234 💬 • <span style="color:var(--orange);font-weight:600;">🔥 TRENDING +200</span></div>
           </div>
           <span class="moderation-badge mod-approved">✓ LIVE</span>
         </div>
@@ -613,7 +987,7 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
           <div class="mod-thumb img-1" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🌴</span></div>
           <div class="mod-info">
             <div class="mod-title">Backwaters photography guide</div>
-            <div class="mod-meta">1d ago • 567 likes • 89 comments • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
+            <div class="mod-meta">1d ago • 567 👍 • 8 👎 • 89 💬 • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
           </div>
           <span class="moderation-badge mod-approved">✓ LIVE</span>
         </div>
@@ -621,7 +995,7 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
           <div class="mod-thumb img-2" style="display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;">🍳</span></div>
           <div class="mod-info">
             <div class="mod-title">Mom's special avial recipe</div>
-            <div class="mod-meta">3d ago • 2,100 likes • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
+            <div class="mod-meta">3d ago • 2,100 👍 • 24 👎 • <span style="color:var(--green);font-weight:600;">+30 pts</span></div>
           </div>
           <span class="moderation-badge mod-approved">✓ LIVE</span>
         </div>
@@ -791,6 +1165,7 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
           </div>
           <div style="position:absolute;right:14px;bottom:24px;display:flex;flex-direction:column;gap:18px;align-items:center;">
             <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">❤️</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">24.5K</div></div>
+            <div style="text-align:center;cursor:pointer;opacity:0.7;" title="Not for me — lowers creator score"><div style="font-size:24px;">👎</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">312</div></div>
             <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">💬</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">1.2K</div></div>
             <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">📤</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">Share</div></div>
             <div style="text-align:center;cursor:pointer;"><div style="font-size:28px;">🔖</div><div style="font-size:11px;color:#fff;font-weight:500;margin-top:2px;">Save</div></div>
@@ -1985,14 +2360,503 @@ Anyone else been to @PageTurnerKochi? Their chai is almost as good as their coll
     </div>
   </div>
 
+  <!-- ===== BUSINESS STOREFRONT ===== -->
+  <div class="screen" id="screen-storefront">
+    <div class="content">
+      <!-- Banner with back button overlaid -->
+      <div style="position:relative;height:140px;background:linear-gradient(135deg,#FF6B35,#FBB03B,#F97316);overflow:hidden;">
+        <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.15),transparent 40%),radial-gradient(circle at 80% 70%,rgba(255,255,255,0.1),transparent 50%);"></div>
+        <span style="position:absolute;top:14px;left:14px;width:36px;height:36px;border-radius:18px;background:rgba(0,0,0,0.25);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:18px;background:rgba(0,0,0,0.25);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;">📤</span>
+        <span style="position:absolute;top:14px;right:58px;width:36px;height:36px;border-radius:18px;background:rgba(0,0,0,0.25);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;">⋯</span>
+        <div style="position:absolute;bottom:10px;left:14px;right:14px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:36px;">🎂</span>
+          <div style="color:#fff;"><div style="font-size:11px;opacity:0.9;">Since 2015</div></div>
+        </div>
+      </div>
+      <!-- Header info -->
+      <div style="padding:0 14px;margin-top:-32px;position:relative;">
+        <div style="display:flex;align-items:flex-end;gap:12px;">
+          <div style="width:72px;height:72px;border-radius:16px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:3px solid var(--card);">🧁</div>
+          <div style="flex:1;padding-bottom:4px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:18px;font-weight:800;color:var(--g800);">Kashi Bakes</span>
+              <span style="width:16px;height:16px;border-radius:8px;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#fff;">✓</span>
+            </div>
+            <div style="font-size:11px;color:var(--g500);">🎂 Artisan Bakery • 📍 682016 Ernakulam</div>
+          </div>
+        </div>
+        <!-- Rating + stats row -->
+        <div style="display:flex;gap:16px;margin-top:12px;padding:10px 0;border-bottom:0.5px solid var(--g100);">
+          <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--g800);">4.7 ★</div><div style="font-size:10px;color:var(--g400);">287 reviews</div></div>
+          <div style="width:1px;background:var(--g100);"></div>
+          <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--g800);">1,240</div><div style="font-size:10px;color:var(--g400);">followers</div></div>
+          <div style="width:1px;background:var(--g100);"></div>
+          <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--green);">~12 min</div><div style="font-size:10px;color:var(--g400);">response time</div></div>
+          <div style="width:1px;background:var(--g100);"></div>
+          <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--orange);">🔥 Top 10</div><div style="font-size:10px;color:var(--g400);">in 682016</div></div>
+        </div>
+        <!-- Actions -->
+        <div style="display:flex;gap:8px;padding:12px 0;">
+          <button style="flex:2;padding:10px;background:var(--orange);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">⭐ Follow &amp; Get Offers</button>
+          <button style="flex:1;padding:10px;background:var(--g100);color:var(--g800);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;" onclick="showScreen('messages')">💬 Message</button>
+          <button style="padding:10px 14px;background:var(--g100);color:var(--g800);border:none;border-radius:10px;font-size:13px;cursor:pointer;">📍</button>
+        </div>
+      </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;padding:0 12px;border-bottom:0.5px solid var(--g200);background:var(--card);">
+        <span style="padding:10px 14px;font-size:13px;font-weight:700;color:var(--navy);border-bottom:2px solid var(--navy);">About</span>
+        <span style="padding:10px 14px;font-size:13px;font-weight:500;color:var(--g500);">Offers (4)</span>
+        <span style="padding:10px 14px;font-size:13px;font-weight:500;color:var(--g500);">Reviews</span>
+        <span style="padding:10px 14px;font-size:13px;font-weight:500;color:var(--g500);">Tagged (12)</span>
+      </div>
+      <!-- About + Live Offers -->
+      <div style="padding:14px;">
+        <!-- About text -->
+        <div style="font-size:13px;color:var(--g700);line-height:1.5;margin-bottom:14px;">Kochi's favourite artisan bakery. Fresh cakes, breads, and pastries baked daily since 2015. Custom cakes for all occasions — birthdays, weddings, and everything in between. Eggless options available.</div>
+
+        <!-- Live Offers (Top highlight) -->
+        <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:8px;">🔥 Live Offers</div>
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px;">
+          <div style="min-width:180px;background:var(--card);border:1.5px solid var(--orange);border-radius:12px;overflow:hidden;">
+            <div style="height:60px;background:linear-gradient(135deg,#FF6B35,#FBB03B);display:flex;align-items:center;justify-content:center;font-size:30px;">🎂</div>
+            <div style="padding:10px;">
+              <div style="font-size:13px;font-weight:700;color:var(--g800);">20% off all cakes</div>
+              <div style="font-size:10px;color:var(--g400);margin-top:2px;">200 pts • Valid till Apr 20</div>
+              <button style="width:100%;margin-top:6px;background:var(--orange);color:#fff;border:none;border-radius:6px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;">Claim</button>
+            </div>
+          </div>
+          <div style="min-width:180px;background:var(--card);border:1.5px solid var(--teal);border-radius:12px;overflow:hidden;">
+            <div style="height:60px;background:linear-gradient(135deg,#14b8a6,#0891b2);display:flex;align-items:center;justify-content:center;font-size:30px;">☕</div>
+            <div style="padding:10px;">
+              <div style="font-size:13px;font-weight:700;color:var(--g800);">Free coffee + pastry</div>
+              <div style="font-size:10px;color:var(--g400);margin-top:2px;">150 pts • Every Thursday</div>
+              <button style="width:100%;margin-top:6px;background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;">Claim</button>
+            </div>
+          </div>
+          <div style="min-width:180px;background:var(--card);border:1.5px solid var(--pink);border-radius:12px;overflow:hidden;">
+            <div style="height:60px;background:linear-gradient(135deg,#be185d,#f9a8d4);display:flex;align-items:center;justify-content:center;font-size:30px;">💝</div>
+            <div style="padding:10px;">
+              <div style="font-size:13px;font-weight:700;color:var(--g800);">30% off Mother's Day</div>
+              <div style="font-size:10px;color:var(--g400);margin-top:2px;">350 pts • May 8–12</div>
+              <button style="width:100%;margin-top:6px;background:var(--pink);color:#fff;border:none;border-radius:6px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;">Claim</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info block -->
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;overflow:hidden;margin-bottom:14px;">
+          <div style="padding:12px 14px;border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:10px;">
+            <span style="font-size:16px;">🕒</span>
+            <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">Open today</div><div style="font-size:10px;color:var(--g400);">8:00 AM – 10:00 PM</div></div>
+            <span style="padding:3px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(16,185,129,0.1);color:var(--green);">OPEN NOW</span>
+          </div>
+          <div style="padding:12px 14px;border-bottom:0.5px solid var(--g100);display:flex;align-items:center;gap:10px;">
+            <span style="font-size:16px;">📞</span>
+            <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">+91 98432 15678</div><div style="font-size:10px;color:var(--g400);">WhatsApp &amp; calls welcome</div></div>
+            <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;">Call</span>
+          </div>
+          <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:16px;">📍</span>
+            <div style="flex:1;"><div style="font-size:12px;font-weight:600;color:var(--g800);">MG Road, Ernakulam</div><div style="font-size:10px;color:var(--g400);">Near Mahila Samajam • 0.8 km away</div></div>
+            <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;">Directions</span>
+          </div>
+        </div>
+
+        <!-- Tagged UGC preview -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);">📸 Creator content (12)</div>
+          <span style="font-size:11px;color:var(--blue);font-weight:600;cursor:pointer;">See all →</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:14px;">
+          <div style="aspect-ratio:1;background:linear-gradient(135deg,#7c2d12,#f97316);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;font-size:32px;">🎂<div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;">▶ 0:32</div></div>
+          <div style="aspect-ratio:1;background:linear-gradient(135deg,#065f46,#14b8a6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:32px;">🥐</div>
+          <div style="aspect-ratio:1;background:linear-gradient(135deg,#4f46e5,#a5b4fc);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;font-size:32px;">🧁<div style="position:absolute;top:4px;right:4px;background:var(--orange);color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;">🔥</div></div>
+        </div>
+
+        <!-- Top review preview -->
+        <div style="font-size:13px;font-weight:700;color:var(--g800);margin-bottom:8px;">⭐ Top reviews</div>
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+            <div class="img-6" style="width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:16px;">👩</div>
+            <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--g800);">Meera.N <span style="color:var(--gold);font-weight:400;">★★★★★</span></div><div style="font-size:10px;color:var(--g400);">2 weeks ago • ⭐ verified Eru customer</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--g700);line-height:1.4;">"Best plum cake in Kochi! Ordered for my birthday and everyone loved it. The owner even added a personalised message — such a sweet touch."</div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--g200);border-radius:12px;padding:12px;">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+            <div class="img-9" style="width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:16px;">👨</div>
+            <div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--g800);">Rohit.M <span style="color:var(--gold);font-weight:400;">★★★★★</span></div><div style="font-size:10px;color:var(--g400);">1 month ago</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--g700);line-height:1.4;">"Their croissants are unreal. Fresh every morning. My Sunday ritual now."</div>
+        </div>
+
+        <!-- Create content CTA -->
+        <div style="margin-top:14px;background:linear-gradient(135deg,rgba(13,148,136,0.06),rgba(16,185,129,0.04));border:1px solid rgba(13,148,136,0.2);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:28px;">🎬</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;color:var(--teal);">Create a reel about Kashi Bakes?</div>
+            <div style="font-size:10px;color:var(--g500);line-height:1.4;margin-top:2px;">Tag @KashiBakes. If they boost it, you earn 20% commission + points!</div>
+          </div>
+          <button style="padding:8px 12px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="showScreen('create')">Create</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== NOTIFICATIONS INBOX ===== -->
+  <div class="screen" id="screen-notifications">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Notifications</span>
+        <span style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;">Mark all read</span>
+      </div>
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:5px;padding:10px 12px;background:var(--card);border-bottom:0.5px solid var(--g100);overflow-x:auto;">
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--purple);color:#fff;white-space:nowrap;">All (18)</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">🪙 Points</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">👥 Social</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">🎁 Offers</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">🛡️ Moderation</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);white-space:nowrap;">💼 Business</span>
+      </div>
+      <!-- Notifications -->
+      <!-- NEW section -->
+      <div style="padding:10px 14px;font-size:10px;color:var(--g400);font-weight:700;letter-spacing:1px;">NEW</div>
+
+      <div style="background:rgba(232,121,43,0.03);border-left:3px solid var(--orange);padding:12px 14px;display:flex;gap:10px;cursor:pointer;" onclick="showScreen('creatorbiz')">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#FF6B35,#FBB03B);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🚀</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;"><strong>Kashi Bakes wants to boost your reel!</strong> 🎉</div>
+          <div style="font-size:11px;color:var(--g500);margin-top:2px;">They proposed ₹3,000 boost → you'd earn ₹600 commission</div>
+          <div style="font-size:10px;color:var(--orange);font-weight:600;margin-top:2px;">2 min ago • Tap to accept</div>
+        </div>
+        <span style="width:8px;height:8px;border-radius:4px;background:var(--orange);align-self:center;flex-shrink:0;"></span>
+      </div>
+
+      <div style="background:rgba(16,185,129,0.03);border-left:3px solid var(--green);padding:12px 14px;display:flex;gap:10px;cursor:pointer;" onclick="showScreen('moderation')">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">✅</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;">Your post <strong>"Hidden coffee spots Fort Kochi"</strong> was approved!</div>
+          <div style="font-size:11px;color:var(--green);margin-top:2px;font-weight:600;">+30 pts credited to your wallet</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">8 min ago</div>
+        </div>
+        <span style="width:8px;height:8px;border-radius:4px;background:var(--green);align-self:center;flex-shrink:0;"></span>
+      </div>
+
+      <div style="background:rgba(13,148,136,0.03);border-left:3px solid var(--teal);padding:12px 14px;display:flex;gap:10px;cursor:pointer;" onclick="showScreen('storefront')">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#FF6B35,#FBB03B);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎂</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;"><strong>Kashi Bakes</strong> just dropped a new offer 🎉</div>
+          <div style="font-size:11px;color:var(--g500);margin-top:2px;">30% off Mother's Day cakes • 350 pts to claim</div>
+          <div style="font-size:10px;color:var(--teal);font-weight:600;margin-top:2px;">15 min ago • ⭐ From your watchlist</div>
+        </div>
+        <span style="width:8px;height:8px;border-radius:4px;background:var(--teal);align-self:center;flex-shrink:0;"></span>
+      </div>
+
+      <div style="background:rgba(124,58,237,0.03);border-left:3px solid var(--purple);padding:12px 14px;display:flex;gap:10px;cursor:pointer;" onclick="showScreen('leaderboard')">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(124,58,237,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏆</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;">You're #4 in <strong>682016 this week!</strong></div>
+          <div style="font-size:11px;color:var(--g500);margin-top:2px;">3 places to #1 — keep creating to win ₹200 gift card</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">1h ago</div>
+        </div>
+        <span style="width:8px;height:8px;border-radius:4px;background:var(--purple);align-self:center;flex-shrink:0;"></span>
+      </div>
+
+      <div style="background:rgba(37,99,235,0.03);border-left:3px solid var(--blue);padding:12px 14px;display:flex;gap:10px;cursor:pointer;">
+        <div class="img-3" style="width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👨‍🍳</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;"><strong>ChefRaju</strong> started following you</div>
+          <div style="font-size:11px;color:var(--g500);margin-top:2px;">👑 #1 Creator in your pincode</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">2h ago</div>
+        </div>
+        <button style="align-self:center;padding:5px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">Follow back</button>
+      </div>
+
+      <!-- EARLIER section -->
+      <div style="padding:10px 14px;font-size:10px;color:var(--g400);font-weight:700;letter-spacing:1px;">EARLIER TODAY</div>
+
+      <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(232,121,43,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🔥</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;">Your reel is <strong>trending in Kerala!</strong> 🎉</div>
+          <div style="font-size:11px;color:var(--orange);font-weight:600;margin-top:2px;">+200 pts trending bonus credited</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">5h ago</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎯</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;">Weekly quest completed: <strong>Read 5 articles</strong></div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px;">+25 pts</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">6h ago</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;opacity:0.7;">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(237,73,86,0.08);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🛡️</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;">Your post was declined: <strong>copyright music</strong></div>
+          <div style="font-size:11px;color:var(--g500);margin-top:2px;">MOD-02 • Tap to edit &amp; resubmit</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">Yesterday</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;opacity:0.7;">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(217,119,6,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⚠️</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;"><strong>480 pts expiring</strong> in 14 days</div>
+          <div style="font-size:11px;color:var(--gold);margin-top:2px;font-weight:600;">Redeem before Apr 30 to avoid losing them</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">Yesterday</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);padding:12px 14px;display:flex;gap:10px;cursor:pointer;opacity:0.7;">
+        <div class="img-7" style="width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👩‍🎨</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--g800);line-height:1.4;"><strong>ArtbyLakshmi</strong> and 3 others liked your post</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:2px;">Yesterday</div>
+        </div>
+      </div>
+
+      <div style="height:12px;"></div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== MESSAGES / DMs ===== -->
+  <div class="screen" id="screen-messages">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:16px;font-weight:800;color:var(--g800);">Messages</span>
+        <span style="font-size:18px;cursor:pointer;">✏️</span>
+      </div>
+      <!-- Filter -->
+      <div style="display:flex;gap:5px;padding:10px 12px;background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;background:var(--g800);color:#fff;">All</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">💼 Business</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">👥 Creators</span>
+        <span style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;color:var(--g500);border:0.5px solid var(--g200);">💬 Friends</span>
+      </div>
+      <!-- Conversations -->
+      <div>
+        <!-- Business collab (priority) -->
+        <div style="background:rgba(232,121,43,0.04);border-bottom:0.5px solid var(--g100);border-left:3px solid var(--orange);padding:12px 14px;display:flex;gap:10px;cursor:pointer;">
+          <div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,#FF6B35,#FBB03B);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;position:relative;">🎂<div style="position:absolute;bottom:-1px;right:-1px;width:16px;height:16px;border-radius:8px;background:var(--card);border:1.5px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;">💼</div></div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;font-weight:700;color:var(--g800);">Kashi Bakes</span><span style="font-size:10px;color:var(--orange);font-weight:600;">2 min ago</span></div>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:2px;"><span class="pill" style="padding:2px 6px;border-radius:3px;background:rgba(232,121,43,0.1);color:var(--orange);font-size:8px;font-weight:700;">BOOST PROPOSAL</span></div>
+            <div style="font-size:12px;color:var(--g600);margin-top:4px;line-height:1.3;">"Loved your plum cake reel! We'd love to boost it for ₹3,000..."</div>
+          </div>
+          <div style="width:20px;height:20px;border-radius:10px;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;align-self:center;flex-shrink:0;">2</div>
+        </div>
+        <!-- Creator -->
+        <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;">
+          <div class="img-3" style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;position:relative;">👨‍🍳<div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:6px;background:var(--green);border:2px solid var(--card);"></div></div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;font-weight:700;color:var(--g800);">ChefRaju</span><span style="font-size:10px;color:var(--g400);">1h ago</span></div>
+            <div style="font-size:12px;color:var(--g600);margin-top:4px;line-height:1.3;">Hey! Loved your food reels. Want to collab on a Malabar biryani series?</div>
+          </div>
+          <div style="width:18px;height:18px;border-radius:9px;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;align-self:center;flex-shrink:0;">1</div>
+        </div>
+        <!-- Friend -->
+        <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;">
+          <div class="img-6" style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">👩</div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;font-weight:700;color:var(--g800);">Meera.N</span><span style="font-size:10px;color:var(--g400);">3h ago</span></div>
+            <div style="font-size:12px;color:var(--g500);margin-top:4px;line-height:1.3;">✓ Sent you the Kashi Bakes offer — claim before it's gone!</div>
+          </div>
+        </div>
+        <!-- Eru -->
+        <div style="background:var(--card);border-bottom:0.5px solid var(--g100);padding:12px 14px;display:flex;gap:10px;cursor:pointer;opacity:0.7;">
+          <div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,#E8792B,#FBB03B);display:flex;align-items:center;justify-content:center;font-size:22px;font-family:Georgia,serif;font-style:italic;font-weight:700;color:#fff;flex-shrink:0;">E</div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:14px;font-weight:600;color:var(--g600);">Eru Support</span><span style="font-size:10px;color:var(--g400);">Yesterday</span></div>
+            <div style="font-size:12px;color:var(--g500);margin-top:4px;line-height:1.3;">Welcome to Eru! Here are 5 tips to earn faster...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Open chat view (Kashi Bakes collab) -->
+      <div style="padding:12px;">
+        <div style="font-size:10px;color:var(--g400);margin-bottom:8px;">💬 Viewing: Kashi Bakes (boost proposal)</div>
+        <!-- Proposal context -->
+        <div style="background:rgba(232,121,43,0.04);border:0.5px solid rgba(232,121,43,0.15);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:4px;">💼 Boost Proposal</div>
+          <div style="font-size:11px;color:var(--g600);line-height:1.4;">Kashi Bakes wants to boost your plum cake reel. Proposed: ₹3,000 • Your commission (20%): ₹600 • Reach: 25K+ in 3 pincodes</div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button style="flex:1;padding:7px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">✓ Accept</button>
+            <button style="flex:1;padding:7px;background:var(--g100);color:var(--g700);border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Negotiate</button>
+            <button style="padding:7px 12px;background:var(--g100);color:var(--g500);border:none;border-radius:6px;font-size:11px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+        <!-- Messages -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="align-self:flex-start;max-width:75%;background:var(--g100);border-radius:14px 14px 14px 4px;padding:8px 12px;">
+            <div style="font-size:12px;color:var(--g800);">Hi! We absolutely loved your plum cake reel — one of our best reviews this year. 🎂</div>
+            <div style="font-size:9px;color:var(--g400);margin-top:3px;">5 min ago</div>
+          </div>
+          <div style="align-self:flex-start;max-width:75%;background:var(--g100);border-radius:14px 14px 14px 4px;padding:8px 12px;">
+            <div style="font-size:12px;color:var(--g800);">We'd love to boost it for ₹3,000 across our 3 pincodes. You'd earn ₹600 (20%) + trending points. Interested?</div>
+            <div style="font-size:9px;color:var(--g400);margin-top:3px;">2 min ago</div>
+          </div>
+        </div>
+        <!-- Input -->
+        <div style="margin-top:12px;background:var(--card);border:1px solid var(--g200);border-radius:20px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px;">
+          <input style="flex:1;border:none;background:transparent;font-size:13px;outline:none;font-family:inherit;" placeholder="Type a message..." value="Sounds great! Let's do it 🙌">
+          <div style="width:32px;height:32px;border-radius:16px;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;">📎</div>
+          <div style="width:32px;height:32px;border-radius:16px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:#fff;">➤</div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ===== POST DETAIL ===== -->
+  <div class="screen" id="screen-postdetail">
+    <div class="content">
+      <div style="padding:4px 14px 10px;background:var(--card);display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--g100);">
+        <span style="font-size:16px;cursor:pointer;" onclick="showScreen('home')">←</span>
+        <span style="font-size:14px;font-weight:700;color:var(--g800);">Post</span>
+        <span style="font-size:18px;cursor:pointer;">⋯</span>
+      </div>
+      <!-- Post -->
+      <div style="background:var(--card);border-bottom:0.5px solid var(--g100);">
+        <div style="padding:12px 14px;display:flex;gap:10px;align-items:center;">
+          <div class="img-3" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;" onclick="showScreen('storefront')">🍰</div>
+          <div style="flex:1;cursor:pointer;" onclick="showScreen('storefront')">
+            <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:13px;font-weight:700;color:var(--g800);">Kashi Bakes</span><span style="font-size:10px;color:var(--orange);font-weight:500;">• Sponsored</span></div>
+            <div style="font-size:11px;color:var(--g400);">📍 682016 Ernakulam • 0.8 km away</div>
+          </div>
+          <span style="padding:3px 8px;border-radius:5px;background:rgba(16,185,129,0.1);color:var(--green);font-size:10px;font-weight:700;">+15 pts</span>
+        </div>
+        <!-- Image -->
+        <div style="aspect-ratio:1;background:linear-gradient(135deg,#FF6B35,#FBB03B);display:flex;align-items:center;justify-content:center;position:relative;">
+          <span style="font-size:80px;">🎂</span>
+          <div style="position:absolute;bottom:14px;left:14px;right:14px;"><button style="width:100%;padding:12px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(10px);">🎂 Claim 20% off →</button></div>
+        </div>
+        <!-- Actions -->
+        <div style="padding:10px 14px;display:flex;gap:16px;align-items:center;">
+          <span style="font-size:24px;cursor:pointer;">❤️</span>
+          <span style="font-size:22px;cursor:pointer;opacity:0.55;" title="Not for me">👎</span>
+          <span style="font-size:24px;cursor:pointer;">💬</span>
+          <span style="font-size:24px;cursor:pointer;">📤</span>
+          <span style="margin-left:auto;font-size:24px;cursor:pointer;">🔖</span>
+        </div>
+        <!-- Likes/caption -->
+        <div style="padding:0 14px 10px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);">890 likes • 12 dislikes</div>
+          <div style="font-size:13px;color:var(--g800);line-height:1.5;margin-top:4px;"><span style="font-weight:700;">Kashi Bakes</span> Weekend Cake Fest! 🎂 20% off ALL cakes this Fri-Sun. Tag someone who deserves a treat! Fresh from our oven, baked with love since 2015. <span style="color:var(--blue);">#cake #kochi #682016 #bakery #weekend</span></div>
+          <div style="font-size:11px;color:var(--g400);margin-top:4px;">2 hours ago</div>
+        </div>
+      </div>
+      <!-- Comments -->
+      <div style="padding:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;color:var(--g800);">Comments (67)</div>
+          <span style="font-size:11px;color:var(--g400);">Most liked ▾</span>
+        </div>
+        <!-- Comment 1 -->
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <div class="img-6" style="width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👩</div>
+          <div style="flex:1;">
+            <div style="background:var(--g100);border-radius:12px;padding:8px 12px;">
+              <div style="font-size:12px;font-weight:700;color:var(--g800);">priya.m <span style="color:var(--gold);font-weight:400;font-size:10px;">★★★★★</span></div>
+              <div style="font-size:12px;color:var(--g700);margin-top:2px;">Their black forest is the best in town! 🖤 Ordered last week for my husband's birthday — everyone was asking where I got it from.</div>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:4px;padding-left:4px;font-size:10px;color:var(--g400);">
+              <span>2h</span><span style="font-weight:600;cursor:pointer;">Like (24)</span><span style="font-weight:600;cursor:pointer;">Reply</span>
+            </div>
+          </div>
+        </div>
+        <!-- Comment 2 -->
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <div class="img-9" style="width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👨</div>
+          <div style="flex:1;">
+            <div style="background:var(--g100);border-radius:12px;padding:8px 12px;">
+              <div style="font-size:12px;font-weight:700;color:var(--g800);">rohit.m</div>
+              <div style="font-size:12px;color:var(--g700);margin-top:2px;">Do you deliver to 682017 on weekends? Want to order for my daughter's birthday Saturday.</div>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:4px;padding-left:4px;font-size:10px;color:var(--g400);">
+              <span>1h</span><span style="font-weight:600;cursor:pointer;">Like (8)</span><span style="font-weight:600;cursor:pointer;">Reply (2)</span>
+            </div>
+            <!-- Reply -->
+            <div style="margin-top:8px;margin-left:12px;display:flex;gap:8px;">
+              <div class="img-3" style="width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🍰</div>
+              <div style="flex:1;">
+                <div style="background:rgba(232,121,43,0.06);border-radius:10px;padding:7px 10px;">
+                  <div style="font-size:11px;font-weight:700;color:var(--orange);display:flex;align-items:center;gap:3px;">Kashi Bakes <span style="color:var(--blue);font-size:9px;">✓</span></div>
+                  <div style="font-size:11px;color:var(--g700);margin-top:2px;">Yes Rohit! We deliver all over Ernakulam on weekends. DM us on WhatsApp for custom orders 🎂</div>
+                </div>
+                <div style="font-size:9px;color:var(--g400);margin-top:3px;padding-left:4px;">45m</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Comment 3 -->
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+          <div class="img-7" style="width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👩‍🎨</div>
+          <div style="flex:1;">
+            <div style="background:var(--g100);border-radius:12px;padding:8px 12px;">
+              <div style="font-size:12px;font-weight:700;color:var(--g800);">ArtbyLakshmi</div>
+              <div style="font-size:12px;color:var(--g700);margin-top:2px;">Just claimed the offer 🎉 thanks Eru for the points discount!</div>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:4px;padding-left:4px;font-size:10px;color:var(--g400);">
+              <span>32m</span><span style="font-weight:600;cursor:pointer;">Like (12)</span><span style="font-weight:600;cursor:pointer;">Reply</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Comment input -->
+      <div style="position:sticky;bottom:0;padding:10px 14px;background:var(--card);border-top:0.5px solid var(--g200);display:flex;gap:8px;align-items:center;">
+        <div class="img-4" style="width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">😊</div>
+        <input style="flex:1;border:1px solid var(--g200);border-radius:20px;padding:8px 14px;font-size:13px;outline:none;font-family:inherit;background:var(--g50);" placeholder="Add a comment... (+3 pts for 10+ words)">
+        <span style="font-size:20px;cursor:pointer;">😊</span>
+        <span style="font-size:14px;color:var(--blue);font-weight:700;cursor:pointer;">Post</span>
+      </div>
+    </div>
+    <div class="bottom-tab">
+      <button onclick="showScreen('home')"><span style="font-size:22px;">🏡</span><span>Home</span></button>
+      <button onclick="showScreen('explore')"><span style="font-size:22px;">🔍</span><span>Explore</span></button>
+      <button onclick="showScreen('create')" style="opacity:1;"><span style="font-size:28px;">➕</span><span>Create</span></button>
+      <button onclick="showScreen('reels')"><span style="font-size:22px;">▶️</span><span>Reels</span></button>
+      <button onclick="showScreen('profile')"><span style="font-size:22px;">😊</span><span>Profile</span></button>
+    </div>
+  </div>
+
+</div><!-- end .phone -->
+
 <script>
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + id).classList.add('active');
   document.querySelectorAll('.screen-nav button').forEach(b => b.classList.remove('active'));
-  const map = {home:'Home Feed',create:'Create',moderation:'My Content',profile:'Profile',explore:'Explore',reels:'Reels',wallet:'Wallet',redeem:'Redeem',myrewards:'My Rewards',settings:'Profile Details',leaderboard:'Leaderboard',creatorbiz:'Creator × Biz'};
+  const map = {welcome:'Welcome',otp:'Sign Up',personalize:'Setup',tutorial:'Tutorial',home:'Home Feed',create:'Create',moderation:'My Content',profile:'Profile',explore:'Explore',reels:'Reels',wallet:'Wallet',redeem:'Redeem',myrewards:'My Rewards',settings:'Profile Details',leaderboard:'Leaderboard',creatorbiz:'Creator × Biz',storefront:'Storefront',notifications:'Notifications',messages:'Messages',postdetail:'Post Detail'};
   document.querySelectorAll('.screen-nav button').forEach(b => {
-    if (b.textContent.replace(/[💰🎁🎫⚙️🏆💼]/g,'').trim() === (map[id]||'')) b.classList.add('active');
+    if (b.textContent.replace(/[💰🎁🎫⚙️🏆💼🚪📱🎯🎓🏪🔔💌📄]/g,'').trim() === (map[id]||'')) b.classList.add('active');
   });
   const content = document.querySelector('#screen-' + id + ' .content');
   if (content) content.scrollTop = 0;
