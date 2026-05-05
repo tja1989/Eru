@@ -11,6 +11,7 @@ import {
 } from '../lib/coldStartMeter';
 import { initSentry } from '../lib/sentryInit';
 import { analytics } from '../lib/analytics';
+import { useTheme } from '../hooks/useTheme';
 
 // Capture the moment the JS bundle began running. The matching
 // completeColdStartMeter() in the layout's first useEffect closes the
@@ -24,6 +25,10 @@ export default function RootLayout() {
   // register the FCM token. On a cold boot that adds ~500ms before the
   // user sees any UI. We defer it past first-interactive instead.
   const [notificationsReady, setNotificationsReady] = useState(false);
+  // Resolves the active theme (system pref + user override). Drives the
+  // StatusBar style below — light text on dark backgrounds, dark text on
+  // light. Reactive: when the system flips dark mode, the bar updates.
+  const { scheme } = useTheme();
 
   useEffect(() => {
     completeColdStartMeter();
@@ -41,7 +46,7 @@ export default function RootLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       {/* Root Stack — required so router.push() from inside a group (e.g.
           /(tabs)/profile → /my-content) has a navigator to push onto.
           With a bare <Slot /> there's no stack and cross-group pushes

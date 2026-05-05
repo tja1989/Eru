@@ -19,6 +19,7 @@ import { userService } from '../../services/userService';
 import { useAuthStore } from '../../stores/authStore';
 import { INTERESTS, LANGUAGES } from '@eru/shared';
 import { colors, spacing, radius } from '../../constants/theme';
+import { useThemeStore, ThemeMode } from '../../stores/themeStore';
 
 type Gender = 'male' | 'female' | 'other';
 
@@ -74,6 +75,8 @@ function toISODateString(date: Date): string {
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout, reset } = useAuthStore();
+  const themeMode = useThemeStore((s) => s.mode);
+  const setThemeMode = useThemeStore((s) => s.setMode);
 
   const [settings, setSettings] = useState<UserSettings>({
     ...DEFAULT_SETTINGS,
@@ -238,6 +241,30 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* Appearance — minimal toggle for theme mode. Full Settings rebuild
+            happens in PR-E (per spec docs/superpowers/specs/2026-05-05-eru-ig-aesthetic-design.md). */}
+        <Text style={styles.sectionHeader}>Appearance</Text>
+        <View style={styles.section}>
+          {(['system', 'light', 'dark'] as ThemeMode[]).map((m, idx, arr) => (
+            <React.Fragment key={m}>
+              <TouchableOpacity
+                style={styles.fieldRow}
+                onPress={() => setThemeMode(m)}
+                accessibilityRole="button"
+                accessibilityLabel={`Set theme to ${m === 'system' ? 'use system' : m}`}
+              >
+                <Text style={[styles.fieldLabel, { width: undefined, flex: 1 }]}>
+                  {m === 'system' ? 'Use system' : m === 'light' ? 'Light' : 'Dark'}
+                </Text>
+                {themeMode === m ? (
+                  <Text style={{ fontSize: 17, color: colors.blue }}>✓</Text>
+                ) : null}
+              </TouchableOpacity>
+              {idx < arr.length - 1 ? <View style={styles.divider} /> : null}
+            </React.Fragment>
+          ))}
+        </View>
 
         {/* Profile section */}
         <Text style={styles.sectionHeader}>Profile</Text>
