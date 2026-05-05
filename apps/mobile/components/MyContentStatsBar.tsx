@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { userService } from '@/services/userService';
+import { colors } from '@/constants/theme';
 
 type Summary = { published: number; pending: number; declined: number; totalLikes: number };
 
@@ -13,10 +14,10 @@ export function MyContentStatsBar() {
 
   return (
     <View style={styles.row}>
-      <Stat label="Published" value={s.published} color="#10B981" />
-      <Stat label="In Review" value={s.pending} color="#D97706" />
-      <Stat label="Declined" value={s.declined} color="#ED4956" />
-      <Stat label="Total Likes" value={s.totalLikes} color="#7C3AED" />
+      <Stat label="Published" value={s.published} color={colors.green} />
+      <Stat label="In Review" value={s.pending} color={colors.gold} />
+      <Stat label="Declined" value={s.declined} color={colors.red} />
+      <Stat label="Total Likes" value={s.totalLikes} color={colors.g700} />
     </View>
   );
 }
