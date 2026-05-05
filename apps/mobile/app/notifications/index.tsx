@@ -1,18 +1,4 @@
-// apps/mobile/app/notifications/index.tsx — IG Activity / Notifications
-//
-// Layout: simple "← Notifications" header, "New" / "This week" / "This month"
-// section headers, flat rows with circular avatar + inline text + right-side
-// thumb (post) OR Follow button (follower).
-//
-// Removed vs prior:
-//  - 6-tab filter rail (All / Posts / Offers / Leaderboard / Messages / Activity)
-//  - Per-type emoji + colored left-border accent strip
-//  - Multi-button CTA blocks ("Tap to accept", "Redeem now →")
-//
-// IG-style compresses each notification to ONE row with a single tap target.
-// Per-type CTAs that were inline now route on row tap to the right destination.
-
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -20,166 +6,263 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Image,
+  ScrollView,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { RelativeTime } from '../../components/RelativeTime';
 import { userService } from '../../services/userService';
 import { colors, spacing, radius } from '../../constants/theme';
 
-// Time-bucket a notification's age — IG's standard New / This week / This month / Earlier.
-function bucket(iso: string): 'New' | 'This week' | 'This month' | 'Earlier' {
-  const ageMs = Date.now() - new Date(iso).getTime();
-  const day = 24 * 60 * 60 * 1000;
-  if (ageMs < 2 * day) return 'New';
-  if (ageMs < 7 * day) return 'This week';
-  if (ageMs < 30 * day) return 'This month';
-  return 'Earlier';
-}
+// PWA 6 filter tabs. "all" is a wildcard; other keys match either Notification
+// `type` directly or a family (posts = post_approved | post_declined | trending).
+type Filter = 'all' | 'posts' | 'offers' | 'leaderboard' | 'messages' | 'activity';
 
-// Resolve a row's tap destination from notification type. Replaces the old
-// inline CTA buttons — IG-style notifications only have one tap target.
-function destinationFor(item: any): string | { pathname: string; params?: any } | null {
-  const data = item.data ?? {};
-  if (item.deepLink) return item.deepLink;
-  switch (item.type) {
-    case 'follower':
-      return data.userId ? { pathname: '/users/[id]', params: { id: data.userId } } : null;
-    case 'post_approved':
-    case 'trending':
-      return data.contentId ? { pathname: '/post/[id]', params: { id: data.contentId } } : null;
-    case 'post_declined':
-      return '/my-content';
-    case 'boost_proposal':
-      return '/sponsorship';
-    case 'watchlist_offer':
-    case 'expiry':
-      return { pathname: '/redeem', params: { type: 'all' } };
-    case 'leaderboard':
-    case 'quest':
-      return '/leaderboard';
-    default:
-      return null;
-  }
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'posts', label: 'Posts' },
+  { key: 'offers', label: 'Offers' },
+  { key: 'leaderboard', label: 'Leaderboard' },
+  { key: 'messages', label: 'Messages' },
+  { key: 'activity', label: 'Activity' },
+];
+
+// Left-border accent + emoji per notification type — matches the PWA's
+// colored chit strip that tells users what kind of note they're looking at.
+const TYPE_META: Record<string, { color: string; emoji: string }> = {
+  boost_proposal: { color: colors.orange, emoji: '🚀' },
+  post_approved: { color: colors.green, emoji: '✓' },
+  post_declined: { color: colors.red, emoji: '⚠️' },
+  trending: { color: colors.orange, emoji: '🔥' },
+  watchlist_offer: { color: colors.teal, emoji: '🏪' },
+  leaderboard: { color: colors.gold, emoji: '👑' },
+  follower: { color: colors.blue, emoji: '👥' },
+  quest: { color: colors.purple, emoji: '🎯' },
+  expiry: { color: colors.red, emoji: '⏰' },
+  default: { color: colors.g300, emoji: '🔔' },
+};
+
+function filterMatch(type: string | undefined, f: Filter): boolean {
+  if (f === 'all') return true;
+  const t = type ?? 'default';
+  if (f === 'posts') return ['post_approved', 'post_declined', 'trending'].includes(t);
+  if (f === 'offers') return ['watchlist_offer', 'boost_proposal'].includes(t);
+  if (f === 'leaderboard') return t === 'leaderboard';
+  if (f === 'messages') return t === 'message';
+  if (f === 'activity') return ['follower', 'quest', 'expiry'].includes(t);
+  return false;
 }
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const items = useNotificationStore((s) => s.items);
   const loading = useNotificationStore((s) => s.loading);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const refresh = useNotificationStore((s) => s.refresh);
   const loadMore = useNotificationStore((s) => s.loadMore);
   const markAllRead = useNotificationStore((s) => s.markAllRead);
+  const [filter, setFilter] = useState<Filter>('all');
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
+  // Group into NEW (unread) and EARLIER (read). Within each, newest-first.
   const sections = useMemo(() => {
-    const sortedDesc = [...items].sort(
+    const filtered = items.filter((n: any) => filterMatch(n.type, filter));
+    const sortedDesc = [...filtered].sort(
       (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
-    const groups: Record<string, any[]> = { New: [], 'This week': [], 'This month': [], Earlier: [] };
-    for (const n of sortedDesc) groups[bucket(n.createdAt)].push(n);
-    return (['New', 'This week', 'This month', 'Earlier'] as const)
-      .filter((k) => groups[k].length > 0)
-      .map((k) => ({ title: k, data: groups[k] }));
-  }, [items]);
+    const unread = sortedDesc.filter((n: any) => !n.isRead);
+    const read = sortedDesc.filter((n: any) => n.isRead);
+    const s: { title: string; data: any[] }[] = [];
+    if (unread.length) s.push({ title: 'NEW', data: unread });
+    if (read.length) s.push({ title: 'EARLIER', data: read });
+    return s;
+  }, [items, filter]);
 
-  function handleRowPress(item: any) {
-    // Mark as read happens server-side via notificationStore — we just navigate.
-    const dest = destinationFor(item);
-    if (!dest) return;
-    if (typeof dest === 'string') router.push(dest as any);
-    else router.push(dest as any);
-  }
+  return (
+    <View style={styles.root}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.back}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Notifications</Text>
+        {unreadCount > 0 ? (
+          <TouchableOpacity onPress={markAllRead}>
+            <Text style={styles.action}>Mark all read</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 100 }} />
+        )}
+      </View>
 
-  async function handleFollowBack(userId: string) {
+      {/* 6 filter tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabs}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
+      >
+        {FILTERS.map((f) => {
+          const selected = filter === f.key;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              testID={`notif-tab-${f.key}`}
+              accessibilityState={{ selected }}
+              onPress={() => setFilter(f.key)}
+              style={[styles.tab, selected && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, selected && styles.tabTextActive]}>{f.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      <SectionList
+        sections={sections}
+        keyExtractor={(n: any) => n.id}
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionHeader}>{section.title}</Text>
+        )}
+        renderItem={({ item }: { item: any }) => {
+          const meta = TYPE_META[item.type] ?? TYPE_META.default;
+          return (
+            <View style={[styles.row, !item.isRead && styles.unread, { borderLeftColor: meta.color }]}>
+              <Text style={styles.rowEmoji}>{meta.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{item.title}</Text>
+                {item.body ? <Text style={styles.rowBody}>{item.body}</Text> : null}
+                {item.createdAt ? (
+                  <View style={styles.rowTime}>
+                    <RelativeTime iso={item.createdAt} />
+                  </View>
+                ) : null}
+                <NotificationCta item={item} router={router} />
+              </View>
+            </View>
+          );
+        }}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>🔔</Text>
+            <Text style={styles.emptyText}>No notifications yet</Text>
+          </View>
+        }
+      />
+    </View>
+  );
+}
+
+// Type-specific CTA row rendered under a notification. Each notification
+// `type` maps to one action the user most wants to take next — the PWA's
+// inline buttons (Follow back, Tap to accept, Redeem now, View post).
+function NotificationCta({ item, router }: { item: any; router: any }) {
+  const data = item.data ?? {};
+  const deepLink: string | undefined = item.deepLink;
+
+  async function followBack(userId: string) {
     try {
       await userService.follow(userId);
-      Alert.alert('Followed');
+      Alert.alert('Followed', 'You are now following this person.');
     } catch (e: any) {
       Alert.alert('Could not follow', e?.response?.data?.error ?? 'Try again');
     }
   }
 
-  return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn} accessibilityLabel="Back">
-          <Text style={styles.back}>←</Text>
+  switch (item.type) {
+    case 'follower':
+      if (!data.userId) return null;
+      return (
+        <TouchableOpacity
+          onPress={() => followBack(data.userId)}
+          style={[styles.ctaBtn, styles.ctaPrimary]}
+          accessibilityLabel="Follow back"
+        >
+          <Text style={styles.ctaPrimaryText}>Follow back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
-        <TouchableOpacity style={styles.headerBtn} onPress={markAllRead}>
-          <Text style={styles.markRead}>✓</Text>
+      );
+    case 'boost_proposal':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push(deepLink ?? '/sponsorship')}
+          style={[styles.ctaBtn, styles.ctaAccent]}
+          accessibilityLabel="Review proposal"
+        >
+          <Text style={styles.ctaAccentText}>Tap to accept →</Text>
         </TouchableOpacity>
-      </View>
-
-      <SectionList
-        sections={sections}
-        keyExtractor={(n: any) => n.id}
-        stickySectionHeadersEnabled={false}
-        renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionHeader}>{section.title}</Text>
-        )}
-        renderItem={({ item }: { item: any }) => {
-          const data = item.data ?? {};
-          const avatarUrl = data.actorAvatarUrl ?? data.userAvatarUrl;
-          const thumbUrl = data.contentThumbnailUrl;
-          const isFollowerRow = item.type === 'follower' && data.userId;
-
-          return (
-            <TouchableOpacity
-              style={styles.row}
-              activeOpacity={0.6}
-              onPress={() => handleRowPress(item)}
-            >
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarInitial}>{(data.actorName ?? 'E').slice(0, 1)}</Text>
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowText}>
-                  <Text style={styles.rowBold}>{item.title}</Text>
-                  {item.body ? <Text style={styles.rowBody}>  {item.body}</Text> : null}
-                  {item.createdAt ? <Text style={styles.rowTime}>  · </Text> : null}
-                  {item.createdAt ? <RelativeTime iso={item.createdAt} /> : null}
-                </Text>
-              </View>
-
-              {/* Right side: Follow button OR post thumbnail OR nothing */}
-              {isFollowerRow ? (
-                <TouchableOpacity
-                  style={styles.followBtn}
-                  onPress={() => handleFollowBack(data.userId)}
-                  accessibilityLabel="Follow back"
-                >
-                  <Text style={styles.followBtnText}>Follow</Text>
-                </TouchableOpacity>
-              ) : thumbUrl ? (
-                <Image source={{ uri: thumbUrl }} style={styles.thumb} />
-              ) : null}
-            </TouchableOpacity>
-          );
-        }}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.g500} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Activity On Your Posts</Text>
-            <Text style={styles.emptySub}>When someone likes or comments on one of your posts, you'll see it here.</Text>
-          </View>
-        }
-      />
-    </SafeAreaView>
-  );
+      );
+    case 'watchlist_offer':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push(deepLink ?? { pathname: '/redeem', params: { type: 'local' } })}
+          style={[styles.ctaBtn, styles.ctaTeal]}
+          accessibilityLabel="Redeem now"
+        >
+          <Text style={styles.ctaTealText}>Redeem now →</Text>
+        </TouchableOpacity>
+      );
+    case 'post_approved':
+    case 'trending':
+      if (!data.contentId) return null;
+      return (
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/post/[id]', params: { id: data.contentId } })}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="View post"
+        >
+          <Text style={styles.ctaSecondaryText}>View post →</Text>
+        </TouchableOpacity>
+      );
+    case 'post_declined':
+      if (!data.contentId) return null;
+      return (
+        <TouchableOpacity
+          onPress={() => router.push('/my-content')}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="See reason"
+        >
+          <Text style={styles.ctaSecondaryText}>See reason →</Text>
+        </TouchableOpacity>
+      );
+    case 'leaderboard':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push('/leaderboard')}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="See ranks"
+        >
+          <Text style={styles.ctaSecondaryText}>See ranks →</Text>
+        </TouchableOpacity>
+      );
+    case 'quest':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push('/leaderboard')}
+          style={[styles.ctaBtn, styles.ctaSecondary]}
+          accessibilityLabel="View quests"
+        >
+          <Text style={styles.ctaSecondaryText}>View quests →</Text>
+        </TouchableOpacity>
+      );
+    case 'expiry':
+      return (
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/redeem', params: { type: 'all' } })}
+          style={[styles.ctaBtn, styles.ctaAccent]}
+          accessibilityLabel="Redeem before expiry"
+        >
+          <Text style={styles.ctaAccentText}>Redeem now →</Text>
+        </TouchableOpacity>
+      );
+    default:
+      return null;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -187,48 +270,66 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    height: 44,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.g200,
+    borderBottomColor: colors.g100,
+    justifyContent: 'space-between',
   },
-  headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  back: { fontSize: 26, color: colors.g900 },
-  markRead: { fontSize: 18, color: colors.g900 },
-  title: { flex: 1, fontSize: 17, fontWeight: '700', color: colors.g900, textAlign: 'left' },
-
+  back: { fontSize: 22, color: colors.g800 },
+  title: { fontSize: 16, fontWeight: '700', color: colors.g900 },
+  action: { color: colors.blue, fontWeight: '600', fontSize: 12 },
+  tabs: { paddingVertical: spacing.sm, flexGrow: 0, borderBottomWidth: 0.5, borderBottomColor: colors.g100 },
+  tab: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.g300,
+  },
+  tabActive: { backgroundColor: colors.g800, borderColor: colors.g800 },
+  tabText: { color: colors.g600, fontWeight: '600', fontSize: 12 },
+  tabTextActive: { color: '#fff' },
   sectionHeader: {
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xs,
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.g900,
+    paddingTop: spacing.md,
+    paddingBottom: 4,
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.g500,
+    letterSpacing: 1,
     backgroundColor: '#fff',
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
+    gap: 10,
+    paddingVertical: 12,
     paddingHorizontal: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#FAFAFA',
+    borderLeftWidth: 3,
   },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.g200 },
-  avatarFallback: { alignItems: 'center', justifyContent: 'center' },
-  avatarInitial: { fontSize: 18, fontWeight: '700', color: colors.g600 },
-  rowText: { fontSize: 14, color: colors.g900, lineHeight: 19 },
-  rowBold: { fontWeight: '700', color: colors.g900 },
-  rowBody: { fontWeight: '400', color: colors.g900 },
-  rowTime: { color: colors.g500 },
-  thumb: { width: 44, height: 44, backgroundColor: colors.g100 },
-  followBtn: {
-    backgroundColor: colors.blue,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: radius.sm,
+  unread: { backgroundColor: '#FAFAFF' },
+  rowEmoji: { fontSize: 18, width: 22, textAlign: 'center' },
+  rowTitle: { fontWeight: '700', color: colors.g800, fontSize: 13 },
+  rowBody: { color: colors.g600, marginTop: 2, fontSize: 12, lineHeight: 17 },
+  rowTime: { marginTop: 4 },
+  empty: { alignItems: 'center', padding: 48 },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyText: { color: colors.g400, fontSize: 14 },
+  ctaBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    marginTop: 8,
   },
-  followBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: spacing.xl, gap: spacing.sm },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.g900 },
-  emptySub: { fontSize: 13, color: colors.g500, textAlign: 'center', lineHeight: 19 },
+  ctaPrimary: { backgroundColor: colors.blue },
+  ctaPrimaryText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  ctaAccent: { backgroundColor: colors.orange },
+  ctaAccentText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  ctaTeal: { backgroundColor: colors.teal },
+  ctaTealText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  ctaSecondary: { backgroundColor: colors.g100 },
+  ctaSecondaryText: { color: colors.g700, fontSize: 12, fontWeight: '700' },
 });

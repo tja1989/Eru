@@ -1,19 +1,3 @@
-// apps/mobile/app/(tabs)/reels.tsx — IG-fidelity Reels
-//
-// Diff vs prior:
-//  - REMOVED on-video green "+N pts/min" pill (per DECISIONS.md). Points are
-//    still credited via useReelHeartbeat — the user just doesn't see a coin
-//    overlay during playback. They'll see the credit in Wallet → ledger.
-//    If you want to keep the pill, restore the {item.pointsPreview != null}
-//    block from the original file.
-//  - Three-tab pill (Following / For You / Local) replaced by IG's two-tab
-//    text header ("Following  |  For You"). Local is folded into For You's
-//    server-side ranking (the API already accepts a 'local' bias param if
-//    you want to wire it up later).
-//  - Tab indicator: bold white text + dim white for inactive, no underline.
-//
-// Behavior, video player, like/save/share, heartbeat — all unchanged.
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
@@ -41,6 +25,7 @@ import { usePlayerMetrics, type PlayerLike } from '../../hooks/usePlayerMetrics'
 import { useReelHeartbeat } from '../../hooks/useReelHeartbeat';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Leave room for the tab bar (~56px) + safe-area insets (~34px on iPhone)
 const REEL_HEIGHT = SCREEN_HEIGHT - 90;
 
 interface Reel {
@@ -78,12 +63,20 @@ function ReelItem({
   const { earn } = usePointsStore();
   const [liked, setLiked] = useState(item.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
+  const [disliked, setDisliked] = useState(item.isDisliked ?? false);
   const [saved, setSaved] = useState(item.isSaved ?? false);
 
+  // Only allocate a player for the active reel and any neighbours the
+  // preloader says we should warm. Off-window items pass null source so
+  // expo-video disposes the player and frees the segment cache.
   const shouldRender = isActive || isWarmed;
   const videoUrl = shouldRender ? pickVideoUrl(item.media?.[0]) : undefined;
   const posterUrl = item.media?.[0]?.thumbnailUrl;
 
+  // useVideoPlayer must run on every render (Rules of Hooks). The setup
+  // callback only configures the player — we deliberately don't auto-play
+  // here, otherwise a freshly-warmed neighbour would emit sound for one
+  // frame before the isActive effect pauses it.
   const player = useVideoPlayer(
     videoUrl ? { uri: videoUrl } : null,
     (p) => {
@@ -94,22 +87,57 @@ function ReelItem({
 
   useEffect(() => {
     if (!videoUrl) return;
-    if (isActive) player.play();
-    else player.pause();
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+    }
   }, [isActive, videoUrl, player]);
 
+  // Meter only the active reel — preloaded neighbours haven't actually
+  // played anything yet, so their stats would skew TTFF / rebuffer numbers.
+  // Cast through unknown because expo-video's addListener is event-typed
+  // and our PlayerLike is the loosened structural shape.
   usePlayerMetrics(
     isActive && videoUrl ? (player as unknown as PlayerLike) : null,
     item.id,
   );
 
+  // Credit reel_watch every 30 seconds the reel is on-screen + app active.
+  // The server enforces the daily cap on the action so we can safely fire
+  // every interval — over-reports are silently capped.
   useReelHeartbeat({ reelId: item.id, enabled: isActive });
 
   const handleLike = async () => {
-    if (liked) { setLiked(false); setLikeCount((c) => c - 1); }
-    else { setLiked(true); setLikeCount((c) => c + 1); earn('like', item.id); }
-    try { await reelsService.like(item.id); }
-    catch { setLiked((p) => !p); setLikeCount((c) => (liked ? c + 1 : c - 1)); }
+    if (liked) {
+      setLiked(false);
+      setLikeCount((c) => c - 1);
+    } else {
+      setLiked(true);
+      setLikeCount((c) => c + 1);
+      earn('like', item.id);
+    }
+    try {
+      await reelsService.like(item.id);
+    } catch {
+      // revert on error
+      setLiked((prev) => !prev);
+      setLikeCount((c) => (liked ? c + 1 : c - 1));
+    }
+  };
+
+  const handleDislike = async () => {
+    if (disliked) {
+      setDisliked(false);
+      await contentService.undislike(item.id).catch(() => { setDisliked(true); });
+    } else {
+      setDisliked(true);
+      await contentService.dislike(item.id).catch((err: any) => {
+        // 409 = already disliked — optimistic state is correct, keep it
+        if (err?.response?.status === 409) return;
+        setDisliked(false);
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -119,6 +147,7 @@ function ReelItem({
     } else {
       setSaved(true);
       await contentService.save(item.id).catch((err: any) => {
+        // 409 = already saved — optimistic state is correct, keep it
         if (err?.response?.status === 409) return;
         setSaved(false);
       });
@@ -126,7 +155,9 @@ function ReelItem({
   };
 
   return (
-    <View style={reelStyles.reelContainer}>
+    <View style={styles.reelContainer}>
+      {/* Poster image — shown under the VideoView while video loads, and as a
+          graceful fallback if expo-video can't play (e.g. in Expo Go). */}
       {posterUrl ? (
         <Image
           source={{ uri: posterUrl }}
@@ -134,65 +165,74 @@ function ReelItem({
           resizeMode="cover"
         />
       ) : null}
+      {/* Video */}
       {videoUrl ? (
         <VideoView
-          style={reelStyles.videoOnTop}
+          style={styles.videoOnTop}
           player={player}
           contentFit="cover"
           nativeControls={false}
         />
       ) : !posterUrl ? (
-        <View style={[reelStyles.video, reelStyles.videoPlaceholder]}>
+        <View style={[styles.video, styles.videoPlaceholder]}>
           <Text style={{ fontSize: 48 }}>🎬</Text>
         </View>
       ) : null}
 
-      {/* NO points pill — see file header */}
+      {/* Points indicator top-right — "🪙 +N pts/min" per PWA line 1103 */}
+      {item.pointsPreview != null && (
+        <View style={styles.pointsIndicator}>
+          <Text style={styles.pointsText}>🪙 +{item.pointsPreview} pts/min</Text>
+        </View>
+      )}
 
-      {/* Right-side action column — IG icon order: heart, comment, share, save, ... */}
-      <View style={reelStyles.actionColumn}>
-        <TouchableOpacity style={reelStyles.actionBtn} onPress={handleLike} accessibilityLabel="Like">
-          <Text style={reelStyles.actionIcon}>{liked ? '❤️' : '🤍'}</Text>
-          <Text style={reelStyles.actionCount}>{likeCount}</Text>
+      {/* Right-side action column */}
+      <View style={styles.actionColumn}>
+        <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
+          <Text style={styles.actionIcon}>{liked ? '❤️' : '🤍'}</Text>
+          <Text style={styles.actionCount}>{likeCount}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={reelStyles.actionBtn} accessibilityLabel="Comment">
-          <Text style={reelStyles.actionIcon}>💬</Text>
-          <Text style={reelStyles.actionCount}>{item.commentCount ?? 0}</Text>
+        <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me" accessibilityState={{ selected: disliked }}>
+          <Text style={[styles.actionIcon, { color: disliked ? '#E53E3E' : '#fff' }]}>👎</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={handleSave} accessibilityLabel="Save post" accessibilityState={{ selected: saved }}>
+          <Text style={[styles.actionIcon, { color: saved ? '#0095F6' : '#fff' }]}>🔖</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn}>
+          <Text style={styles.actionIcon}>💬</Text>
+          <Text style={styles.actionCount}>{item.commentCount ?? 0}</Text>
         </TouchableOpacity>
 
         <ShareButton
           contentId={item.id}
           creatorUsername={item.user?.username ?? ''}
           caption={item.text ?? ''}
-          style={reelStyles.actionBtn}
-          iconStyle={reelStyles.actionIcon}
-          label=""
-          labelStyle={reelStyles.actionCount}
+          style={styles.actionBtn}
+          iconStyle={styles.actionIcon}
+          label="Share"
+          labelStyle={styles.actionCount}
         />
-
-        <TouchableOpacity style={reelStyles.actionBtn} onPress={handleSave} accessibilityLabel="Save" accessibilityState={{ selected: saved }}>
-          <Text style={reelStyles.actionIcon}>{saved ? '🔖' : '🏷️'}</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Bottom overlay: creator info + caption */}
-      <View style={reelStyles.bottomOverlay}>
-        <View style={reelStyles.creatorRow}>
-          <Text style={reelStyles.creatorName}>{item.user?.username ? `@${item.user.username}` : 'unknown'}</Text>
+      <View style={styles.bottomOverlay}>
+        <View style={styles.creatorRow}>
+          <Text style={styles.creatorName}>@{item.user?.username ?? 'unknown'}</Text>
           {item.user?.id && currentUserId && item.user.id !== currentUserId ? (
-            <View style={reelStyles.followWrap}>
-              <Text style={reelStyles.creatorDot}>·</Text>
-              <FollowButton
-                targetUserId={item.user.id}
-                initiallyFollowing={item.user.isFollowing ?? false}
-                size="sm"
-              />
-            </View>
+            <FollowButton
+              targetUserId={item.user.id}
+              initiallyFollowing={item.user.isFollowing ?? false}
+              size="sm"
+            />
           ) : null}
         </View>
         {item.text ? (
-          <Text style={reelStyles.caption} numberOfLines={2}>{item.text}</Text>
+          <Text style={styles.caption} numberOfLines={2}>
+            {item.text}
+          </Text>
         ) : null}
       </View>
     </View>
@@ -202,27 +242,35 @@ function ReelItem({
 export default function ReelsScreen() {
   const { earn } = usePointsStore();
   const currentUserId = useAuthStore((s) => s.user?.id);
+  // reelId is set when the user taps a reel thumbnail from Explore. We fetch
+  // that specific reel and prepend it so it's the first thing they see.
   const { reelId } = useLocalSearchParams<{ reelId?: string }>();
   const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  // IG-style: only Following / For You. Local now folds into For You's ranking.
-  const [tab, setTab] = useState<'foryou' | 'following'>('foryou');
+  const [tab, setTab] = useState<'foryou' | 'following' | 'local'>('foryou');
   const { indicesToPreload } = useReelPreloader({ activeIndex });
 
   useEffect(() => {
     let cancelled = false;
+
     async function load() {
       setLoading(true);
+      // Clear stale items before fetching so the FlatList doesn't flash
+      // results from the previous tab while the new tab is loading.
       setReels([]);
 
+      // If deep-linked to a specific reel, fetch it first so we can pin it
+      // to the top of the list even if it's not in page 1 of /reels.
       let pinned: Reel | null = null;
       if (reelId) {
         try {
           const r = await contentService.getById(reelId);
           const target = r?.content ?? r;
           if (target?.type === 'reel') pinned = target as Reel;
-        } catch { /* fall through */ }
+        } catch {
+          // ignore — if the specific reel fails to load we fall back to the list
+        }
       }
 
       try {
@@ -243,8 +291,11 @@ export default function ReelsScreen() {
         if (!cancelled) setLoading(false);
       }
     }
+
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [reelId, tab]);
 
   const onViewableItemsChanged = useCallback(
@@ -259,18 +310,16 @@ export default function ReelsScreen() {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
-  // IG-style header: bold "Reels" left, two text-only tabs centered
   const tabBar = (
-    <View style={reelStyles.tabsBar} pointerEvents="box-none">
-      {(['following', 'foryou'] as const).map((t) => (
+    <View style={styles.tabs} pointerEvents="box-none">
+      {(['following', 'foryou', 'local'] as const).map((t) => (
         <TouchableOpacity
           key={t}
           onPress={() => setTab(t)}
-          style={reelStyles.tab}
-          accessibilityState={{ selected: tab === t }}
+          style={[styles.tab, tab === t && styles.tabActive]}
         >
-          <Text style={[reelStyles.tabText, tab === t && reelStyles.tabTextActive]}>
-            {t === 'foryou' ? 'For You' : 'Following'}
+          <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+            {t === 'foryou' ? 'For You' : t === 'following' ? 'Following' : 'Local'}
           </Text>
         </TouchableOpacity>
       ))}
@@ -279,10 +328,10 @@ export default function ReelsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={reelStyles.safe} edges={['top']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         {tabBar}
-        <View style={reelStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.g300} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.g400} />
         </View>
       </SafeAreaView>
     );
@@ -290,9 +339,9 @@ export default function ReelsScreen() {
 
   if (reels.length === 0) {
     return (
-      <SafeAreaView style={reelStyles.safe} edges={['top']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         {tabBar}
-        <View style={reelStyles.loadingContainer}>
+        <View style={styles.loadingContainer}>
           <Text style={{ fontSize: 40 }}>🎬</Text>
           <Text style={{ color: '#fff', marginTop: spacing.md, fontSize: 16 }}>No reels yet</Text>
         </View>
@@ -301,7 +350,7 @@ export default function ReelsScreen() {
   }
 
   return (
-    <SafeAreaView style={reelStyles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       {tabBar}
       <FlatList
         data={reels}
@@ -331,53 +380,93 @@ export default function ReelsScreen() {
   );
 }
 
-const reelStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#000' },
-  tabsBar: {
+  tabs: {
     flexDirection: 'row',
     position: 'absolute',
     top: 50,
     alignSelf: 'center',
-    gap: 24,
+    gap: 20,
     zIndex: 10,
   },
-  tab: { paddingVertical: 6, paddingHorizontal: 4 },
-  tabText: { color: 'rgba(255,255,255,0.55)', fontWeight: '600', fontSize: 16 },
-  tabTextActive: { color: '#fff', fontWeight: '700' },
+  tab: { paddingVertical: 6, paddingHorizontal: 12 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#fff' },
+  tabText: { color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
+  tabTextActive: { color: '#fff', fontWeight: '800' },
   loadingContainer: {
-    flex: 1, backgroundColor: '#000',
-    alignItems: 'center', justifyContent: 'center',
+    flex: 1,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  reelContainer: { width: SCREEN_WIDTH, height: REEL_HEIGHT, backgroundColor: '#000' },
-  video: { width: SCREEN_WIDTH, height: REEL_HEIGHT },
-  videoOnTop: { width: SCREEN_WIDTH, height: REEL_HEIGHT, zIndex: 2, elevation: 2 },
+  reelContainer: {
+    width: SCREEN_WIDTH,
+    height: REEL_HEIGHT,
+    backgroundColor: '#000',
+  },
+  video: {
+    width: SCREEN_WIDTH,
+    height: REEL_HEIGHT,
+  },
+  // Same dimensions as `video` but forced on top of the poster image so the
+  // native VideoView surface isn't hidden underneath the <Image> fallback.
+  videoOnTop: {
+    width: SCREEN_WIDTH,
+    height: REEL_HEIGHT,
+    zIndex: 2,
+    elevation: 2,
+  },
   videoPlaceholder: {
-    alignItems: 'center', justifyContent: 'center', backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111',
   },
+  pointsIndicator: {
+    position: 'absolute',
+    top: spacing.xl,
+    right: spacing.lg,
+    backgroundColor: 'rgba(16,185,129,0.85)',
+    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  pointsText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   actionColumn: {
-    position: 'absolute', right: spacing.md, bottom: 110,
-    alignItems: 'center', gap: spacing.lg,
+    position: 'absolute',
+    right: spacing.lg,
+    bottom: 100,
+    alignItems: 'center',
+    gap: spacing.xl,
   },
-  actionBtn: { alignItems: 'center', gap: 4 },
+  actionBtn: { alignItems: 'center', gap: spacing.xs },
   actionIcon: { fontSize: 30 },
   actionCount: { color: '#fff', fontSize: 12, fontWeight: '700' },
   bottomOverlay: {
-    position: 'absolute', bottom: 30, left: spacing.md, right: 80,
+    position: 'absolute',
+    bottom: 40,
+    left: spacing.lg,
+    right: 80,
   },
   creatorRow: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: spacing.sm, marginBottom: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  followWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  creatorDot: { color: '#fff', fontWeight: '700' },
   creatorName: {
-    color: '#fff', fontWeight: '700', fontSize: 14,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 15,
+    marginBottom: spacing.xs,
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
   caption: {
-    color: '#fff', fontSize: 13, lineHeight: 19,
+    color: '#fff',
+    fontSize: 13,
+    lineHeight: 19,
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,

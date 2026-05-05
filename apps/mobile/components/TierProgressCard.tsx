@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '@/constants/theme';
 
 type TierMeta = {
   label: string;
@@ -91,7 +90,7 @@ const styles = StyleSheet.create({
   tierLabel: { fontWeight: '700', fontSize: 16, color: '#262626' },
   multi: { color: '#737373', fontSize: 13 },
   barWrap: { height: 8, backgroundColor: '#F0F0F0', borderRadius: 4, overflow: 'hidden' },
-  barFill: { height: 8, backgroundColor: colors.g800, borderRadius: 4 },
+  barFill: { height: 8, backgroundColor: '#1A3C6E', borderRadius: 4 },
   progressText: { marginTop: 6, fontSize: 12, color: '#737373' },
   hint: { marginTop: 4, fontSize: 12, color: '#10B981' },
 });

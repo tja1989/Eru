@@ -43,7 +43,7 @@ export default function StoryViewer() {
       <TouchableOpacity style={styles.close} onPress={() => router.back()}>
         <Text style={styles.closeText}>×</Text>
       </TouchableOpacity>
-      <Text style={styles.username}>{current.user.username ? `@${current.user.username}` : ''}</Text>
+      <Text style={styles.username}>{current.user.username}</Text>
       <Image source={{ uri: current.mediaUrl }} style={styles.media} resizeMode="contain" />
       <TouchableOpacity
         testID="story-skip"

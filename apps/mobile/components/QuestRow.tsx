@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '@/constants/theme';
 
 type Quest = {
   id: string;
@@ -31,7 +30,7 @@ export function QuestRow({ quest }: { quest: Quest }) {
             style={{
               ...styles.barFill,
               width: `${pct}%`,
-              backgroundColor: quest.completed ? colors.green : colors.g800,
+              backgroundColor: quest.completed ? '#10B981' : '#1A3C6E',
             }}
           />
         </View>

@@ -1,23 +1,3 @@
-// apps/mobile/app/(tabs)/profile.tsx
-// IG-fidelity profile.
-//
-// Layout:
-//   • Top bar: username (left, 18/700) · ⊕ + ☰ icons (right)
-//   • Row 1: 86px avatar (left) · stats (Posts / Followers / Following)
-//     each as a centered stack — stats are vertical, NOT in a divider row
-//   • Display name (14/600) + bio (14/400) BELOW that row, left-aligned
-//   • CTA row: "Edit Profile" + "Share Profile" (both g100 fill, equal)
-//     plus a square overflow button (▼)
-//   • Highlights row
-//   • Tab bar: ⊞ Posts | ▶ Reels | 👤 Tagged — only THREE tabs in IG
-//   • 3-column grid below
-//
-// Removed (per pure-IG spec):
-//   • Tier/points/streak badges, Creator Score card, "Create" CTA, "My
-//     Creations" + "Saved" tabs (Saved lives in Settings → Saved on IG).
-//   • If you need to keep "My Creations" and "Saved" reachable, put them
-//     in Settings — they're not tabs on profile.
-
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -30,28 +10,38 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Avatar } from '../../components/Avatar';
+import { TierBadge } from '../../components/TierBadge';
 import { MediaGrid } from '../../components/MediaGrid';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { HighlightsRow } from '../../components/HighlightsRow';
 import { HighlightEditor } from '../../components/HighlightEditor';
 import { HighlightViewer } from '../../components/HighlightViewer';
+import { CreatorScoreCard } from '../../components/CreatorScoreCard';
 import { userService, type UserProfile } from '../../services/userService';
 import { highlightsService, Highlight, HighlightItem } from '../../services/highlightsService';
 import { useAuthStore } from '../../stores/authStore';
-import { colors } from '../../constants/theme';
+import { usePointsStore } from '../../stores/pointsStore';
+import { colors, spacing, radius, tierColors } from '../../constants/theme';
+import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
 
 const GRID_TABS = [
-  { key: 'posts',  glyph: '⊞' },
-  { key: 'reels',  glyph: '▶' },
-  { key: 'tagged', glyph: '👤' },
+  { key: 'posts', icon: '⊞', label: 'Posts' },
+  { key: 'reels', icon: '▶', label: 'Reels' },
+  { key: 'created', icon: '✍️', label: 'My Creations' },
+  { key: 'saved', icon: '🔖', label: 'Saved' },
+  { key: 'tagged', icon: '👤', label: 'Tagged' },
 ] as const;
 
 type GridTab = (typeof GRID_TABS)[number]['key'];
+
+// Re-use the typed profile shape from userService so TypeScript
+// knows creatorScore is number | null (not any).
 type Profile = UserProfile;
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { balance, streak, tier: storeTier } = usePointsStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [gridTab, setGridTab] = useState<GridTab>('posts');
@@ -59,7 +49,10 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // MVP: weekly score delta — swap for server-side snapshot table when DAU grows.
+  const [scoreDelta, setScoreDelta] = useState<number | undefined>(undefined);
 
+  // Highlights state
   const [highlightsKey, setHighlightsKey] = useState(0);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorHighlight, setEditorHighlight] = useState<Highlight | undefined>(undefined);
@@ -74,6 +67,8 @@ export default function ProfileScreen() {
       const data = await userService.getProfile(userId);
       setProfile(data.user);
     } catch {
+      // API failed — leave profile null and let the render fall back to
+      // authStore values for name/username/tier.
       setProfile(null);
     }
   };
@@ -91,15 +86,31 @@ export default function ProfileScreen() {
     }
   };
 
+  // Defer initial profile + content fetch until the tab is focused. With
+  // `lazy: true` on the Tabs root the screen isn't even mounted on cold
+  // boot, but useFocusEffect is the safer pattern in case lazy ever drops.
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      Promise.all([loadProfile(), loadContent(gridTab)]).finally(() => setLoading(false));
+      Promise.all([loadProfile(), loadContent(gridTab)]).finally(() =>
+        setLoading(false),
+      );
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 
-  useEffect(() => { loadContent(gridTab); }, [gridTab]);
+  useEffect(() => {
+    loadContent(gridTab);
+  }, [gridTab]);
+
+  // Compute weekly creator-score delta from local snapshot (MVP approach).
+  // Replace with a server-side snapshot table when DAU grows.
+  // Single derived value prevents the double-fire that occurred when both
+  // profile?.creatorScore and user?.creatorScore were listed as separate deps.
+  const currentScore = profile?.creatorScore ?? user?.creatorScore ?? 50;
+  useEffect(() => {
+    getOrCreateWeeklySnapshot(Number(currentScore)).then(setScoreDelta);
+  }, [currentScore]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -120,25 +131,30 @@ export default function ProfileScreen() {
 
   const handleHighlightSaved = (_saved: Highlight | null) => {
     setEditorOpen(false);
-    setHighlightsKey((k) => k + 1);
+    setHighlightsKey((k) => k + 1); // force HighlightsRow re-fetch
   };
 
   if (loading) return <LoadingSpinner />;
 
-  const rawUsername = profile?.username ?? user?.username ?? '';
-  const username = rawUsername ? `@${rawUsername}` : '';
+  const displayTier = profile?.tier ?? storeTier ?? 'explorer';
+  const displayBalance = balance;
+  const displayStreak = streak;
+  const ringColor = tierColors[displayTier] ?? colors.g400;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Text style={styles.topUsername}>{username}</Text>
-        <View style={styles.topIcons}>
-          <TouchableOpacity onPress={() => router.push('/create' as any)} hitSlop={8}>
-            <Text style={styles.topIcon}>＋</Text>
+      {/* App header */}
+      <View style={styles.appHeader}>
+        <Text style={styles.logo}>Eru</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity onPress={() => router.push('/my-content' as any)}>
+            <Text style={styles.headerIcon}>📋</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/settings' as any)} hitSlop={8}>
-            <Text style={styles.topIcon}>☰</Text>
+          <TouchableOpacity onPress={() => router.push('/leaderboard' as any)}>
+            <Text style={styles.headerIcon}>🏆</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/settings' as any)}>
+            <Text style={styles.headerIcon}>⚙️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -146,40 +162,88 @@ export default function ProfileScreen() {
       <ScrollView
         style={styles.scroll}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.g500} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.blue} />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Header row: avatar + stats */}
-        <View style={styles.headerRow}>
-          <Avatar uri={profile?.avatarUrl ?? null} size={86} />
-          <View style={styles.stats}>
-            <Stat n={profile?.postCount ?? 0} label="posts" />
-            <Stat n={profile?.followerCount ?? 0} label="followers" />
-            <Stat n={profile?.followingCount ?? 0} label="following" />
+        {/* Profile section */}
+        <View style={styles.profileSection}>
+          {/* Avatar with tier ring */}
+          <View style={[styles.avatarRing, { borderColor: ringColor }]}>
+            <Avatar
+              uri={profile?.avatarUrl ?? null}
+              size={80}
+              tier={displayTier}
+            />
+          </View>
+
+          {/* Name + username */}
+          <Text style={styles.displayName}>{profile?.name ?? user?.name ?? 'You'}</Text>
+          <Text style={styles.username}>@{profile?.username ?? user?.username}</Text>
+
+          {/* Bio */}
+          {profile?.bio ? (
+            <Text style={styles.bio}>{profile.bio}</Text>
+          ) : null}
+
+          {/* Stats row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {(profile?.postCount ?? 0).toLocaleString()}
+              </Text>
+              <Text style={styles.statLabel}>Posts</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {(profile?.followerCount ?? 0).toLocaleString()}
+              </Text>
+              <Text style={styles.statLabel}>Followers</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {(profile?.followingCount ?? 0).toLocaleString()}
+              </Text>
+              <Text style={styles.statLabel}>Following</Text>
+            </View>
+          </View>
+
+          {/* Badges row */}
+          <View style={styles.badgesRow}>
+            <TierBadge tier={displayTier} />
+            <View style={styles.pointsBadge}>
+              <Text style={styles.pointsBadgeText}>⭐ {displayBalance.toLocaleString()} pts</Text>
+            </View>
+            {displayStreak > 0 && (
+              <View style={styles.streakBadge}>
+                <Text style={styles.streakBadgeText}>🔥 {displayStreak}d streak</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Creator Score card */}
+          <CreatorScoreCard
+            score={Number(currentScore)}
+            deltaThisWeek={scoreDelta}
+          />
+
+          {/* Edit / Create buttons */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile' as any)}>
+              <Text style={styles.editBtnText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.createBtn}
+              onPress={() => router.push('/create' as any)}
+            >
+              <Text style={styles.createBtnText}>+ Create</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Display name + bio */}
-        <View style={styles.bioBlock}>
-          <Text style={styles.displayName}>{profile?.name ?? user?.name ?? ''}</Text>
-          {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
-        </View>
-
-        {/* CTA row */}
-        <View style={styles.ctaRow}>
-          <TouchableOpacity style={styles.cta} onPress={() => router.push('/edit-profile' as any)}>
-            <Text style={styles.ctaText}>Edit profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cta}>
-            <Text style={styles.ctaText}>Share profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.ctaIcon}>
-            <Text style={styles.ctaIconText}>⌄</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Highlights */}
+        {/* Highlights row */}
         <HighlightsRow
           key={highlightsKey}
           userId={userId}
@@ -188,7 +252,7 @@ export default function ProfileScreen() {
           onAddNew={() => { setEditorHighlight(undefined); setEditorOpen(true); }}
         />
 
-        {/* Tab bar */}
+        {/* Grid tabs */}
         <View style={styles.gridTabBar}>
           {GRID_TABS.map((tab) => (
             <TouchableOpacity
@@ -196,32 +260,35 @@ export default function ProfileScreen() {
               style={[styles.gridTabBtn, gridTab === tab.key && styles.gridTabBtnActive]}
               onPress={() => setGridTab(tab.key)}
             >
-              <Text style={[styles.gridTabIcon, gridTab !== tab.key && { color: colors.g400 }]}>
-                {tab.glyph}
-              </Text>
+              <Text style={styles.gridTabIcon}>{tab.icon}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Grid */}
+        {/* Grid content */}
         {contentLoading ? (
-          <View style={styles.contentLoader}><LoadingSpinner /></View>
+          <View style={styles.contentLoader}>
+            <LoadingSpinner />
+          </View>
         ) : gridItems.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📷</Text>
-            <Text style={styles.emptyTitle}>No Posts Yet</Text>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyText}>No content here yet</Text>
           </View>
         ) : (
           <MediaGrid items={gridItems} />
         )}
       </ScrollView>
 
+      {/* Highlight Editor modal */}
       <HighlightEditor
         visible={editorOpen}
         onClose={() => setEditorOpen(false)}
         existing={editorHighlight}
         onSaved={handleHighlightSaved}
       />
+
+      {/* Highlight Viewer modal */}
       {viewerHighlight && (
         <HighlightViewer
           visible={viewerHighlight !== null}
@@ -234,83 +301,138 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ n, label }: { n: number; label: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statN}>{n.toLocaleString()}</Text>
-      <Text style={styles.statL}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  topBar: {
+  safe: { flex: 1, backgroundColor: colors.card },
+  appHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g100,
   },
-  topUsername: { fontSize: 18, fontWeight: '700', color: colors.g900 },
-  topIcons: { flexDirection: 'row', gap: 18 },
-  topIcon: { fontSize: 26, color: colors.g900, fontWeight: '300' },
-
+  logo: {
+    fontSize: 22,
+    fontWeight: '800',
+    fontStyle: 'italic',
+    color: colors.g800,
+    fontFamily: 'Georgia',
+  },
+  headerIcons: { flexDirection: 'row', gap: spacing.lg },
+  headerIcon: { fontSize: 22 },
   scroll: { flex: 1 },
-
-  headerRow: {
+  profileSection: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
+  avatarRing: {
+    borderWidth: 3,
+    borderRadius: 56,
+    padding: 3,
+    marginBottom: spacing.md,
+  },
+  displayName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.g900,
+    marginBottom: 2,
+  },
+  username: {
+    fontSize: 14,
+    color: colors.g500,
+    marginBottom: spacing.sm,
+  },
+  bio: {
+    fontSize: 13,
+    color: colors.g700,
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    gap: 28,
+    marginVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  stats: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
-  stat: { alignItems: 'center' },
-  statN: { fontSize: 17, fontWeight: '700', color: colors.g900 },
-  statL: { fontSize: 13, color: colors.g800, marginTop: 1 },
-
-  bioBlock: { paddingHorizontal: 16, paddingTop: 12 },
-  displayName: { fontSize: 14, fontWeight: '600', color: colors.g900 },
-  bio: { fontSize: 14, color: colors.g800, lineHeight: 19, marginTop: 2 },
-
-  ctaRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingTop: 14 },
-  cta: {
-    flex: 1,
-    backgroundColor: colors.g100,
-    borderRadius: 8,
-    paddingVertical: 7,
-    alignItems: 'center',
-  },
-  ctaText: { fontSize: 14, fontWeight: '600', color: colors.g900 },
-  ctaIcon: {
-    width: 34,
-    backgroundColor: colors.g100,
-    borderRadius: 8,
-    alignItems: 'center',
+  statItem: { alignItems: 'center', flex: 1 },
+  statNumber: { fontSize: 18, fontWeight: '800', color: colors.g900 },
+  statLabel: { fontSize: 12, color: colors.g500, marginTop: 2 },
+  statDivider: { width: 1, height: 28, backgroundColor: colors.g200 },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
-  ctaIconText: { fontSize: 14, fontWeight: '700', color: colors.g900 },
-
+  pointsBadge: {
+    backgroundColor: 'rgba(16,185,129,0.1)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(16,185,129,0.3)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 3,
+  },
+  pointsBadgeText: { fontSize: 11, fontWeight: '700', color: colors.green },
+  streakBadge: {
+    backgroundColor: 'rgba(232,121,43,0.1)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(232,121,43,0.3)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 3,
+  },
+  streakBadgeText: { fontSize: 11, fontWeight: '700', color: colors.orange },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+    paddingHorizontal: spacing.sm,
+  },
+  editBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.g300,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  editBtnText: { fontSize: 14, fontWeight: '700', color: colors.g800 },
+  createBtn: {
+    flex: 1,
+    backgroundColor: colors.orange,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  createBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
   gridTabBar: {
     flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 0.5,
     borderTopColor: colors.g200,
-    marginTop: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.g200,
   },
   gridTabBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'transparent',
-    marginTop: -StyleSheet.hairlineWidth,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-  gridTabBtnActive: { borderTopColor: colors.g900 },
-  gridTabIcon: { fontSize: 22, color: colors.g900 },
-
+  gridTabBtnActive: { borderBottomColor: colors.g900 },
+  gridTabIcon: { fontSize: 20 },
   contentLoader: { height: 200, justifyContent: 'center', alignItems: 'center' },
-  emptyState: { alignItems: 'center', paddingTop: 60, gap: 8 },
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: spacing.md,
+  },
   emptyIcon: { fontSize: 40 },
-  emptyTitle: { fontSize: 28, fontWeight: '700', color: colors.g900 },
+  emptyText: { fontSize: 15, color: colors.g500 },
 });

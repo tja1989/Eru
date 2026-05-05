@@ -8,28 +8,18 @@ export const authService = {
   // Silent first-time registration fired by the OTP screen the moment a
   // Firebase Phone Auth verification succeeds. The defaults keep the user
   // from having to fill out a separate form (the PWA flow has no such form).
-  // Name and username can be edited later in Settings.
-  //
-  // Username is derived from the Firebase UID (a guaranteed-unique server-
-  // assigned token) instead of the phone number. The previous "user_<10
-  // phone digits>" format leaked the user's phone number publicly anywhere
-  // their handle appeared (post header, comments, profile URL) — which is
-  // both a privacy regression and visually unfriendly. Firebase UIDs are
-  // already collision-free and contain no PII, so taking the first 10
-  // alphanumeric characters gives us a clean, unique handle.
-  //
-  // The server's /auth/register handler already treats a phone collision as
-  // "adopt the existing row" (see apps/api/src/routes/auth.ts), which means
-  // a returning user who half-registered earlier still gets reunited with
-  // their data — and now they'll be re-keyed to the cleaner UID-derived
-  // handle on first sign-in after this change.
+  // name/username can be edited later in Settings; username is derived from
+  // the verified phone digits so it's unique by construction. The server's
+  // /auth/register handler already treats a phone collision as "adopt the
+  // existing row" (see apps/api/src/routes/auth.ts), which means a returning
+  // user who half-registered earlier still gets reunited with their data.
   autoRegister: (firebaseUid: string, phone: string) => {
-    const handle = firebaseUid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toLowerCase();
+    const digits = phone.replace(/\D/g, '').slice(-10);
     return api.post('/auth/register', {
       firebaseUid,
       phone,
       name: 'New User',
-      username: `user_${handle}`,
+      username: `user_${digits}`,
     }).then((r) => r.data);
   },
 
