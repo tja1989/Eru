@@ -18,6 +18,7 @@
     "db:fix-reel-urls": "tsx src/scripts/fix-reel-urls.ts",
     "db:backfill-transcodes": "tsx src/scripts/backfill-transcodes.ts",
     "db:backfill-hls": "tsx src/scripts/backfill-hls.ts",
+    "db:backfill-handles": "tsx src/scripts/backfill-handles.ts",
     "db:pincodes": "tsx src/scripts/download-pincodes.ts"
   },
   "dependencies": {
