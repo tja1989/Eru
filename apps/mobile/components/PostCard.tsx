@@ -1,24 +1,3 @@
-// apps/mobile/components/PostCard.tsx
-// IG-fidelity feed post.
-//
-// Layout (top to bottom):
-//   1. Header: 32px avatar + username (14, 600) · "·" · relative time
-//      — single row, NO badges/UGC/sponsor stacked underneath. Sponsored
-//      shows ONLY as the secondary line "Sponsored". Verified shows as a
-//      tiny blue tick after the username. The "•••" sits on the right.
-//   2. Square media (1:1 for photo/carousel/video, 4:5 for reels)
-//   3. Action row: heart / comment / share on the LEFT, save on the RIGHT
-//      — all icons are stroke-style at 26pt, IG black (g800) by default.
-//      Liked → IG red filled.
-//   4. Likes count (13/600 g800)
-//   5. Caption: bold username inline + caption text
-//   6. "View all N comments" (13 g500)
-//   7. Timestamp (10/uppercase g400)
-//
-// Behavior preserved 1:1 from the source file (likes, save, dislike,
-// dual-write to API, video viewability gating, points earn). Only the
-// VISUAL layer changes.
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -26,8 +5,14 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Avatar } from './Avatar';
 import { ShareButton } from './ShareButton';
 import { PostActionSheet } from './PostActionSheet';
+import { UgcBadge } from './UgcBadge';
+import { ModerationBadge } from './ModerationBadge';
+import { PostPointsBadge } from './PostPointsBadge';
+import { RelativeTime } from './RelativeTime';
+import { SponsoredCtaBar } from './SponsoredCtaBar';
 import { CarouselDots } from './CarouselDots';
-import { colors } from '../constants/theme';
+import { ReelTypeBadge } from './ReelTypeBadge';
+import { colors, spacing } from '../constants/theme';
 import { contentService } from '../services/contentService';
 import { usePointsStore } from '../stores/pointsStore';
 import { useAuthStore } from '../stores/authStore';
@@ -40,26 +25,21 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface PostCardProps {
   post: any;
+  // Optional: true when this card is the one currently in view (FlatList
+  // viewability tracking). Only the active card's video plays; others pause
+  // to save battery/bandwidth. Defaults to true for callers that don't wire
+  // viewability (e.g. the detail page).
   isActive?: boolean;
+  // Optional: fires after the author confirms a delete and the API call
+  // succeeds. Parents (feed/profile screens) can use this to remove the card
+  // from their list. Not wired into any screen yet — that's a later task.
   onDeleted?: (id: string) => void;
 }
 
-// Compact "2h", "3d", "5w" relative time — matches IG.
-function relTime(iso?: string): string {
-  if (!iso) return '';
-  const d = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (d < 60) return `${Math.max(1, Math.floor(d))}s`;
-  if (d < 3600) return `${Math.floor(d / 60)}m`;
-  if (d < 86400) return `${Math.floor(d / 3600)}h`;
-  if (d < 604800) return `${Math.floor(d / 86400)}d`;
-  return `${Math.floor(d / 604800)}w`;
-}
-
-// Long-form timestamp under caption — IG style "MAY 5".
-function longTime(iso?: string): string {
-  if (!iso) return '';
-  const date = new Date(iso);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+function formatDuration(s: number): string {
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
@@ -68,10 +48,14 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
   const [saved, setSaved] = useState(post.isSaved ?? false);
+  const [disliked, setDisliked] = useState(post.isDisliked ?? false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [carouselIndex] = useState(0);
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
 
+  // Resolve mediaKind from derived field when present, falling back to best
+  // inference from the legacy `type` + first media. This lets the feed pass
+  // `mediaKind` directly (P6 derived) while keeping older callers working.
   const firstMedia = post.media?.[0];
   const mediaKind: string =
     post.mediaKind ??
@@ -93,21 +77,30 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   const videoUrl = isVideo ? pickVideoUrl(firstMedia) ?? null : null;
   const imageUrl = firstMedia?.thumbnailUrl || firstMedia?.originalUrl;
   const isReel = mediaKind === 'reel';
-  const mediaAspect = isReel ? 4 / 5 : 1; // IG square for photos, 4:5 for reels
+  const mediaAspect = isReel ? 4 / 5 : 1;
   const mediaHeight = SCREEN_WIDTH / mediaAspect;
 
+  // Always call useVideoPlayer (Rules of Hooks). Pass null source when there
+  // is no video — the player exists but has nothing to play.
   const player = useVideoPlayer(videoUrl ? { uri: videoUrl } : null, (p) => {
     p.loop = true;
+    // Feed videos autoplay MUTED (Instagram behavior). Full audio happens
+    // when the user taps into the Reels viewer.
     p.muted = true;
     p.play();
   });
 
   useEffect(() => {
     if (!videoUrl) return;
-    if (isActive) player.play();
-    else player.pause();
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+    }
   }, [isActive, videoUrl, player]);
 
+  // Credit view_sponsored +2 once after 2s of continuous visibility on a
+  // sponsored post. Dedupe is inside useImpressionTimer (once per mount).
   useImpressionTimer({
     enabled: !!post.isSponsored && isActive,
     thresholdMs: 2000,
@@ -125,6 +118,19 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
     }
   };
 
+  const handleDislike = async () => {
+    if (disliked) {
+      setDisliked(false);
+      await contentService.undislike(post.id).catch(() => { setDisliked(true); });
+    } else {
+      setDisliked(true);
+      await contentService.dislike(post.id).catch((err: any) => {
+        if (err?.response?.status === 409) return;
+        setDisliked(false);
+      });
+    }
+  };
+
   const handleSave = async () => {
     if (saved) {
       setSaved(false);
@@ -139,21 +145,25 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete this post?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await contentService.delete(post.id);
-            onDeleted?.(post.id);
-          } catch {
-            Alert.alert('Could not delete', 'Please try again.');
-          }
+    Alert.alert(
+      'Delete this post?',
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await contentService.delete(post.id);
+              onDeleted?.(post.id);
+            } catch {
+              Alert.alert('Could not delete', 'Please try again.');
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const openDetail = () => {
@@ -170,54 +180,82 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
     }
   };
 
+  const claimOffer = () => {
+    earn('click_sponsored_cta', post.id);
+    if (post.sponsorBusinessId) {
+      router.push({ pathname: '/business/[id]', params: { id: post.sponsorBusinessId } });
+    }
+  };
+
+  // Author label: business name when sponsored, else the creator's username.
   const authorLabel: string = post.isSponsored && post.sponsorName ? post.sponsorName : post.user?.username ?? '';
   const isSponsoredRow = !!post.isSponsored && !!post.sponsorName;
 
   return (
     <View style={styles.post}>
-      {/* HEADER — single row, IG-style */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.userRow}
           onPress={isSponsoredRow ? openSponsor : undefined}
           activeOpacity={isSponsoredRow ? 0.7 : 1}
         >
-          <Avatar uri={post.sponsorAvatarUrl || post.user?.avatarUrl} size={32} />
-          <View style={{ flex: 1 }}>
+          <Avatar
+            uri={post.sponsorAvatarUrl || post.user?.avatarUrl}
+            size={34}
+            tier={post.user?.tier}
+          />
+          <View>
             <View style={styles.nameRow}>
-              <Text style={styles.username} numberOfLines={1}>{authorLabel}</Text>
-              {post.user?.isVerified && !isSponsoredRow ? (
+              <Text style={styles.username}>{authorLabel}</Text>
+              {isSponsoredRow ? (
+                <Text style={styles.sponsored}> • Sponsored</Text>
+              ) : post.user?.isVerified ? (
                 <View style={styles.verified}>
-                  <Text style={styles.verifiedTick}>✓</Text>
+                  <Text style={{ fontSize: 8, color: '#fff' }}>✓</Text>
                 </View>
               ) : null}
-              {!isSponsoredRow && post.createdAt ? (
-                <Text style={styles.dim}> • {relTime(post.createdAt)}</Text>
+              {post.createdAt ? (
+                <>
+                  <Text style={styles.dot}> • </Text>
+                  <RelativeTime iso={post.createdAt} />
+                </>
               ) : null}
             </View>
-            {isSponsoredRow ? (
-              <Text style={styles.sponsoredLine}>Sponsored</Text>
-            ) : post.locationLabel ? (
+            {post.locationLabel ? (
               <Text style={styles.location}>{post.locationLabel}</Text>
+            ) : null}
+            {(post.ugcBadge && !isSponsoredRow) || post.moderationBadge ? (
+              <View style={styles.badgeRow}>
+                <UgcBadge variant={isSponsoredRow ? null : post.ugcBadge ?? null} />
+                <ModerationBadge variant={post.moderationBadge ?? null} />
+              </View>
             ) : null}
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => setSheetOpen(true)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.more}>⋯</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {post.pointsEarnedOnView ? (
+            <PostPointsBadge points={post.pointsEarnedOnView} />
+          ) : null}
+          <TouchableOpacity
+            onPress={() => setSheetOpen(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.more}>•••</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* MEDIA */}
-      {firstMedia ? (
+      {firstMedia && (
         <View style={[styles.mediaWrap, { height: mediaHeight }]}>
           {videoUrl ? (
             <>
               {imageUrl ? (
-                <Image source={{ uri: imageUrl }} style={[styles.image, { height: mediaHeight }]} resizeMode="cover" />
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={[styles.image, { height: mediaHeight }]}
+                  resizeMode="cover"
+                />
               ) : null}
               <VideoView
                 style={[styles.videoOverlay, { height: mediaHeight }]}
@@ -225,29 +263,62 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
                 contentFit="cover"
                 nativeControls={false}
               />
+              <View style={styles.playBtn} accessibilityLabel="play">
+                <Text style={styles.playTri}>▶</Text>
+              </View>
+              {isReel ? (
+                <View style={styles.reelBadgeWrap}>
+                  <ReelTypeBadge durationSeconds={post.durationSeconds ?? firstMedia.durationSeconds ?? null} />
+                </View>
+              ) : post.durationSeconds ? (
+                <View style={styles.durationBadge}>
+                  <Text style={styles.durationText}>{formatDuration(post.durationSeconds)}</Text>
+                </View>
+              ) : null}
             </>
           ) : (
-            <Image source={{ uri: imageUrl }} style={[styles.image, { height: mediaHeight }]} resizeMode="cover" />
+            <Image
+              source={{ uri: imageUrl }}
+              style={[styles.image, { height: mediaHeight }]}
+              resizeMode="cover"
+            />
           )}
-          <TouchableOpacity activeOpacity={0.95} onPress={openDetail} style={styles.tapOverlay} />
+
+          {post.isSponsored && post.offerUrl ? (
+            <View style={styles.ctaBarWrap}>
+              <SponsoredCtaBar onPress={claimOffer} />
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={openDetail}
+            style={styles.tapOverlay}
+          />
         </View>
-      ) : null}
+      )}
 
       {mediaKind === 'carousel' && post.carouselCount ? (
         <CarouselDots count={post.carouselCount} activeIndex={carouselIndex} />
       ) : null}
 
-      {/* ACTION ROW — IG icons, glyph-based for portability */}
       <View style={styles.actions}>
         <View style={styles.actionsLeft}>
-          <TouchableOpacity onPress={handleLike} hitSlop={8}>
-            <Text style={[styles.icon, liked && styles.iconLiked]}>
-              {liked ? '♥' : '♡'}
+          <TouchableOpacity onPress={handleLike}>
+            <Text style={{ fontSize: 26 }}>{liked ? '❤️' : '🤍'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDislike}
+            accessibilityLabel="Not for me"
+            accessibilityHint="Not for me — helps us improve your feed and affects creator score"
+            accessibilityState={{ selected: disliked }}
+          >
+            <Text style={{ fontSize: 26, opacity: disliked ? 1 : 0.55, color: disliked ? '#E53E3E' : '#737373' }}>
+              👎
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={openDetail} hitSlop={8}>
-            <Text style={styles.icon}>♡</Text>
-            {/* placeholder — your existing comment icon */}
+          <TouchableOpacity onPress={openDetail}>
+            <Text style={{ fontSize: 26 }}>💬</Text>
           </TouchableOpacity>
           <ShareButton
             contentId={post.id}
@@ -255,17 +326,16 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
             caption={post.text ?? ''}
           />
         </View>
-        <TouchableOpacity onPress={handleSave} hitSlop={8}>
-          <Text style={[styles.icon, saved && { color: colors.g800 }]}>
-            {saved ? '▣' : '▢'}
-          </Text>
+        <TouchableOpacity
+          onPress={handleSave}
+          accessibilityLabel="Save post"
+          accessibilityState={{ selected: saved }}
+        >
+          <Text style={{ fontSize: 26, color: saved ? '#0095F6' : '#737373' }}>🔖</Text>
         </TouchableOpacity>
       </View>
 
-      {/* LIKES */}
       <Text style={styles.likes}>{likeCount.toLocaleString()} likes</Text>
-
-      {/* CAPTION — username inline, IG style */}
       {post.type === 'poll' && post.pollOptions ? (
         <PollCard
           contentId={post.id}
@@ -274,29 +344,23 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
           userVote={post.userVote ?? null}
         />
       ) : post.type === 'thread' && post.threadParentId === null ? (
-        post.parts?.length > 0 ? (
+        post.parts && post.parts.length > 0 ? (
           <ThreadView parts={post.parts} />
         ) : (
-          <TouchableOpacity onPress={openDetail} style={styles.captionWrap}>
-            <Text style={styles.viewThreadText}>View thread</Text>
+          <TouchableOpacity onPress={(e) => { e.stopPropagation?.(); openDetail(); }} style={styles.viewThreadBtn}>
+            <Text style={styles.viewThreadText}>View thread →</Text>
           </TouchableOpacity>
         )
-      ) : post.text ? (
-        <Text style={styles.captionWrap} numberOfLines={2} ellipsizeMode="tail">
-          <Text style={styles.captionUser}>{post.user?.username ?? ''}</Text>
-          <Text style={styles.caption}> {post.text}</Text>
-        </Text>
-      ) : null}
-
+      ) : (
+        post.text && (
+          <Text style={styles.caption}>{post.text}</Text>
+        )
+      )}
       {post.commentCount > 0 && (
         <TouchableOpacity onPress={openDetail}>
           <Text style={styles.viewComments}>View all {post.commentCount} comments</Text>
         </TouchableOpacity>
       )}
-
-      {post.createdAt ? (
-        <Text style={styles.timestamp}>{longTime(post.createdAt)}</Text>
-      ) : null}
 
       <PostActionSheet
         visible={sheetOpen}
@@ -311,63 +375,71 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
 }
 
 const styles = StyleSheet.create({
-  post: { backgroundColor: '#fff', paddingBottom: 12 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
+  post: { backgroundColor: '#fff', borderBottomWidth: 0.5, borderBottomColor: colors.g100 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.md },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center' },
-  username: { fontSize: 14, fontWeight: '600', color: colors.g800 },
-  dim: { fontSize: 14, color: colors.g500 },
-  sponsoredLine: { fontSize: 12, color: colors.g500, marginTop: 1 },
-  location: { fontSize: 12, color: colors.g700, marginTop: 1 },
-  verified: {
-    width: 14, height: 14, borderRadius: 7,
-    backgroundColor: colors.blue,
-    alignItems: 'center', justifyContent: 'center',
-    marginLeft: 4,
-  },
-  verifiedTick: { fontSize: 9, color: '#fff', fontWeight: '800' },
-  more: { fontSize: 22, color: colors.g800, lineHeight: 22 },
-
-  mediaWrap: { position: 'relative', width: SCREEN_WIDTH, backgroundColor: colors.g100 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  username: { fontSize: 13, fontWeight: '600', color: colors.g800 },
+  sponsored: { fontSize: 11, color: colors.g400, fontWeight: '500' },
+  dot: { fontSize: 11, color: colors.g400 },
+  location: { fontSize: 11, color: colors.g500, marginTop: 1 },
+  badgeRow: { flexDirection: 'row', gap: 4, marginTop: 3 },
+  verified: { width: 13, height: 13, borderRadius: 6.5, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
+  more: { fontSize: 16, color: colors.g800, letterSpacing: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mediaWrap: { position: 'relative', width: SCREEN_WIDTH },
   image: { width: SCREEN_WIDTH, backgroundColor: colors.g100 },
-  videoOverlay: { position: 'absolute', top: 0, left: 0, width: SCREEN_WIDTH, zIndex: 2, elevation: 2 },
-  tapOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5, elevation: 5 },
-
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    zIndex: 2,
+    elevation: 2,
+  },
+  playBtn: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -24,
+    marginLeft: -24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
+    justifyContent: 'center',
+    zIndex: 3,
   },
-  actionsLeft: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-  icon: { fontSize: 26, color: colors.g800, lineHeight: 28 },
-  iconLiked: { color: colors.red },
-
-  likes: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.g800,
+  playTri: { color: '#fff', fontSize: 20, marginLeft: 3 },
+  durationBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 3,
   },
-  captionWrap: { paddingHorizontal: 12, paddingTop: 4 },
-  captionUser: { fontSize: 14, fontWeight: '600', color: colors.g800 },
-  caption: { fontSize: 14, color: colors.g800, lineHeight: 19 },
-  viewComments: { paddingHorizontal: 12, paddingTop: 4, fontSize: 14, color: colors.g500 },
-  viewThreadText: { fontSize: 14, color: colors.g500 },
-  timestamp: {
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    fontSize: 10,
-    letterSpacing: 0.3,
-    color: colors.g400,
+  durationText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  reelBadgeWrap: { position: 'absolute', top: 12, left: 12, zIndex: 3 },
+  ctaBarWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 4 },
+  tapOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    elevation: 5,
   },
+  actions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 6 },
+  actionsLeft: { flexDirection: 'row', gap: 14 },
+  likes: { paddingHorizontal: spacing.md, fontSize: 13, fontWeight: '600', color: colors.g800 },
+  caption: { paddingHorizontal: spacing.md, paddingVertical: 4, fontSize: 13, color: colors.g800, lineHeight: 19 },
+  captionUser: { fontWeight: '600' },
+  viewComments: { paddingHorizontal: spacing.md, paddingBottom: 8, fontSize: 13, color: colors.g400 },
+  viewThreadBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  viewThreadText: { fontSize: 13, color: colors.blue, fontWeight: '600' },
 });

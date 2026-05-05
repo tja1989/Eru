@@ -1,13 +1,6 @@
-// apps/mobile/components/FollowButton.tsx
-// IG-fidelity Follow button.
-//   • Not following → solid IG-blue background, white text, "Follow"
-//   • Following     → light gray fill (g100), black text, "Following"
-//   • Both states use 8px radius (IG uses ~6–8px on rectangular buttons)
-
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { userService } from '@/services/userService';
-import { colors } from '@/constants/theme';
 
 type Props = {
   targetUserId: string;
@@ -22,15 +15,18 @@ export function FollowButton({ targetUserId, initiallyFollowing, onChange, size 
 
   async function handlePress() {
     if (busy) return;
-    const next = !following;
-    setFollowing(next);
+    const nextFollowing = !following;
+    setFollowing(nextFollowing);
     setBusy(true);
     try {
-      if (next) await userService.follow(targetUserId);
-      else await userService.unfollow(targetUserId);
-      onChange?.(next);
+      if (nextFollowing) {
+        await userService.follow(targetUserId);
+      } else {
+        await userService.unfollow(targetUserId);
+      }
+      onChange?.(nextFollowing);
     } catch {
-      setFollowing(!next);
+      setFollowing(!nextFollowing);
     } finally {
       setBusy(false);
     }
@@ -48,7 +44,7 @@ export function FollowButton({ targetUserId, initiallyFollowing, onChange, size 
       ]}
     >
       {busy ? (
-        <ActivityIndicator size="small" color={following ? colors.g800 : '#fff'} />
+        <ActivityIndicator size="small" color={following ? '#1A3C6E' : '#fff'} />
       ) : (
         <Text style={[styles.text, following ? styles.textOutlined : styles.textFilled]}>
           {following ? 'Following' : 'Follow'}
@@ -60,17 +56,17 @@ export function FollowButton({ targetUserId, initiallyFollowing, onChange, size 
 
 const styles = StyleSheet.create({
   base: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 96,
+    minWidth: 90,
   },
-  sm: { paddingHorizontal: 12, paddingVertical: 5, minWidth: 76, borderRadius: 6 },
-  filled: { backgroundColor: colors.blue },
-  outlined: { backgroundColor: colors.g100 },
-  text: { fontWeight: '600', fontSize: 14 },
+  sm: { paddingHorizontal: 10, paddingVertical: 5, minWidth: 70 },
+  filled: { backgroundColor: '#1A3C6E' },
+  outlined: { borderWidth: 1, borderColor: '#1A3C6E', backgroundColor: 'transparent' },
+  text: { fontWeight: '700', fontSize: 13 },
   textFilled: { color: '#fff' },
-  textOutlined: { color: colors.g800 },
+  textOutlined: { color: '#1A3C6E' },
 });

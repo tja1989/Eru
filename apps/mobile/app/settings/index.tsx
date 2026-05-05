@@ -239,48 +239,6 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Your activity — entry point for routes that used to be Profile tabs.
-            Per the IG visual rework, Saved / My creations / Liked / Recent
-            move from Profile sub-tabs to a top-of-Settings section. */}
-        <Text style={styles.sectionHeader}>Your activity</Text>
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.activityRow}
-            onPress={() => router.push({ pathname: '/my-content', params: { filter: 'saved' } } as any)}
-          >
-            <Text style={styles.activityIcon}>🔖</Text>
-            <Text style={styles.activityLabel}>Saved</Text>
-            <Text style={styles.activityCaret}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.activityRow}
-            onPress={() => router.push('/my-content' as any)}
-          >
-            <Text style={styles.activityIcon}>📐</Text>
-            <Text style={styles.activityLabel}>My creations</Text>
-            <Text style={styles.activityCaret}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.activityRow}
-            onPress={() => router.push({ pathname: '/my-content', params: { filter: 'liked' } } as any)}
-          >
-            <Text style={styles.activityIcon}>❤️</Text>
-            <Text style={styles.activityLabel}>Liked</Text>
-            <Text style={styles.activityCaret}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.activityRow}
-            onPress={() => router.push({ pathname: '/my-content', params: { filter: 'recent' } } as any)}
-          >
-            <Text style={styles.activityIcon}>🕘</Text>
-            <Text style={styles.activityLabel}>Recent</Text>
-            <Text style={styles.activityCaret}>›</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Profile section */}
         <Text style={styles.sectionHeader}>Profile</Text>
         <View style={styles.section}>
@@ -914,17 +872,4 @@ const styles = StyleSheet.create({
   pickerTitle: { fontSize: 15, fontWeight: '600', color: colors.g900 },
   pickerCancelText: { fontSize: 15, color: colors.g500 },
   pickerDoneText: { fontSize: 15, fontWeight: '700', color: colors.navy },
-
-  // "Your activity" section rows — IG-styled menu items, distinct from the
-  // form-style fieldRows used by the rest of Settings.
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 14,
-    gap: spacing.md,
-  },
-  activityIcon: { fontSize: 18, width: 24, textAlign: 'center' },
-  activityLabel: { flex: 1, fontSize: 15, color: colors.g900 },
-  activityCaret: { fontSize: 22, color: colors.g400 },
 });
