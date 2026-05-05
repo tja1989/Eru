@@ -1,25 +1,37 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Text, FlatList, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+// apps/mobile/app/messages/index.tsx — IG Direct inbox
+//
+// Header: "← username    ✏️"  (back arrow, owner handle as title, "new message" pencil)
+// Search box (grey pill, "Ask Meta AI or search" → "Search")
+// Optional "Requests" row (count badge)
+// Conversation list — flat rows, no filter pills
+//
+// Removed: All / Business / Creators / Friends pill bar. IG inbox doesn't filter.
+// If filtering is genuinely needed, surface it under a "..." menu — not as
+// always-visible chrome.
+
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { messagesService, ConversationSummary } from '@/services/messagesService';
 import { ConversationRow } from '@/components/ConversationRow';
+import { useAuthStore } from '@/stores/authStore';
 import { colors, spacing, radius } from '@/constants/theme';
-
-type Filter = 'all' | 'business' | 'creators' | 'friends';
-
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'business', label: 'Business' },
-  { key: 'creators', label: 'Creators' },
-  { key: 'friends', label: 'Friends' },
-];
 
 export default function MessagesListScreen() {
   const router = useRouter();
+  const me = useAuthStore((s) => s.user);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     messagesService
@@ -31,70 +43,120 @@ export default function MessagesListScreen() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    if (filter === 'all') return conversations;
-    if (filter === 'business') return conversations.filter((c: any) => c.otherUser?.kind === 'business');
-    if (filter === 'creators') return conversations.filter((c: any) => c.otherUser?.isVerified === true);
-    if (filter === 'friends') return conversations.filter((c: any) => c.otherUser?.isFollowing === true);
-    return conversations;
-  }, [conversations, filter]);
+  const filtered = query
+    ? conversations.filter((c: any) => {
+        const u = c.otherUser;
+        const text = `${u?.username ?? ''} ${u?.name ?? ''}`.toLowerCase();
+        return text.includes(query.toLowerCase());
+      })
+    : conversations;
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
+  const requestCount = (conversations as any[]).filter((c) => c.isRequest).length;
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <Text style={styles.title}>Messages</Text>
+      {/* IG header: back arrow + owner handle as title + new-message pencil */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
+          <Text style={styles.back}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.title} numberOfLines={1}>{me?.username ?? 'Messages'}</Text>
+        <TouchableOpacity style={styles.headerBtn} accessibilityLabel="New message">
+          <Text style={styles.newMessage}>✏️</Text>
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.tabs}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
-      >
-        {FILTERS.map((f) => {
-          const selected = filter === f.key;
-          return (
-            <TouchableOpacity
-              key={f.key}
-              testID={`msg-tab-${f.key}`}
-              accessibilityState={{ selected }}
-              onPress={() => setFilter(f.key)}
-              style={[styles.tab, selected && styles.tabActive]}
-            >
-              <Text style={[styles.tabText, selected && styles.tabTextActive]}>{f.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      <FlatList
-        data={filtered}
-        keyExtractor={(c) => c.id}
-        renderItem={({ item }) => (
-          <ConversationRow
-            conversation={item}
-            onPress={() => router.push(`/messages/${item.id}`)}
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search"
+            placeholderTextColor={colors.g500}
+            value={query}
+            onChangeText={setQuery}
+            autoCapitalize="none"
           />
-        )}
-        ListEmptyComponent={<Text style={styles.empty}>No conversations yet</Text>}
-      />
+        </View>
+      </View>
+
+      {loading ? (
+        <ActivityIndicator style={{ flex: 1 }} color={colors.g500} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(c) => c.id}
+          ListHeaderComponent={
+            requestCount > 0 ? (
+              <TouchableOpacity style={styles.requestsRow} accessibilityLabel="Message requests">
+                <View style={styles.requestsIcon}>
+                  <Text style={{ fontSize: 18 }}>✉️</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.requestsTitle}>Requests</Text>
+                  <Text style={styles.requestsSub}>{requestCount} new</Text>
+                </View>
+              </TouchableOpacity>
+            ) : null
+          }
+          renderItem={({ item }) => (
+            <ConversationRow
+              conversation={item}
+              onPress={() => router.push(`/messages/${item.id}`)}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>Your messages</Text>
+              <Text style={styles.emptySub}>Send a message to start a chat.</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: '700', padding: 16, color: colors.g900 },
-  tabs: { paddingVertical: spacing.sm, flexGrow: 0, borderBottomWidth: 0.5, borderBottomColor: colors.g100 },
-  tab: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.g300,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    height: 44,
   },
-  tabActive: { backgroundColor: colors.g800, borderColor: colors.g800 },
-  tabText: { color: colors.g600, fontWeight: '600', fontSize: 12 },
-  tabTextActive: { color: '#fff' },
-  empty: { textAlign: 'center', padding: 32, color: colors.g500 },
+  headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  back: { fontSize: 26, color: colors.g900 },
+  title: { flex: 1, fontSize: 17, fontWeight: '700', color: colors.g900 },
+  newMessage: { fontSize: 20 },
+  searchWrap: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.g100,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 9,
+    gap: spacing.sm,
+  },
+  searchIcon: { fontSize: 14, opacity: 0.5 },
+  searchInput: { flex: 1, fontSize: 14, color: colors.g900 },
+  requestsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  requestsIcon: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: colors.g100,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  requestsTitle: { fontSize: 14, fontWeight: '600', color: colors.g900 },
+  requestsSub: { fontSize: 12, color: colors.blue, marginTop: 2, fontWeight: '600' },
+  empty: { alignItems: 'center', paddingTop: 80 },
+  emptyTitle: { fontSize: 22, fontWeight: '700', color: colors.g900 },
+  emptySub: { fontSize: 14, color: colors.g500, marginTop: 8 },
 });
