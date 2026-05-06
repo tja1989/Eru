@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { authService } from '@/services/authService';
+import { userService } from '@/services/userService';
 import { whatsappAuthService } from '@/services/whatsappAuthService';
 import { signInWithCustomToken } from '@/services/firebase';
 import {
@@ -110,16 +111,43 @@ export default function OtpScreen() {
 
       const registered = await authService.checkRegistered(idToken);
       if (registered) {
-        // Returning user — let the auth gate decide tutorial vs home based on
-        // whether they've already claimed their welcome bonus. Also propagate
-        // needsHandleChoice into the user object so the route gate can bounce
-        // them to Personalize if they're still on a `pending_*` placeholder.
+        // Returning user — the bug history here matters. checkRegistered only
+        // returns a boolean, so on a fresh install (cleared AsyncStorage),
+        // store.user is still null at this point. If we route past this block
+        // without populating it, the next layout reads
+        //   useAuthStore((s) => s.user?.needsHandleChoice ?? true)
+        // — that "?? true" is a fail-safe for first-time users, but it
+        // weaponizes against returning users with an empty store, redirecting
+        // them straight back to Personalize on every navigation. Loop.
+        //
+        // Fix: hydrate store.user from the server BEFORE we route, so every
+        // downstream gate has real values to read. We fetch settings (for the
+        // user record) and onboarding-status (for the route decision) in
+        // parallel — settings doesn't carry needsHandleChoice today and
+        // wiring it through every consumer is a heavier change.
         try {
-          const status = await authService.getOnboardingStatus();
+          const [status, settingsRes] = await Promise.all([
+            authService.getOnboardingStatus(),
+            userService.getSettings(),
+          ]);
           store.setOnboardingComplete(status.complete);
-          const currentUser = store.user;
-          if (currentUser) {
-            store.setUser({ ...currentUser, needsHandleChoice: status.needsHandleChoice });
+          const settings = settingsRes?.settings;
+          if (settings) {
+            // Compose a store-user from server truth + the phone we already
+            // have from the search params. The Zustand user shape is a
+            // superset of the settings shape; missing optional fields stay
+            // undefined and consumers tolerate that.
+            store.setUser({
+              id: settings.id,
+              name: settings.name,
+              username: settings.username,
+              phone: String(phone),
+              tier: settings.tier,
+              currentBalance: settings.currentBalance ?? 0,
+              avatarUrl: settings.avatarUrl ?? null,
+              lifetimePoints: settings.lifetimePoints,
+              needsHandleChoice: status.needsHandleChoice,
+            });
           }
           if (status.needsHandleChoice) {
             router.replace('/(auth)/personalize');

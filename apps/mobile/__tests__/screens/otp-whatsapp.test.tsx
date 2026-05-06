@@ -23,6 +23,25 @@ jest.mock('@/services/authService', () => ({
   },
 }));
 
+// userService.getSettings is now called from the returning-user OTP path to
+// hydrate the auth store. Mock it with a sane default so existing tests that
+// don't care about settings still resolve correctly.
+jest.mock('@/services/userService', () => ({
+  userService: {
+    getSettings: jest.fn().mockResolvedValue({
+      settings: {
+        id: 'u-default',
+        name: 'Default User',
+        username: 'default_user',
+        tier: 'explorer',
+        currentBalance: 0,
+        avatarUrl: null,
+        lifetimePoints: 0,
+      },
+    }),
+  },
+}));
+
 jest.mock('@/services/firebase', () => ({
   signInWithPhoneNumber: jest.fn(),
   signInWithCustomToken: jest.fn(),
