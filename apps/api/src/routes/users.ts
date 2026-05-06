@@ -490,6 +490,11 @@ export async function userRoutes(app: FastifyInstance) {
   // show ✓ for free, ✗ for taken, and a specific message for invalid input
   // (reserved word, bad chars, leading period, etc.). Rate-limited per user
   // to prevent enumeration of which handles are taken.
+  //
+  // The requester's OWN current handle is always treated as available — they
+  // can keep it. Without this guard, a user revisiting Personalize after
+  // saving would see their own handle reported as "taken" (it's in the DB,
+  // assigned to them), which is technically correct but UX-confusing.
   app.get<{ Querystring: { handle?: string } }>(
     '/users/handle-available',
     { preHandler: [rateLimitByUser(20, '1 m')] },
@@ -502,7 +507,7 @@ export async function userRoutes(app: FastifyInstance) {
         where: { username: parsed.data },
         select: { id: true },
       });
-      return { available: !existing };
+      return { available: !existing || existing.id === request.userId };
     },
   );
 

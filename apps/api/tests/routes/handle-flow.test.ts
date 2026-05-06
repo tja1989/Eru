@@ -259,6 +259,24 @@ describe('handle flow', () => {
       expect(body.available).toBe(false);
       expect(body.reason).toMatch(/reserved/i);
     });
+
+    it('returns available=true when the existing record is the requester themselves', async () => {
+      // A user revisiting Personalize after saving sees their own handle pre-filled.
+      // The endpoint must report it as available (it's already theirs), otherwise
+      // the UI shows "taken" with no path forward.
+      await seedUser({
+        firebaseUid: 'dev-test-avail5',
+        phone: '+919999000014',
+        username: 'myownhandle',
+      });
+      const res = await getTestApp().inject({
+        method: 'GET',
+        url: '/api/v1/users/handle-available?handle=myownhandle',
+        headers: { Authorization: devToken('dev-test-avail5') },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ available: true });
+    });
   });
 
   describe('GET /users/me/onboarding-status', () => {
