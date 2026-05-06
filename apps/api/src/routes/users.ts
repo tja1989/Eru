@@ -411,10 +411,23 @@ export async function userRoutes(app: FastifyInstance) {
     }
 
     // Picking a real handle is the single chokepoint where placeholders
-    // become real. Centralising the flag flip here means we never have to
-    // remember to clear needsHandleChoice in two places.
+    // become real. We clear needsHandleChoice in two cases:
+    //   1. The request body sets a username (the user just picked one), OR
+    //   2. The user already has a real (non-pending) username on record. A
+    //      user revisiting Personalize with their existing handle pre-filled
+    //      taps Next without retyping → mobile sends the patch without
+    //      `username` → without case 2, server keeps flag true → route gate
+    //      bounces them back. Idempotent server-side sweep breaks the loop.
     if (rest.username !== undefined) {
       updateData.needsHandleChoice = false;
+    } else {
+      const current = await prisma.user.findUnique({
+        where: { id: request.userId },
+        select: { username: true },
+      });
+      if (current?.username && !current.username.startsWith('pending_')) {
+        updateData.needsHandleChoice = false;
+      }
     }
 
     let user;
