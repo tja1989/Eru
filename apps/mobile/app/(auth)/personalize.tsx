@@ -20,6 +20,7 @@ import {
 import { ProgressSteps } from '@/components/ProgressSteps';
 import { userService } from '@/services/userService';
 import { locationsService } from '@/services/locationsService';
+import { authService } from '@/services/authService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/constants/theme';
 
@@ -81,6 +82,37 @@ export default function Personalize() {
         setLocationLoading(false);
       }
     })();
+  }, []);
+
+  // Sync needsHandleChoice from server on mount. The route guard at
+  // (auth)/_layout reads this flag out of the local Zustand store. If the
+  // local copy is stale (any earlier success/failure path forgot to clear
+  // it, or a prior APK shipped a buggy clear), the user gets bounced right
+  // back here on every navigation. Pulling server truth on entry breaks the
+  // loop: when this fetch resolves, the surrounding layout re-evaluates with
+  // the fresh value and — if the server says we no longer need Personalize —
+  // forwards the user on without a tap.
+  useEffect(() => {
+    let cancelled = false;
+    authService
+      .getOnboardingStatus()
+      .then((status) => {
+        if (cancelled) return;
+        const current = useAuthStore.getState().user;
+        if (current) {
+          useAuthStore
+            .getState()
+            .setUser({ ...current, needsHandleChoice: status.needsHandleChoice });
+        }
+      })
+      .catch(() => {
+        // Silent — offline or server hiccup just means we keep the current
+        // local value. No regression vs. before; user simply misses the
+        // self-heal on this entry.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Debounced live availability check on the handle. 400ms feels responsive
@@ -150,7 +182,7 @@ export default function Personalize() {
     setSaveError(null);
     try {
       const sendUsername = !!(handle && handle !== initialHandle);
-      await userService.updateSettings({
+      const result = await userService.updateSettings({
         name: trimmedName,
         // Only send username if it's actually changing — sending the same
         // value back fires the unique-constraint check needlessly.
@@ -159,25 +191,18 @@ export default function Personalize() {
         interests,
         contentLanguages: languages,
       });
-      // Reflect the handle change in the auth store so the route gate stops
-      // bouncing the user to Personalize. Also update the username locally so
-      // post cards on the next screen show the new value immediately.
-      //
-      // We always clear needsHandleChoice on success: canContinue requires
-      // handleStatus === 'available', so the user provably has a real handle
-      // by the time this code runs — whether it was just-set (sendUsername
-      // true) or already-set on a prior submit (sendUsername false). Without
-      // the always-clear, a user revisiting Personalize with their handle
-      // already saved, tapping Next without retyping, slips into the catch-
-      // less success path with the local flag still true, then the route
-      // gate bounces them back. Idempotent server side handles this too,
-      // but the local clear gives instant feedback before the next render.
+      // Sync local store from the server's authoritative response. The PUT
+      // returns the post-update settings including needsHandleChoice (server
+      // performs an idempotent sweep — clears it whenever the user has a real
+      // non-pending username). Writing the server's value back, rather than
+      // hard-coding `false`, keeps the local route-guard cache truthful even
+      // for edge cases we haven't enumerated.
       if (storeUser) {
         setStoreUser({
           ...storeUser,
           name: trimmedName,
           ...(sendUsername ? { username: handle } : {}),
-          needsHandleChoice: false,
+          needsHandleChoice: result?.settings?.needsHandleChoice ?? false,
         });
       }
       router.replace('/(auth)/tutorial');
@@ -209,18 +234,20 @@ export default function Personalize() {
     setSaveError(null);
     try {
       const sendUsername = !!(handle && handle !== initialHandle);
+      let serverFlag: boolean | undefined;
       if (sendUsername) {
-        await userService.updateSettings({ username: handle });
+        const result = await userService.updateSettings({ username: handle });
+        serverFlag = result?.settings?.needsHandleChoice;
       }
-      // Always clear needsHandleChoice locally on success — see handleNext
-      // for the rationale (idempotent flag clearing, breaks the route-gate
-      // loop when the user revisits Personalize with their handle already
-      // saved).
+      // Mirror handleNext: when the server replied with the post-update value
+      // for needsHandleChoice, write that. When we didn't call the server
+      // (handle unchanged), the mount-time onboarding-status sync has already
+      // refreshed the local cache, so we just clear conservatively here.
       if (storeUser) {
         setStoreUser({
           ...storeUser,
           ...(sendUsername ? { username: handle } : {}),
-          needsHandleChoice: false,
+          needsHandleChoice: serverFlag ?? false,
         });
       }
       router.push('/(auth)/tutorial');

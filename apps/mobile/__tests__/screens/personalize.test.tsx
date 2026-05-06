@@ -38,9 +38,27 @@ jest.mock('@/services/locationsService', () => ({
 // Pre-fill the name field with a meaningful value so existing tests exercise
 // the interests/languages logic without having to type a name every time.
 // The "empty name blocks Continue" case gets its own explicit test below.
+// Provide both `user` (read by selectors) and `setUser` (called inside
+// handleNext/handleSkip on success). Without setUser, the success path
+// throws synchronously and the route never updates — masking real
+// regressions behind a mock-shape mismatch.
+const mockSetUser = jest.fn();
+const mockAuthStoreState = {
+  user: { id: 'u-me', name: 'Test User', username: 'tst', phone: '+9199', tier: 'explorer', currentBalance: 0 },
+  setUser: mockSetUser,
+};
 jest.mock('@/stores/authStore', () => ({
-  useAuthStore: (sel: any) =>
-    sel({ user: { id: 'u-me', name: 'Test User', username: 'tst', phone: '+9199', tier: 'explorer', currentBalance: 0 } }),
+  useAuthStore: Object.assign((sel: any) => sel(mockAuthStoreState), {
+    getState: () => mockAuthStoreState,
+  }),
+}));
+
+// authService is invoked from a useEffect on mount (server-truth sync). Mock
+// it to a no-op so tests don't depend on network or api mocks.
+jest.mock('@/services/authService', () => ({
+  authService: {
+    getOnboardingStatus: jest.fn().mockResolvedValue({ complete: false, needsHandleChoice: true }),
+  },
 }));
 
 describe('<Personalize /> (P5 F3 pixel parity)', () => {
