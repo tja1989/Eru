@@ -228,6 +228,12 @@ describe('handle flow', () => {
         payload: { name: 'Updated Name', interests: ['tech', 'food'] },
       });
       expect(res.statusCode).toBe(200);
+      // Response body must echo the post-update flag so the mobile client
+      // can sync its local route-guard cache from server-authoritative state
+      // instead of guessing — closes the last drift window between server
+      // and mobile.
+      const body = res.json() as { settings: { needsHandleChoice?: boolean } };
+      expect(body.settings.needsHandleChoice).toBe(false);
       const after = await prisma.user.findUnique({
         where: { firebaseUid: 'dev-test-pick8' },
         select: { needsHandleChoice: true },

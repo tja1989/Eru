@@ -453,6 +453,10 @@ export async function userRoutes(app: FastifyInstance) {
           notifyWatchlistOffers: true,
           isPrivate: true,
           shareDataWithBrands: true,
+          // Returned so the mobile client can sync its local route-guard cache
+          // from server-authoritative state instead of guessing — closes the
+          // last loop window where mobile/server drift on this flag.
+          needsHandleChoice: true,
         },
       });
     } catch (error: unknown) {
