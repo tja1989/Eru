@@ -184,7 +184,7 @@ describe('handle flow', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    it('does NOT clear needsHandleChoice when username is not in the payload', async () => {
+    it('does NOT clear needsHandleChoice when username is not in the payload AND user is on a pending placeholder', async () => {
       await seedUser({
         firebaseUid: 'dev-test-pick7',
         phone: '+919999000009',
@@ -202,6 +202,37 @@ describe('handle flow', () => {
         select: { needsHandleChoice: true },
       });
       expect(after?.needsHandleChoice).toBe(true);
+    });
+
+    it('CLEARS needsHandleChoice when user has a real handle on record (idempotent sweep)', async () => {
+      // Setup: user already has a real handle (e.g. picked one in a prior
+      // submit) but `needsHandleChoice` is still true (e.g. partial state
+      // from a crashed earlier session). Tapping Next on Personalize
+      // without retyping the handle sends a settings patch without
+      // `username`. Server must still clear the flag, otherwise the route
+      // gate loops them back.
+      await seedUser({
+        firebaseUid: 'dev-test-pick8',
+        phone: '+919999000020',
+        username: 'realhandle',
+      });
+      // Manually re-set the flag to true to simulate a partial-state user.
+      await prisma.user.update({
+        where: { firebaseUid: 'dev-test-pick8' },
+        data: { needsHandleChoice: true },
+      });
+      const res = await getTestApp().inject({
+        method: 'PUT',
+        url: '/api/v1/users/me/settings',
+        headers: { Authorization: devToken('dev-test-pick8'), 'content-type': 'application/json' },
+        payload: { name: 'Updated Name', interests: ['tech', 'food'] },
+      });
+      expect(res.statusCode).toBe(200);
+      const after = await prisma.user.findUnique({
+        where: { firebaseUid: 'dev-test-pick8' },
+        select: { needsHandleChoice: true },
+      });
+      expect(after?.needsHandleChoice).toBe(false);
     });
   });
 

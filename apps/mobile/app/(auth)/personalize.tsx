@@ -162,10 +162,23 @@ export default function Personalize() {
       // Reflect the handle change in the auth store so the route gate stops
       // bouncing the user to Personalize. Also update the username locally so
       // post cards on the next screen show the new value immediately.
-      if (storeUser && sendUsername) {
-        setStoreUser({ ...storeUser, name: trimmedName, username: handle, needsHandleChoice: false });
-      } else if (storeUser) {
-        setStoreUser({ ...storeUser, name: trimmedName });
+      //
+      // We always clear needsHandleChoice on success: canContinue requires
+      // handleStatus === 'available', so the user provably has a real handle
+      // by the time this code runs — whether it was just-set (sendUsername
+      // true) or already-set on a prior submit (sendUsername false). Without
+      // the always-clear, a user revisiting Personalize with their handle
+      // already saved, tapping Next without retyping, slips into the catch-
+      // less success path with the local flag still true, then the route
+      // gate bounces them back. Idempotent server side handles this too,
+      // but the local clear gives instant feedback before the next render.
+      if (storeUser) {
+        setStoreUser({
+          ...storeUser,
+          name: trimmedName,
+          ...(sendUsername ? { username: handle } : {}),
+          needsHandleChoice: false,
+        });
       }
       router.replace('/(auth)/tutorial');
     } catch (e: any) {
@@ -199,8 +212,16 @@ export default function Personalize() {
       if (sendUsername) {
         await userService.updateSettings({ username: handle });
       }
-      if (storeUser && sendUsername) {
-        setStoreUser({ ...storeUser, username: handle, needsHandleChoice: false });
+      // Always clear needsHandleChoice locally on success — see handleNext
+      // for the rationale (idempotent flag clearing, breaks the route-gate
+      // loop when the user revisits Personalize with their handle already
+      // saved).
+      if (storeUser) {
+        setStoreUser({
+          ...storeUser,
+          ...(sendUsername ? { username: handle } : {}),
+          needsHandleChoice: false,
+        });
       }
       router.push('/(auth)/tutorial');
     } catch (e: any) {
