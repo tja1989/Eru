@@ -10,11 +10,21 @@ export function useAuth() {
   );
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasCompletedOnboarding = useAuthStore((s) => s.hasCompletedOnboarding);
-  // Default to true so a partial-onboarding crash (token persisted before
-  // user record fully populated) bounces the user back to Personalize
-  // rather than letting them slip into the tabs with no handle. The flag
-  // gets cleared the moment they pick a real handle.
-  const needsHandleChoice = useAuthStore((s) => s.user?.needsHandleChoice ?? true);
+  // History note (2026-05-06): this used to default to `true`. The intent
+  // was protective — catch a partial-onboarding crash where the token
+  // persists but the user record didn't fully populate, and bounce the
+  // user back to Personalize rather than into Tabs with no handle.
+  //
+  // That well-meaning default produced an unkillable loop class. Any code
+  // path that left `s.user` null or `needsHandleChoice` undefined for even
+  // one render — boot rehydration race, edit-profile spread, partial OTP
+  // hydration on stale APK bundles — turned into a redirect to Personalize.
+  // After four PRs (#9–#12) trying to keep the flag accurate at every
+  // write site, the only architecturally clean fix is to stop trapping
+  // users on a transient unknown. The server still enforces real-handle
+  // requirements at the action level (POST /content, etc.), so a brief
+  // false-negative is harmless; a false-positive locks the user out.
+  const needsHandleChoice = useAuthStore((s) => s.user?.needsHandleChoice ?? false);
 
   useEffect(() => {
     if (useAuthStore.persist.hasHydrated()) {

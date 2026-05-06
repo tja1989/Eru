@@ -27,7 +27,22 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       hasCompletedOnboarding: false,
       setToken: (token) => { setAuthToken(token); set({ token, isAuthenticated: true }); },
-      setUser: (user) => set({ user }),
+      // Preserve needsHandleChoice across spread-style updates. Some call
+      // sites (e.g. edit-profile) do `setUser({ ...user, name, username })`
+      // — if the spread source ever lacks the field, the route guard's
+      // input goes undefined. Until 2026-05-06 the guard's fail-safe
+      // turned undefined into a redirect-to-Personalize loop. Even with
+      // that fail-safe flipped, keeping the last-known value here prevents
+      // future drift and is cheap.
+      setUser: (next) => set((prev) => ({
+        user: next
+          ? {
+              ...next,
+              needsHandleChoice:
+                next.needsHandleChoice ?? prev.user?.needsHandleChoice ?? false,
+            }
+          : null,
+      })),
       setOnboardingComplete: (value) => set({ hasCompletedOnboarding: value }),
       register: async (data) => {
         set({ isLoading: true });
