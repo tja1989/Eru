@@ -23,6 +23,7 @@ import { locationsService } from '@/services/locationsService';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function Personalize() {
   const router = useRouter();
@@ -331,9 +332,9 @@ export default function Personalize() {
             returnKeyType="done"
           />
           {handleStatus === 'checking' && <ActivityIndicator size="small" color={colors.teal} />}
-          {handleStatus === 'available' && <Text style={styles.handleOk}>✓</Text>}
+          {handleStatus === 'available' && <Ionicons name="checkmark-circle" size={20} color={colors.green} />}
           {(handleStatus === 'taken' || handleStatus === 'invalid') && (
-            <Text style={styles.handleErr}>✗</Text>
+            <Ionicons name="close-circle" size={20} color={colors.orange} />
           )}
         </View>
         {handleError ? <Text style={styles.handleErrText}>{handleError}</Text> : null}
@@ -342,7 +343,7 @@ export default function Personalize() {
         <Text style={styles.sectionTitle}>📍 Your location</Text>
         <View style={styles.locationCard}>
           <View style={styles.locationIcon}>
-            <Text style={styles.locationIconText}>📍</Text>
+            <Ionicons name="location" size={18} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
             {locationLoading ? (

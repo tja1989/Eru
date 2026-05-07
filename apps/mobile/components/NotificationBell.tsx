@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '../stores/notificationStore';
 import { colors } from '../constants/theme';
@@ -15,7 +16,7 @@ export function NotificationBell() {
       onPress={() => router.push('/notifications')}
       style={styles.wrap}
     >
-      <Text style={styles.icon}>🔔</Text>
+      <Ionicons name="notifications-outline" size={26} color="#262626" />
       {unreadCount > 0 ? (
         <View accessibilityLabel={`unread count ${unreadCount}`} style={styles.badge}>
           <Text style={styles.badgeText}>{label}</Text>
