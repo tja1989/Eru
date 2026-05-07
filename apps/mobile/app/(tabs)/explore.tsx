@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
   View,
@@ -100,7 +101,7 @@ export default function ExploreScreen() {
       {/* Search bar */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={18} color={colors.g500} style={{ marginRight: 6 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search posts, people, hashtags..."

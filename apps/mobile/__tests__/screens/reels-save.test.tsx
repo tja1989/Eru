@@ -49,10 +49,9 @@ describe('<ReelItem /> save button', () => {
     (contentService.undislike as jest.Mock).mockResolvedValue({});
   });
 
-  it('renders 🔖 with accessibilityLabel "Save post"', async () => {
-    const { findByLabelText, findByText } = render(<ReelsScreen />);
+  it('renders the save button with accessibilityLabel "Save post"', async () => {
+    const { findByLabelText } = render(<ReelsScreen />);
     expect(await findByLabelText('Save post')).toBeTruthy();
-    expect(await findByText('🔖')).toBeTruthy();
   });
 
   it('is not selected when reel.isSaved is false', async () => {

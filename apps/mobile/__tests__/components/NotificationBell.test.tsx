@@ -16,10 +16,14 @@ describe('<NotificationBell />', () => {
     mockUnread.mockReset();
   });
 
-  it('renders the 🔔 emoji', () => {
+  it('renders the bell button (now an Ionicons glyph)', () => {
     mockUnread.mockReturnValue(0);
-    const { getByText } = render(<NotificationBell />);
-    expect(getByText('🔔')).toBeTruthy();
+    const { getByLabelText } = render(<NotificationBell />);
+    // Asserts the touchable is in the tree by its accessibility label.
+    // Don't assert on the glyph itself — the icon library is an
+    // implementation detail and the previous emoji-text assertion broke
+    // when we swapped to <Ionicons />.
+    expect(getByLabelText('Open notifications')).toBeTruthy();
   });
 
   it('does not render a badge when unreadCount=0', () => {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { formatHandle } from '../../utils/formatHandle';
 import {
   View,
@@ -189,21 +190,23 @@ function ReelItem({
 
       {/* Right-side action column */}
       <View style={styles.actionColumn}>
-        <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
-          <Text style={styles.actionIcon}>{liked ? '❤️' : '🤍'}</Text>
+        {/* Reels icons sit on top of video — always white for legibility,
+            switch to filled when active to mirror IG's reel UX. */}
+        <TouchableOpacity style={styles.actionBtn} onPress={handleLike} accessibilityLabel="Like" accessibilityState={{ selected: liked }}>
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={32} color={liked ? '#E53E3E' : '#fff'} />
           <Text style={styles.actionCount}>{likeCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me" accessibilityState={{ selected: disliked }}>
-          <Text style={[styles.actionIcon, { color: disliked ? '#E53E3E' : '#fff' }]}>👎</Text>
+          <Ionicons name={disliked ? 'thumbs-down' : 'thumbs-down-outline'} size={32} color={disliked ? '#E53E3E' : '#fff'} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleSave} accessibilityLabel="Save post" accessibilityState={{ selected: saved }}>
-          <Text style={[styles.actionIcon, { color: saved ? '#0095F6' : '#fff' }]}>🔖</Text>
+          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={32} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn}>
-          <Text style={styles.actionIcon}>💬</Text>
+        <TouchableOpacity style={styles.actionBtn} accessibilityLabel="View comments">
+          <Ionicons name="chatbubble-outline" size={32} color="#fff" />
           <Text style={styles.actionCount}>{item.commentCount ?? 0}</Text>
         </TouchableOpacity>
 
@@ -212,7 +215,7 @@ function ReelItem({
           creatorUsername={item.user?.username ?? ''}
           caption={item.text ?? ''}
           style={styles.actionBtn}
-          iconStyle={styles.actionIcon}
+          iconStyle={{ fontSize: 32, color: '#fff' }}
           label="Share"
           labelStyle={styles.actionCount}
         />

@@ -1,23 +1,31 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { ContentSubtype } from '@eru/shared';
 import { colors, spacing, radius } from '../constants/theme';
 
-type SubtypeMeta = { key: ContentSubtype; icon: string; title: string; subtitle: string };
+// Ionicons name for each subtype tile. Picked to read at a glance at 20px;
+// the rendered icon swaps from g700 to orange when selected.
+type SubtypeMeta = {
+  key: ContentSubtype;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+};
 
 export const SUBTYPES: SubtypeMeta[] = [
-  { key: 'review', icon: '⭐', title: 'Review', subtitle: 'Rate a business or product' },
-  { key: 'recommendation', icon: '💡', title: 'Recommendation', subtitle: 'Suggest a place or product' },
-  { key: 'vlog', icon: '🎬', title: 'Vlog / Day-in-Life', subtitle: 'Behind-the-scenes, experience' },
-  { key: 'photo_story', icon: '📸', title: 'Photo Story', subtitle: 'Visual carousel or album' },
-  { key: 'tutorial', icon: '📖', title: 'Tutorial / How-to', subtitle: 'Step-by-step guide or lesson' },
-  { key: 'comparison', icon: '🆚', title: 'Comparison', subtitle: 'A vs B side-by-side' },
-  { key: 'unboxing', icon: '📦', title: 'Unboxing / First Try', subtitle: 'Trying something new' },
-  { key: 'event_coverage', icon: '🎪', title: 'Event Coverage', subtitle: 'Festival, pop-up, opening' },
-  { key: 'hot_take', icon: '🔥', title: 'Hot Take / Opinion', subtitle: 'Discussion starter, debate' },
-  { key: 'meme', icon: '😂', title: 'Meme / Fun', subtitle: 'Humor, entertainment' },
-  { key: 'recipe', icon: '🍳', title: 'Recipe', subtitle: 'Food recipe or cooking guide' },
-  { key: 'local_guide', icon: '📍', title: 'Local Guide', subtitle: 'Hidden gems, neighbourhood walks' },
+  { key: 'review', icon: 'star-outline', title: 'Review', subtitle: 'Rate a business or product' },
+  { key: 'recommendation', icon: 'bulb-outline', title: 'Recommendation', subtitle: 'Suggest a place or product' },
+  { key: 'vlog', icon: 'videocam-outline', title: 'Vlog / Day-in-Life', subtitle: 'Behind-the-scenes, experience' },
+  { key: 'photo_story', icon: 'images-outline', title: 'Photo Story', subtitle: 'Visual carousel or album' },
+  { key: 'tutorial', icon: 'book-outline', title: 'Tutorial / How-to', subtitle: 'Step-by-step guide or lesson' },
+  { key: 'comparison', icon: 'swap-horizontal-outline', title: 'Comparison', subtitle: 'A vs B side-by-side' },
+  { key: 'unboxing', icon: 'cube-outline', title: 'Unboxing / First Try', subtitle: 'Trying something new' },
+  { key: 'event_coverage', icon: 'calendar-outline', title: 'Event Coverage', subtitle: 'Festival, pop-up, opening' },
+  { key: 'hot_take', icon: 'flame-outline', title: 'Hot Take / Opinion', subtitle: 'Discussion starter, debate' },
+  { key: 'meme', icon: 'happy-outline', title: 'Meme / Fun', subtitle: 'Humor, entertainment' },
+  { key: 'recipe', icon: 'restaurant-outline', title: 'Recipe', subtitle: 'Food recipe or cooking guide' },
+  { key: 'local_guide', icon: 'location-outline', title: 'Local Guide', subtitle: 'Hidden gems, neighbourhood walks' },
 ];
 
 export const SUBTYPE_BANNER: Record<ContentSubtype, string> = {
@@ -50,7 +58,10 @@ export function ContentSubtypeSelector({ value, onChange }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerLeft}>📋 What type of content?</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Ionicons name="list-outline" size={16} color={colors.g800} />
+          <Text style={styles.headerLeft}>What type of content?</Text>
+        </View>
         <Text style={styles.headerRight}>Shapes reach & earnings</Text>
       </View>
 
@@ -68,8 +79,8 @@ export function ContentSubtypeSelector({ value, onChange }: Props) {
               testID={`subtype-card-${s.key}`}
             >
               <View style={styles.cardIconRow}>
-                <Text style={styles.cardIcon}>{s.icon}</Text>
-                {selected && <Text style={styles.cardCheck}>✓</Text>}
+                <Ionicons name={s.icon} size={22} color={selected ? colors.orange : colors.g700} />
+                {selected && <Ionicons name="checkmark" size={16} color={colors.orange} />}
               </View>
               <Text style={styles.cardTitle}>{s.title}</Text>
               <Text style={styles.cardSubtitle}>{s.subtitle}</Text>

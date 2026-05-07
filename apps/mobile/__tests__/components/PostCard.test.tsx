@@ -54,11 +54,9 @@ describe('<PostCard /> dislike button', () => {
     expect(getByLabelText('Not for me')).toBeTruthy();
   });
 
-  it('shows 👎 when not disliked and active state when disliked', () => {
-    const { getByLabelText, getByText } = render(<PostCard post={{ ...basePost, isDisliked: false }} />);
+  it('renders the dislike button with active state when disliked', () => {
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isDisliked: false }} />);
     expect(getByLabelText('Not for me')).toBeTruthy();
-    // Always renders the plain emoji
-    expect(getByText('👎')).toBeTruthy();
     // Not selected when not disliked
     expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(false);
   });
@@ -69,15 +67,13 @@ describe('<PostCard /> dislike button', () => {
       new Promise<void>((res) => { resolveDislike = res; }),
     );
 
-    const { getByLabelText, getByText } = render(
+    const { getByLabelText } = render(
       <PostCard post={{ ...basePost, isDisliked: false }} />,
     );
 
     fireEvent.press(getByLabelText('Not for me'));
 
     // State must flip immediately — before we resolve the promise
-    // Emoji stays '👎' but button is now selected
-    expect(getByText('👎')).toBeTruthy();
     expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
 
     // Cleanup: resolve promise so no hanging promises exist
@@ -90,18 +86,16 @@ describe('<PostCard /> dislike button', () => {
       new Promise<void>((res) => { resolveUndislike = res; }),
     );
 
-    const { getByLabelText, getByText } = render(
+    const { getByLabelText } = render(
       <PostCard post={{ ...basePost, isDisliked: true }} />,
     );
 
     // Initially selected (disliked)
-    expect(getByText('👎')).toBeTruthy();
     expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(true);
 
     fireEvent.press(getByLabelText('Not for me'));
 
     // Flips back immediately — deselected
-    expect(getByText('👎')).toBeTruthy();
     expect(getByLabelText('Not for me').props.accessibilityState?.selected).toBe(false);
 
     await act(async () => { resolveUndislike(); });
@@ -151,10 +145,9 @@ describe('<PostCard /> save button', () => {
     (contentService.undislike as jest.Mock).mockResolvedValue({});
   });
 
-  it('renders 🔖 with accessibilityLabel "Save post"', () => {
-    const { getByLabelText, getByText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
+  it('renders Save button with accessibilityLabel "Save post"', () => {
+    const { getByLabelText } = render(<PostCard post={{ ...basePost, isSaved: false }} />);
     expect(getByLabelText('Save post')).toBeTruthy();
-    expect(getByText('🔖')).toBeTruthy();
   });
 
   it('is not selected when post.isSaved is false', () => {

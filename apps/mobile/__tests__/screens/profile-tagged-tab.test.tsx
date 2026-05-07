@@ -68,21 +68,19 @@ describe('<ProfileScreen /> — Tagged tab', () => {
     (userService.getContent as jest.Mock).mockResolvedValue({ items: [] });
   });
 
-  it('renders the Tagged tab icon in the grid tab bar', async () => {
-    const { findByText } = render(<ProfileScreen />);
-    // The icon for tagged is 👤
-    expect(await findByText('👤')).toBeTruthy();
+  it('renders the Tagged tab in the grid tab bar', async () => {
+    const { findByLabelText } = render(<ProfileScreen />);
+    // Tab bar icons swapped from emoji glyphs to Ionicons; query by the
+    // tab's accessibility label instead of the (now absent) emoji text.
+    expect(await findByLabelText('Tagged tab')).toBeTruthy();
   });
 
   it('switching to Tagged tab calls userService.getContent with "tagged"', async () => {
     (userService.getContent as jest.Mock).mockResolvedValue({ items: MOCK_TAGGED });
-    const { findByText, getByText } = render(<ProfileScreen />);
+    const { findByLabelText } = render(<ProfileScreen />);
 
-    // Wait for initial render
-    await findByText('👤');
-
-    // Press the Tagged tab
-    fireEvent.press(getByText('👤'));
+    const taggedTab = await findByLabelText('Tagged tab');
+    fireEvent.press(taggedTab);
 
     await waitFor(() => {
       expect(userService.getContent).toHaveBeenCalledWith('me', 'tagged');
@@ -95,9 +93,9 @@ describe('<ProfileScreen /> — Tagged tab', () => {
       return Promise.resolve({ items: [] });
     });
 
-    const { findByText, getByText } = render(<ProfileScreen />);
-    await findByText('👤');
-    fireEvent.press(getByText('👤'));
+    const { findByLabelText } = render(<ProfileScreen />);
+    const taggedTab = await findByLabelText('Tagged tab');
+    fireEvent.press(taggedTab);
 
     await waitFor(() => {
       expect(userService.getContent).toHaveBeenCalledWith('me', 'tagged');

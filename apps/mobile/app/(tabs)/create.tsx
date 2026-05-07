@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { formatHandle } from '../../utils/formatHandle';
 import {
   View,
@@ -295,7 +296,7 @@ export default function CreateScreen() {
         {contentType !== 'text' && contentType !== 'poll' && contentType !== 'thread' && (
           <View style={styles.mediaSection}>
             <TouchableOpacity style={styles.mediaPickerBtn} onPress={pickMedia}>
-              <Text style={styles.mediaPickerIcon}>🖼️</Text>
+              <Ionicons name="images-outline" size={22} color={colors.g600} style={{ marginRight: 8 }} />
               <Text style={styles.mediaPickerText}>
                 {media.length > 0
                   ? `${media.length} item${media.length > 1 ? 's' : ''} selected`
@@ -353,28 +354,28 @@ export default function CreateScreen() {
         {/* Bottom toolbar */}
         <View style={styles.toolbar}>
           <TouchableOpacity style={styles.toolbarBtn} onPress={pickMedia}>
-            <Text style={styles.toolbarIcon}>📷</Text>
+            <Ionicons name="camera-outline" size={22} color={colors.g700} />
             <Text style={styles.toolbarLabel}>Photo</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.toolbarBtn}
             onPress={() => { setContentType('video'); pickMedia(); }}
           >
-            <Text style={styles.toolbarIcon}>🎬</Text>
+            <Ionicons name="videocam-outline" size={22} color={colors.g700} />
             <Text style={styles.toolbarLabel}>Video</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.toolbarBtn}
             onPress={() => setContentType('poll')}
           >
-            <Text style={styles.toolbarIcon}>📊</Text>
+            <Ionicons name="bar-chart-outline" size={22} color={colors.g700} />
             <Text style={styles.toolbarLabel}>Poll</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.toolbarBtn}
             onPress={() => setShowLocPicker(true)}
           >
-            <Text style={styles.toolbarIcon}>📍</Text>
+            <Ionicons name="location-outline" size={22} color={colors.g700} />
             <Text style={styles.toolbarLabel}>
               {selectedPincode ?? 'Location'}
             </Text>
@@ -384,19 +385,19 @@ export default function CreateScreen() {
             onPress={() => setShowTagPicker(true)}
             accessibilityLabel="Tag users"
           >
-            <Text style={styles.toolbarIcon}>👥</Text>
+            <Ionicons name="people-outline" size={22} color={colors.g700} />
             <Text style={styles.toolbarLabel}>
               {taggedUsers.length > 0 ? `${taggedUsers.length} tagged` : 'Tag'}
             </Text>
           </TouchableOpacity>
-          {/* Audio — placeholder icon matching PWA's 6-icon toolbar. The audio
+          {/* Audio — placeholder matching PWA's 6-icon toolbar. The audio
               feature itself (background track picker) isn't wired yet. */}
           <TouchableOpacity
             style={styles.toolbarBtn}
             onPress={() => Alert.alert('Audio coming soon', 'Background audio picker is on the roadmap.')}
             accessibilityLabel="Add audio"
           >
-            <Text style={styles.toolbarIcon}>🎵</Text>
+            <Ionicons name="musical-notes-outline" size={22} color={colors.g700} />
             <Text style={styles.toolbarLabel}>Audio</Text>
           </TouchableOpacity>
         </View>

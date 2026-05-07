@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Avatar } from './Avatar';
@@ -310,8 +311,13 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
 
       <View style={styles.actions}>
         <View style={styles.actionsLeft}>
-          <TouchableOpacity onPress={handleLike}>
-            <Text style={{ fontSize: 26 }}>{liked ? '❤️' : '🤍'}</Text>
+          <TouchableOpacity onPress={handleLike} accessibilityLabel="Like" accessibilityState={{ selected: liked }}>
+            {/* IG pattern: outline by default, filled red when liked. */}
+            <Ionicons
+              name={liked ? 'heart' : 'heart-outline'}
+              size={26}
+              color={liked ? '#E53E3E' : '#262626'}
+            />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleDislike}
@@ -319,12 +325,16 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
             accessibilityHint="Not for me — helps us improve your feed and affects creator score"
             accessibilityState={{ selected: disliked }}
           >
-            <Text style={{ fontSize: 26, opacity: disliked ? 1 : 0.55, color: disliked ? '#E53E3E' : '#737373' }}>
-              👎
-            </Text>
+            {/* Eru-specific (not IG). Filled red when active to mirror like
+                visually; muted gray otherwise. */}
+            <Ionicons
+              name={disliked ? 'thumbs-down' : 'thumbs-down-outline'}
+              size={26}
+              color={disliked ? '#E53E3E' : '#262626'}
+            />
           </TouchableOpacity>
-          <TouchableOpacity onPress={openDetail}>
-            <Text style={{ fontSize: 26 }}>💬</Text>
+          <TouchableOpacity onPress={openDetail} accessibilityLabel="View comments">
+            <Ionicons name="chatbubble-outline" size={26} color="#262626" />
           </TouchableOpacity>
           <ShareButton
             contentId={post.id}
@@ -337,7 +347,7 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
           accessibilityLabel="Save post"
           accessibilityState={{ selected: saved }}
         >
-          <Text style={{ fontSize: 26, color: saved ? '#0095F6' : '#737373' }}>🔖</Text>
+          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color="#262626" />
         </TouchableOpacity>
       </View>
 

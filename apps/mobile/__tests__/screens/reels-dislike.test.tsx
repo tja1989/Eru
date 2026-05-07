@@ -62,17 +62,15 @@ describe('<ReelItem /> dislike button', () => {
       new Promise<void>((res) => { resolveDislike = res; }),
     );
 
-    const { findByLabelText, getByText } = render(<ReelsScreen />);
+    const { findByLabelText } = render(<ReelsScreen />);
     const btn = await findByLabelText('Not for me');
 
-    // Before tap: unhighlighted, not selected
-    expect(getByText('👎')).toBeTruthy();
+    // Before tap: not selected
     expect(btn.props.accessibilityState?.selected).toBe(false);
 
     fireEvent.press(btn);
 
     // Flips optimistically — before promise resolves
-    expect(getByText('👎')).toBeTruthy();
     expect(btn.props.accessibilityState?.selected).toBe(true);
 
     await act(async () => { resolveDislike(); });

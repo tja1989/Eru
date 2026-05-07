@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, FlatList, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { PostCard } from '../../components/PostCard';
@@ -82,7 +83,7 @@ export default function HomeFeedScreen() {
           <PointsBadge />
           <NotificationBell />
           <TouchableOpacity onPress={() => router.push('/messages')} accessibilityLabel="Open messages">
-            <Text style={{ fontSize: 22 }}>✉️</Text>
+            <Ionicons name="paper-plane-outline" size={26} color="#262626" />
           </TouchableOpacity>
         </View>
       </View>

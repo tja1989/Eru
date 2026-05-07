@@ -7,6 +7,7 @@ import {
   RefreshControl,
   StyleSheet,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Avatar } from '../../components/Avatar';
@@ -25,12 +26,15 @@ import { colors, spacing, radius, tierColors } from '../../constants/theme';
 import { getOrCreateWeeklySnapshot } from '../../utils/creatorScoreSnapshot';
 import { formatHandle } from '../../utils/formatHandle';
 
+// Ionicons glyph names for the profile-grid sub-tabs. Renderer uses
+// `<Ionicons name={tab.icon} />` so the icons sit on a single shared
+// vector type, matching the IG-style UI.
 const GRID_TABS = [
-  { key: 'posts', icon: '⊞', label: 'Posts' },
-  { key: 'reels', icon: '▶', label: 'Reels' },
-  { key: 'created', icon: '✍️', label: 'My Creations' },
-  { key: 'saved', icon: '🔖', label: 'Saved' },
-  { key: 'tagged', icon: '👤', label: 'Tagged' },
+  { key: 'posts', icon: 'grid-outline', label: 'Posts' },
+  { key: 'reels', icon: 'play-outline', label: 'Reels' },
+  { key: 'created', icon: 'create-outline', label: 'My Creations' },
+  { key: 'saved', icon: 'bookmark-outline', label: 'Saved' },
+  { key: 'tagged', icon: 'person-outline', label: 'Tagged' },
 ] as const;
 
 type GridTab = (typeof GRID_TABS)[number]['key'];
@@ -147,14 +151,14 @@ export default function ProfileScreen() {
       <View style={styles.appHeader}>
         <Text style={styles.logo}>Eru</Text>
         <View style={styles.headerIcons}>
-          <TouchableOpacity onPress={() => router.push('/my-content' as any)}>
-            <Text style={styles.headerIcon}>📋</Text>
+          <TouchableOpacity onPress={() => router.push('/my-content' as any)} accessibilityLabel="My content">
+            <Ionicons name="list-outline" size={26} color="#262626" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/leaderboard' as any)}>
-            <Text style={styles.headerIcon}>🏆</Text>
+          <TouchableOpacity onPress={() => router.push('/leaderboard' as any)} accessibilityLabel="Leaderboard">
+            <Ionicons name="trophy-outline" size={26} color="#262626" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/settings' as any)}>
-            <Text style={styles.headerIcon}>⚙️</Text>
+          <TouchableOpacity onPress={() => router.push('/settings' as any)} accessibilityLabel="Settings">
+            <Ionicons name="settings-outline" size={26} color="#262626" />
           </TouchableOpacity>
         </View>
       </View>
@@ -257,10 +261,13 @@ export default function ProfileScreen() {
           {GRID_TABS.map((tab) => (
             <TouchableOpacity
               key={tab.key}
+              accessibilityLabel={`${tab.label} tab`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: gridTab === tab.key }}
               style={[styles.gridTabBtn, gridTab === tab.key && styles.gridTabBtnActive]}
               onPress={() => setGridTab(tab.key)}
             >
-              <Text style={styles.gridTabIcon}>{tab.icon}</Text>
+              <Ionicons name={tab.icon as any} size={22} color={gridTab === tab.key ? colors.g900 : colors.g400} />
             </TouchableOpacity>
           ))}
         </View>

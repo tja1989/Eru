@@ -1,5 +1,6 @@
 import React from 'react';
 import { Share, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { usePointsStore } from '../stores/pointsStore';
 import { formatHandle } from '../utils/formatHandle';
 
@@ -54,7 +55,13 @@ export function ShareButton({
       accessibilityRole="button"
       accessibilityLabel="Share"
     >
-      <Text style={[styles.icon, iconStyle]}>📤</Text>
+      {/* IG-style paper-plane share glyph. Sized by iconStyle?.fontSize when
+          callers want a larger glyph (Reels uses 32). */}
+      <Ionicons
+        name="paper-plane-outline"
+        size={iconStyle?.fontSize ?? 26}
+        color={iconStyle?.color ?? '#262626'}
+      />
       {label ? <Text style={labelStyle}>{label}</Text> : null}
     </TouchableOpacity>
   );
