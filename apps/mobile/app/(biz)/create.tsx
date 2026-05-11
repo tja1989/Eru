@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { colors, spacing, radius } from '@/constants/theme';
 import { WizardStepper } from '@/components/biz/WizardStepper';
 import { PincodeMultiSelect } from '@/components/biz/PincodeMultiSelect';
+import { bizService } from '@/services/bizService';
 import type { BizCampaignType } from '@eru/shared';
 
 const STEPS = ['Content', 'Target', 'Budget', 'Review'];
@@ -34,8 +36,10 @@ const initialState: WizardState = {
 };
 
 export default function BizCreate() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>(initialState);
+  const [launching, setLaunching] = useState(false);
 
   function update<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setState((s) => ({ ...s, [key]: value }));
@@ -62,10 +66,26 @@ export default function BizCreate() {
     if (step > 0) setStep(step - 1);
   }
 
-  function onFinish() {
-    // B3.3 wires this to bizService.createCampaign + launchCampaign.
-    // For now we just preview the payload so the wizard scaffold is testable.
-    Alert.alert('Review complete', `Title: ${state.title}\nBudget: ₹${state.budgetText}\nPincodes: ${state.pincodes.join(', ')}`);
+  async function onFinish() {
+    if (launching) return;
+    setLaunching(true);
+    try {
+      const created = await bizService.createCampaign({
+        type: state.type,
+        title: state.title.trim(),
+        body: state.body.trim() || undefined,
+        imageUrl: state.imageUrl.trim() || undefined,
+        pincodes: state.pincodes,
+        budget: Number(state.budgetText) || 0,
+      });
+      await bizService.launchCampaign(created.id);
+      router.push('/(biz)/campaigns' as Href);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Try again later';
+      Alert.alert('Launch failed', msg);
+    } finally {
+      setLaunching(false);
+    }
   }
 
   return (
@@ -162,10 +182,12 @@ export default function BizCreate() {
         </TouchableOpacity>
         <TouchableOpacity
           onPress={onNext}
-          disabled={!canAdvance()}
-          style={[styles.btnPrimary, !canAdvance() && styles.btnDisabled]}
+          disabled={!canAdvance() || launching}
+          style={[styles.btnPrimary, (!canAdvance() || launching) && styles.btnDisabled]}
         >
-          <Text style={styles.btnPrimaryText}>{step === STEPS.length - 1 ? 'Launch' : 'Next'}</Text>
+          <Text style={styles.btnPrimaryText}>
+            {step === STEPS.length - 1 ? (launching ? 'Launching…' : 'Launch') : 'Next'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

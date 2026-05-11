@@ -34,4 +34,10 @@ export const bizService = {
 
   updateCampaign: (id: string, patch: Partial<BizCampaignCreateInput>): Promise<BizCampaign> =>
     api.patch(`/biz/campaigns/${id}`, patch).then((r) => r.data),
+
+  createCampaign: (input: BizCampaignCreateInput): Promise<BizCampaign> =>
+    api.post('/biz/campaigns', input).then((r) => r.data),
+
+  launchCampaign: (id: string): Promise<BizCampaign> =>
+    api.post(`/biz/campaigns/${id}/launch`).then((r) => r.data),
 };

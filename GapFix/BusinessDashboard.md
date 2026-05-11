@@ -43,7 +43,7 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
 
 - [x] **B3.1** Mobile `apps/mobile/app/(biz)/create.tsx`: 4-step wizard (Content → Target → Budget → Review). Reuses `components/biz/WizardStepper.tsx`, `PincodeMultiSelect.tsx` (wraps existing `LocationPicker`).
 - [x] **B3.2** Mobile `components/biz/AdPreview.tsx`: live preview using the same `PostCard` body that the feed renders.
-- [ ] **B3.3** Wire wizard Launch button to `bizService.createCampaign()` then `launchCampaign()`. Navigation back to campaigns list on success. Test in `__tests__/(biz)/create.test.tsx`.
+- [x] **B3.3** Wire wizard Launch button to `bizService.createCampaign()` then `launchCampaign()`. Navigation back to campaigns list on success. Test in `__tests__/(biz)/create.test.tsx`.
 
 ## Phase B4 — UGC + Feedback
 
