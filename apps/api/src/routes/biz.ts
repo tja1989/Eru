@@ -16,6 +16,7 @@ import type {
   BizOfferItem,
   BizOfferType,
   BizOffersResponse,
+  BizQrScanResponse,
   BizUgcContentItem,
   BizUgcResponse,
 } from '@eru/shared';
@@ -26,6 +27,7 @@ import { Errors } from '../utils/errors.js';
 import {
   bizOfferCreateSchema,
   bizOfferPatchSchema,
+  bizQrScanSchema,
   campaignCreateSchema,
   campaignListQuerySchema,
   campaignPatchSchema,
@@ -752,5 +754,70 @@ export async function bizRoutes(app: FastifyInstance) {
       },
     });
     return serializeOffer(updated);
+  });
+
+  // ---------- QR scan: redeem a reward + log a visit (B5.3) ----------
+
+  // POST /biz/qrscan — owner scans a customer's reward QR. Reuses the
+  // rewardsService.markUsed semantics (status='used', usedAt=now) but
+  // scopes by business rather than by user, and wraps in a transaction
+  // so the redeem + CampaignEvent insert happen atomically.
+  app.post('/biz/qrscan', async (request): Promise<BizQrScanResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizQrScanSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+
+    const reward = await prisma.userReward.findUnique({
+      where: { claimCode: parsed.data.claimCode },
+      include: {
+        offer: { select: { id: true, title: true, businessId: true } },
+        user: { select: { id: true, username: true } },
+      },
+    });
+    // 404 covers both "no row" and "belongs to another business" so we
+    // don't leak the existence of foreign claim codes.
+    if (!reward || reward.offer.businessId !== business.id) {
+      throw Errors.notFound('Reward');
+    }
+    if (reward.status !== 'active') {
+      throw Errors.conflict('Reward is not active');
+    }
+
+    // If this offer is wired to an active campaign, the visit event keeps
+    // costPerVisit on the dashboard honest. Fetch outside the txn so we
+    // know whether to write the event before opening it.
+    const campaign = await prisma.campaign.findFirst({
+      where: { businessId: business.id, offerId: reward.offer.id },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.userReward.update({
+        where: { id: reward.id },
+        data: { status: 'used', usedAt: new Date() },
+      });
+      const event = campaign
+        ? await tx.campaignEvent.create({
+            data: { campaignId: campaign.id, userId: reward.userId, kind: 'visit' },
+          })
+        : null;
+      return { reward: updated, eventId: event?.id ?? null };
+    });
+
+    return {
+      reward: {
+        id: result.reward.id,
+        status: result.reward.status as 'active' | 'used' | 'expired',
+        usedAt: result.reward.usedAt ? result.reward.usedAt.toISOString() : null,
+        offerId: reward.offer.id,
+        offerTitle: reward.offer.title,
+        userId: reward.user.id,
+        username: reward.user.username,
+      },
+      campaignEventId: result.eventId,
+    };
   });
 }

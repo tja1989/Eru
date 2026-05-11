@@ -249,6 +249,21 @@ export interface BizOffersResponse {
   items: BizOfferItem[];
 }
 
+export interface BizQrScanReward {
+  id: string;
+  status: 'active' | 'used' | 'expired';
+  usedAt: string | null;
+  offerId: string;
+  offerTitle: string;
+  userId: string;
+  username: string;
+}
+
+export interface BizQrScanResponse {
+  reward: BizQrScanReward;
+  campaignEventId: string | null;
+}
+
 export interface BizOfferCreateInput {
   type: BizOfferType;
   title: string;
@@ -287,4 +302,5 @@ type _BizExportsAssertion = [
   BizOfferItem,
   BizOffersResponse,
   BizOfferCreateInput,
+  BizQrScanResponse,
 ];

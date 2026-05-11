@@ -237,3 +237,7 @@ export const bizOfferCreateSchema = z.object({
 export const bizOfferPatchSchema = bizOfferCreateSchema.partial().extend({
   isActive: z.boolean().optional(),
 });
+
+export const bizQrScanSchema = z.object({
+  claimCode: z.string().trim().min(1).max(100),
+});
