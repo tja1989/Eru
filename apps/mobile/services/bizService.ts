@@ -1,5 +1,11 @@
 import api from './api';
-import type { BizDashboardPeriod, BizDashboardResponse, BizMeResponse } from '@eru/shared';
+import type {
+  BizCampaignListResponse,
+  BizCampaignStatus,
+  BizDashboardPeriod,
+  BizDashboardResponse,
+  BizMeResponse,
+} from '@eru/shared';
 
 // The owner-side Business Dashboard API client. Each method maps 1:1 to a
 // /api/v1/biz/* endpoint and returns its shared response type — no fallback
@@ -10,4 +16,7 @@ export const bizService = {
 
   getDashboard: (period: BizDashboardPeriod = 'week'): Promise<BizDashboardResponse> =>
     api.get('/biz/dashboard', { params: { period } }).then((r) => r.data),
+
+  getCampaigns: (status?: BizCampaignStatus): Promise<BizCampaignListResponse> =>
+    api.get('/biz/campaigns', { params: status ? { status } : {} }).then((r) => r.data),
 };
