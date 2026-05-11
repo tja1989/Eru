@@ -12,6 +12,11 @@ import type {
   BizOfferCreateInput,
   BizOfferItem,
   BizOffersResponse,
+  BizOnboardingInput,
+  BizOnboardingSetupResponse,
+  BizPaymentResponse,
+  BizPlanResponse,
+  BizPlanTier,
   BizQrScanResponse,
   BizUgcResponse,
 } from '@eru/shared';
@@ -74,4 +79,16 @@ export const bizService = {
 
   scanQr: (claimCode: string): Promise<BizQrScanResponse> =>
     api.post('/biz/qrscan', { claimCode }).then((r) => r.data),
+
+  onboardingSetup: (input: BizOnboardingInput): Promise<BizOnboardingSetupResponse> =>
+    api.post('/biz/onboarding/setup', input).then((r) => r.data),
+
+  onboardingPincodes: (pincodes: string[]): Promise<BizOnboardingSetupResponse> =>
+    api.post('/biz/onboarding/pincodes', { pincodes }).then((r) => r.data),
+
+  onboardingPlan: (tier: BizPlanTier): Promise<BizPlanResponse> =>
+    api.post('/biz/onboarding/plan', { tier }).then((r) => r.data),
+
+  onboardingPayment: (amount: number): Promise<BizPaymentResponse> =>
+    api.post('/biz/onboarding/payment', { amount }).then((r) => r.data),
 };

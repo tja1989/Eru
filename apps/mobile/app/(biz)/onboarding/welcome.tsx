@@ -1,21 +1,34 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '@/constants/theme';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { colors, spacing, radius } from '@/constants/theme';
 
-// Placeholder for BD B6.2 — the real welcome screen lands then.
-// Exists now so expo-router's typed-routes recognize the path that the
-// (biz)/_layout gate redirects to.
 export default function BizOnboardingWelcome() {
+  const router = useRouter();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Set up your business</Text>
-      <Text style={styles.subtitle}>This screen is coming soon.</Text>
+      <View style={styles.hero}>
+        <Text style={styles.title}>Grow your business on Yeru</Text>
+        <Text style={styles.subtitle}>
+          Reach Kerala customers with sponsored content, targeted offers,
+          and live UGC-driven campaigns. Setup takes about a minute.
+        </Text>
+      </View>
+      <TouchableOpacity
+        style={styles.btnPrimary}
+        onPress={() => router.push('/(biz)/onboarding/bizinfo' as Href)}
+      >
+        <Text style={styles.btnPrimaryText}>Get Started</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.bg },
-  title: { fontSize: 22, fontWeight: '700', color: colors.g800, marginBottom: 8 },
-  subtitle: { fontSize: 14, color: colors.g400 },
+  container: { flex: 1, padding: spacing.xl, gap: spacing.xl, backgroundColor: colors.bg, justifyContent: 'space-between' },
+  hero: { flex: 1, justifyContent: 'center', gap: spacing.md },
+  title: { fontSize: 28, fontWeight: '700', color: colors.g800 },
+  subtitle: { fontSize: 15, color: colors.g600, lineHeight: 22 },
+  btnPrimary: { backgroundColor: colors.navy, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center' },
+  btnPrimaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
