@@ -205,3 +205,8 @@ export const campaignPatchSchema = campaignCreateSchema.partial();
 export const campaignListQuerySchema = z.object({
   status: campaignStatusEnum.optional(),
 });
+
+export const ugcBoostSchema = z.object({
+  amount: z.number().positive(),
+  note: z.string().max(500).optional(),
+});

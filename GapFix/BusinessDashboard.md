@@ -47,7 +47,7 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
 
 ## Phase B4 — UGC + Feedback
 
-- [ ] **B4.1** API `GET /biz/ugc` and `POST /biz/ugc/:contentId/boost`. The boost path wraps existing `SponsorshipProposal` model — do not introduce a new model. Tests in `biz-ugc.test.ts`.
+- [x] **B4.1** API `GET /biz/ugc` and `POST /biz/ugc/:contentId/boost`. The boost path wraps existing `SponsorshipProposal` model — do not introduce a new model. Tests in `biz-ugc.test.ts`.
 - [ ] **B4.2** API `GET /biz/feedback?sentiment=`, `POST /biz/feedback/:contentId/reply`. Reply persistence reuses whatever `BusinessReplyCard` already reads (audit first). Tests in `biz-feedback.test.ts`.
 - [ ] **B4.3** Mobile screens `(biz)/ugc.tsx` and `(biz)/feedback.tsx`, plus feed sentiment counters into `overview.tsx`.
 

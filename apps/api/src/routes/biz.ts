@@ -9,7 +9,10 @@ import type {
   BizDashboardPeriod,
   BizDashboardResponse,
   BizMeResponse,
+  BizUgcContentItem,
+  BizUgcResponse,
 } from '@eru/shared';
+import { sponsorshipService } from '../services/sponsorshipService.js';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { Errors } from '../utils/errors.js';
@@ -17,6 +20,7 @@ import {
   campaignCreateSchema,
   campaignListQuerySchema,
   campaignPatchSchema,
+  ugcBoostSchema,
 } from '../utils/validators.js';
 
 const dashboardQuerySchema = z.object({
@@ -361,4 +365,90 @@ export async function bizRoutes(app: FastifyInstance) {
 
     return serializeCampaign(launched as CampaignRow);
   });
+
+  // ---------- UGC: list tagged content + boost (B4.1) ----------
+
+  // GET /biz/ugc — content tagged to the owner's business, split into
+  // newTags (no sponsorship yet) vs activeSponsorships (proposal in
+  // accepted/active status). Reuse of existing SponsorshipProposal model
+  // means we don't introduce a new "boost" table.
+  app.get('/biz/ugc', async (request): Promise<BizUgcResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const business = await requireBusinessOwner(userId);
+
+    const tagged = await prisma.content.findMany({
+      where: { businessTagId: business.id, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, username: true, avatarUrl: true } } },
+    });
+
+    const proposals = await prisma.sponsorshipProposal.findMany({
+      where: {
+        businessId: business.id,
+        contentId: { in: tagged.map((c) => c.id) },
+        status: { in: ['accepted', 'active'] },
+      },
+      select: { id: true, contentId: true, reach: true },
+    });
+    const sponsoredByContentId = new Map(proposals.map((p) => [p.contentId, p]));
+
+    function toItem(c: typeof tagged[number]): BizUgcContentItem {
+      const proposal = c.id ? sponsoredByContentId.get(c.id) : undefined;
+      return {
+        id: c.id,
+        authorId: c.user.id,
+        authorUsername: c.user.username,
+        authorAvatarUrl: c.user.avatarUrl,
+        text: c.text ?? '',
+        imageUrl: null,
+        createdAt: c.createdAt.toISOString(),
+        isSponsored: !!proposal,
+        sponsorshipId: proposal?.id ?? null,
+      };
+    }
+
+    const newTags: BizUgcContentItem[] = [];
+    const activeSponsorships: BizUgcContentItem[] = [];
+    for (const c of tagged) {
+      const item = toItem(c);
+      if (item.isSponsored) activeSponsorships.push(item);
+      else newTags.push(item);
+    }
+
+    const reachEstimate = proposals.reduce((sum, p) => sum + (p.reach ?? 0), 0);
+
+    return {
+      stats: { tagged: tagged.length, sponsored: proposals.length, reachEstimate },
+      newTags,
+      activeSponsorships,
+    };
+  });
+
+  // POST /biz/ugc/:contentId/boost — wraps the existing
+  // SponsorshipProposal model. 404 if the content isn't tagged to this
+  // business (prevents owners from boosting unrelated UGC).
+  app.post<{ Params: { contentId: string } }>(
+    '/biz/ugc/:contentId/boost',
+    async (request): Promise<{ proposalId: string }> => {
+      const userId = request.userId;
+      if (!userId) throw Errors.unauthorized('Authentication required');
+      const parsed = ugcBoostSchema.safeParse(request.body);
+      if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+
+      const business = await requireBusinessOwner(userId);
+      const content = await prisma.content.findUnique({ where: { id: request.params.contentId } });
+      if (!content || content.businessTagId !== business.id) {
+        throw Errors.notFound('Content');
+      }
+
+      const proposal = await sponsorshipService.createProposal(
+        business.id,
+        content.userId,
+        parsed.data.amount,
+        content.id,
+      );
+      return { proposalId: proposal.id };
+    },
+  );
 }
