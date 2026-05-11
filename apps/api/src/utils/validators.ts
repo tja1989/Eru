@@ -176,3 +176,32 @@ export const offersQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
+
+// ---------- Business Dashboard: campaigns ----------
+
+const campaignTypeEnum = z.enum([
+  'promotion', 'brand_awareness', 'new_launch', 'poll', 'event',
+  'contest', 'seasonal', 'review_request', 'restock', 'hiring',
+]);
+
+const campaignStatusEnum = z.enum(['draft', 'active', 'paused', 'completed']);
+
+export const campaignCreateSchema = z.object({
+  type: campaignTypeEnum,
+  title: z.string().min(1).max(200),
+  body: z.string().max(2000).optional(),
+  imageUrl: z.string().url().optional(),
+  pincodes: z.array(z.string().length(6)).max(50).optional(),
+  ageRanges: z.array(z.string()).max(10).optional(),
+  interests: z.array(z.string()).max(20).optional(),
+  budget: z.number().nonnegative().optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  offerId: z.string().uuid().optional(),
+});
+
+export const campaignPatchSchema = campaignCreateSchema.partial();
+
+export const campaignListQuerySchema = z.object({
+  status: campaignStatusEnum.optional(),
+});
