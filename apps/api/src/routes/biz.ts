@@ -13,6 +13,9 @@ import type {
   BizFeedbackItem,
   BizFeedbackResponse,
   BizMeResponse,
+  BizOfferItem,
+  BizOfferType,
+  BizOffersResponse,
   BizUgcContentItem,
   BizUgcResponse,
 } from '@eru/shared';
@@ -21,6 +24,8 @@ import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { Errors } from '../utils/errors.js';
 import {
+  bizOfferCreateSchema,
+  bizOfferPatchSchema,
   campaignCreateSchema,
   campaignListQuerySchema,
   campaignPatchSchema,
@@ -645,5 +650,107 @@ export async function bizRoutes(app: FastifyInstance) {
       peakHours,
       topInterests: toBuckets(interestCount),
     };
+  });
+
+  // ---------- Owner-side Offers (B5.2) ----------
+
+  function serializeOffer(o: {
+    id: string;
+    type: string;
+    title: string;
+    description: string | null;
+    imageUrl: string | null;
+    pointsCost: number;
+    cashValue: { toNumber(): number } | number;
+    stock: number | null;
+    perUserLimit: number;
+    validFrom: Date;
+    validUntil: Date;
+    isActive: boolean;
+    createdAt: Date;
+  }): BizOfferItem {
+    return {
+      id: o.id,
+      type: o.type as BizOfferType,
+      title: o.title,
+      description: o.description,
+      imageUrl: o.imageUrl,
+      pointsCost: o.pointsCost,
+      cashValue: asNumber(o.cashValue),
+      stock: o.stock,
+      perUserLimit: o.perUserLimit,
+      validFrom: o.validFrom.toISOString(),
+      validUntil: o.validUntil.toISOString(),
+      isActive: o.isActive,
+      createdAt: o.createdAt.toISOString(),
+    };
+  }
+
+  app.get('/biz/offers', async (request): Promise<BizOffersResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const business = await requireBusinessOwner(userId);
+    const items = await prisma.offer.findMany({
+      where: { businessId: business.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { items: items.map(serializeOffer) };
+  });
+
+  app.post('/biz/offers', async (request): Promise<BizOfferItem> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizOfferCreateSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+    const data = parsed.data;
+    const created = await prisma.offer.create({
+      data: {
+        type: data.type,
+        businessId: business.id,
+        title: data.title,
+        description: data.description ?? null,
+        imageUrl: data.imageUrl ?? null,
+        pointsCost: data.pointsCost,
+        cashValue: data.cashValue,
+        stock: data.stock ?? null,
+        perUserLimit: data.perUserLimit ?? 1,
+        validFrom: new Date(data.validFrom),
+        validUntil: new Date(data.validUntil),
+      },
+    });
+    return serializeOffer(created);
+  });
+
+  app.patch<{ Params: { id: string } }>('/biz/offers/:id', async (request): Promise<BizOfferItem> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizOfferPatchSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+
+    // Scope the update to the owner's business — cross-business writes
+    // return 404 to avoid leaking the existence of another owner's offer.
+    const existing = await prisma.offer.findUnique({ where: { id: request.params.id } });
+    if (!existing || existing.businessId !== business.id) throw Errors.notFound('Offer');
+
+    const data = parsed.data;
+    const updated = await prisma.offer.update({
+      where: { id: existing.id },
+      data: {
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        imageUrl: data.imageUrl,
+        pointsCost: data.pointsCost,
+        cashValue: data.cashValue,
+        stock: data.stock,
+        perUserLimit: data.perUserLimit,
+        validFrom: data.validFrom ? new Date(data.validFrom) : undefined,
+        validUntil: data.validUntil ? new Date(data.validUntil) : undefined,
+        isActive: data.isActive,
+      },
+    });
+    return serializeOffer(updated);
   });
 }

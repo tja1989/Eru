@@ -218,3 +218,22 @@ export const feedbackReplySchema = z.object({
 export const feedbackListQuerySchema = z.object({
   sentiment: z.enum(['positive', 'neutral', 'negative']).optional(),
 });
+
+const offerTypeEnum = z.enum(['local', 'giftcard', 'recharge', 'donate', 'premium']);
+
+export const bizOfferCreateSchema = z.object({
+  type: offerTypeEnum,
+  title: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  imageUrl: z.string().url().optional(),
+  pointsCost: z.number().int().nonnegative(),
+  cashValue: z.number().nonnegative(),
+  stock: z.number().int().nonnegative().optional(),
+  perUserLimit: z.number().int().positive().optional(),
+  validFrom: z.string().datetime(),
+  validUntil: z.string().datetime(),
+});
+
+export const bizOfferPatchSchema = bizOfferCreateSchema.partial().extend({
+  isActive: z.boolean().optional(),
+});

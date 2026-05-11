@@ -225,6 +225,43 @@ export interface BizBillingResponse {
   transactions: BizTransaction[];
 }
 
+// ---------- B5.2: owner-side offers ----------
+
+export type BizOfferType = 'local' | 'giftcard' | 'recharge' | 'donate' | 'premium';
+
+export interface BizOfferItem {
+  id: string;
+  type: BizOfferType;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  pointsCost: number;
+  cashValue: number;
+  stock: number | null;
+  perUserLimit: number;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface BizOffersResponse {
+  items: BizOfferItem[];
+}
+
+export interface BizOfferCreateInput {
+  type: BizOfferType;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  pointsCost: number;
+  cashValue: number;
+  stock?: number;
+  perUserLimit?: number;
+  validFrom: string;
+  validUntil: string;
+}
+
 // ---------- Compile-time guarantee that every promised export exists ----------
 // If any of the symbols below is renamed or removed, tsc will fail with TS2304.
 // This is the "type-level test" for B1.3.
@@ -247,4 +284,7 @@ type _BizExportsAssertion = [
   BizPlansResponse,
   BizBillingResponse,
   BizTransaction,
+  BizOfferItem,
+  BizOffersResponse,
+  BizOfferCreateInput,
 ];
