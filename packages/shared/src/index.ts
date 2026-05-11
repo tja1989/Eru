@@ -9,6 +9,7 @@ export * from './types/messages.js';
 export * from './types/badges.js';
 export * from './types/sponsorship.js';
 export * from './types/offersList.js';
+export * from './types/biz.js';
 export * from './constants/points.js';
 export * from './constants/tiers.js';
 export * from './constants/onboarding.js';
