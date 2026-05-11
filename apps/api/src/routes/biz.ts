@@ -8,6 +8,8 @@ import type {
   BizCampaignType,
   BizDashboardPeriod,
   BizDashboardResponse,
+  BizFeedbackItem,
+  BizFeedbackResponse,
   BizMeResponse,
   BizUgcContentItem,
   BizUgcResponse,
@@ -20,6 +22,8 @@ import {
   campaignCreateSchema,
   campaignListQuerySchema,
   campaignPatchSchema,
+  feedbackListQuerySchema,
+  feedbackReplySchema,
   ugcBoostSchema,
 } from '../utils/validators.js';
 
@@ -449,6 +453,90 @@ export async function bizRoutes(app: FastifyInstance) {
         content.id,
       );
       return { proposalId: proposal.id };
+    },
+  );
+
+  // ---------- Feedback: list reviews + owner reply (B4.2) ----------
+
+  // Sentiment classification is a like/dislike heuristic for the MVP — no
+  // sentiment column exists on Content. Positive when likes outnumber
+  // dislikes, negative when the reverse, neutral when tied or both zero.
+  // The mobile chart consumes whatever this returns, so changing the
+  // heuristic later doesn't ripple beyond this function.
+  function classifySentiment(likes: number, dislikes: number): 'positive' | 'neutral' | 'negative' {
+    if (likes > dislikes) return 'positive';
+    if (dislikes > likes) return 'negative';
+    return 'neutral';
+  }
+
+  app.get('/biz/feedback', async (request): Promise<BizFeedbackResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = feedbackListQuerySchema.safeParse(request.query);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+
+    const tagged = await prisma.content.findMany({
+      where: { businessTagId: business.id, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, username: true, avatarUrl: true } } },
+    });
+
+    // Pull the latest owner-authored Comment per content in one round-trip.
+    const replies = await prisma.comment.findMany({
+      where: {
+        contentId: { in: tagged.map((c) => c.id) },
+        userId,
+        parentId: null,
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { contentId: true, text: true, createdAt: true },
+    });
+    const replyByContent = new Map<string, { text: string; createdAt: string }>();
+    for (const r of replies) {
+      if (!replyByContent.has(r.contentId)) {
+        replyByContent.set(r.contentId, { text: r.text, createdAt: r.createdAt.toISOString() });
+      }
+    }
+
+    const items: BizFeedbackItem[] = tagged.map((c) => {
+      const sentiment = classifySentiment(c.likeCount, c.dislikeCount);
+      return {
+        contentId: c.id,
+        authorId: c.user.id,
+        authorUsername: c.user.username,
+        authorAvatarUrl: c.user.avatarUrl,
+        text: c.text ?? '',
+        rating: null,
+        sentiment,
+        createdAt: c.createdAt.toISOString(),
+        reply: replyByContent.get(c.id) ?? null,
+      };
+    });
+
+    const filtered = parsed.data.sentiment ? items.filter((i) => i.sentiment === parsed.data.sentiment) : items;
+    return { items: filtered };
+  });
+
+  app.post<{ Params: { contentId: string } }>(
+    '/biz/feedback/:contentId/reply',
+    async (request): Promise<{ reply: { text: string; createdAt: string } }> => {
+      const userId = request.userId;
+      if (!userId) throw Errors.unauthorized('Authentication required');
+      const parsed = feedbackReplySchema.safeParse(request.body);
+      if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+
+      const business = await requireBusinessOwner(userId);
+      const content = await prisma.content.findUnique({ where: { id: request.params.contentId } });
+      if (!content) throw Errors.notFound('Content');
+      if (content.businessTagId !== business.id) {
+        throw Errors.forbidden('Content is not tagged to your business');
+      }
+
+      const created = await prisma.comment.create({
+        data: { userId, contentId: content.id, text: parsed.data.text },
+      });
+      return { reply: { text: created.text, createdAt: created.createdAt.toISOString() } };
     },
   );
 }

@@ -210,3 +210,11 @@ export const ugcBoostSchema = z.object({
   amount: z.number().positive(),
   note: z.string().max(500).optional(),
 });
+
+export const feedbackReplySchema = z.object({
+  text: z.string().trim().min(1).max(1000),
+});
+
+export const feedbackListQuerySchema = z.object({
+  sentiment: z.enum(['positive', 'neutral', 'negative']).optional(),
+});
