@@ -28,8 +28,8 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
   - Files: `packages/shared/src/types/biz.ts`, `packages/shared/src/index.ts`.
 - [x] **B1.4** Create `apps/api/src/routes/biz.ts` with `app.addHook('preHandler', authMiddleware)`, the `requireBusinessOwner(userId)` helper, and `GET /biz/me`. Register in `apps/api/src/app.ts`. Add `apps/api/tests/routes/biz-onboarding.test.ts` covering 200 (owner) + 200 with `business:null` (no owned business).
   - Files: `apps/api/src/routes/biz.ts`, `apps/api/src/app.ts`, `apps/api/tests/routes/biz-onboarding.test.ts`.
-- [ ] **B1.5** Mobile `(biz)` layout skeleton: `apps/mobile/app/(biz)/_layout.tsx` with the Instagram-style tab bar geometry from `(tabs)/_layout.tsx`, plus `apps/mobile/services/bizService.ts` with `getMe()` only. Layout gates: unauthed → `/(auth)/login`; authed + no business → `/(biz)/onboarding/welcome`.
-  - Files: `apps/mobile/app/(biz)/_layout.tsx`, `apps/mobile/services/bizService.ts`.
+- [x] **B1.5** Mobile `(biz)` layout skeleton: `apps/mobile/app/(biz)/_layout.tsx` with the Instagram-style tab bar geometry from `(tabs)/_layout.tsx`, plus `apps/mobile/services/bizService.ts` with `getMe()` only. Layout gates: unauthed → `/(auth)/login`; authed + no business → `/(biz)/onboarding/welcome`. NOTE: added `apps/mobile/app/(biz)/onboarding/welcome.tsx` as a placeholder so the redirect target route exists at runtime; B6.2 will replace it with the real onboarding welcome screen.
+  - Files: `apps/mobile/app/(biz)/_layout.tsx`, `apps/mobile/services/bizService.ts`, `apps/mobile/app/(biz)/onboarding/welcome.tsx` (placeholder).
 
 ## Phase B2 — Overview + Campaigns CRUD
 
