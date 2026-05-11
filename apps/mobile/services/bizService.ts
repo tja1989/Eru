@@ -1,5 +1,6 @@
 import api from './api';
 import type {
+  BizAudienceResponse,
   BizCampaign,
   BizCampaignCreateInput,
   BizCampaignListResponse,
@@ -8,6 +9,10 @@ import type {
   BizDashboardResponse,
   BizFeedbackResponse,
   BizMeResponse,
+  BizOfferCreateInput,
+  BizOfferItem,
+  BizOffersResponse,
+  BizQrScanResponse,
   BizUgcResponse,
 } from '@eru/shared';
 
@@ -54,4 +59,19 @@ export const bizService = {
 
   replyFeedback: (contentId: string, text: string): Promise<{ reply: { text: string; createdAt: string } }> =>
     api.post(`/biz/feedback/${contentId}/reply`, { text }).then((r) => r.data),
+
+  getAudience: (): Promise<BizAudienceResponse> =>
+    api.get('/biz/audience').then((r) => r.data),
+
+  getOffers: (): Promise<BizOffersResponse> =>
+    api.get('/biz/offers').then((r) => r.data),
+
+  createOffer: (input: BizOfferCreateInput): Promise<BizOfferItem> =>
+    api.post('/biz/offers', input).then((r) => r.data),
+
+  updateOffer: (id: string, patch: Partial<BizOfferCreateInput> & { isActive?: boolean }): Promise<BizOfferItem> =>
+    api.patch(`/biz/offers/${id}`, patch).then((r) => r.data),
+
+  scanQr: (claimCode: string): Promise<BizQrScanResponse> =>
+    api.post('/biz/qrscan', { claimCode }).then((r) => r.data),
 };
