@@ -37,7 +37,7 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
 - [x] **B2.2** API `GET /biz/campaigns?status=`, `POST /biz/campaigns` (validated by Zod in `utils/validators.ts`), `PATCH /biz/campaigns/:id` (drafts only), `POST /biz/campaigns/:id/launch` (flip → active, debit `BusinessTransaction`, emit `CampaignEvent { kind:'launch' }`). Tests in `biz-campaigns.test.ts`.
 - [x] **B2.3** Mobile `apps/mobile/app/(biz)/overview.tsx`: KPI tiles, 7-day bar chart, sentiment row, recent activity. Reuses `colors/spacing/radius` tokens.
 - [x] **B2.4** Mobile `apps/mobile/app/(biz)/campaigns/index.tsx`: status-tab filter (All/Active/Completed/Draft), card list, deep link to detail.
-- [ ] **B2.5** Mobile `apps/mobile/app/(biz)/campaigns/[id].tsx`: campaign detail + edit (drafts only). Edit calls `PATCH /biz/campaigns/:id`.
+- [x] **B2.5** Mobile `apps/mobile/app/(biz)/campaigns/[id].tsx`: campaign detail + edit (drafts only). Edit calls `PATCH /biz/campaigns/:id`.
 
 ## Phase B3 — Create-Ad wizard
 

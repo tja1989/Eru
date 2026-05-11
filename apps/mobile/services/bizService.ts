@@ -1,5 +1,7 @@
 import api from './api';
 import type {
+  BizCampaign,
+  BizCampaignCreateInput,
   BizCampaignListResponse,
   BizCampaignStatus,
   BizDashboardPeriod,
@@ -19,4 +21,17 @@ export const bizService = {
 
   getCampaigns: (status?: BizCampaignStatus): Promise<BizCampaignListResponse> =>
     api.get('/biz/campaigns', { params: status ? { status } : {} }).then((r) => r.data),
+
+  // No GET /biz/campaigns/:id yet — derived from the list. Cheap enough at
+  // the current campaign volumes; a dedicated endpoint can land later if
+  // an owner ever crosses ~hundreds of campaigns.
+  getCampaign: async (id: string): Promise<BizCampaign> => {
+    const list = await api.get('/biz/campaigns').then((r) => r.data) as BizCampaignListResponse;
+    const found = list.items.find((c) => c.id === id);
+    if (!found) throw new Error('Campaign not found');
+    return found;
+  },
+
+  updateCampaign: (id: string, patch: Partial<BizCampaignCreateInput>): Promise<BizCampaign> =>
+    api.patch(`/biz/campaigns/${id}`, patch).then((r) => r.data),
 };
