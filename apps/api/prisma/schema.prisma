@@ -426,6 +426,7 @@ model Business {
   rating              Decimal   @default(0) @db.Decimal(2, 1)
   reviewCount         Int       @default(0) @map("review_count")
   followerCount       Int       @default(0) @map("follower_count")
+  targetPincodes      String[]  @default([]) @map("target_pincodes")
   createdAt           DateTime  @default(now()) @map("created_at")
 
   offers               Offer[]
@@ -433,6 +434,9 @@ model Business {
   watchlist            Watchlist[]
   taggedContent        Content[] @relation("BusinessTaggedContent")
   owner                User?     @relation("BusinessOwner", fields: [ownerId], references: [id])
+  campaigns            Campaign[]
+  plan                 BusinessPlan?
+  transactions         BusinessTransaction[]
 
   @@index([pincode])
   @@index([ownerId])
@@ -732,4 +736,113 @@ model Watchlist {
   @@index([userId])
   @@index([businessId])
   @@map("watchlist")
+}
+
+// ========== Business Dashboard: campaigns, plans, billing ==========
+
+enum CampaignType {
+  promotion
+  brand_awareness
+  new_launch
+  poll
+  event
+  contest
+  seasonal
+  review_request
+  restock
+  hiring
+}
+
+enum CampaignStatus {
+  draft
+  active
+  paused
+  completed
+}
+
+enum BusinessPlanTier {
+  starter
+  growth
+  pro
+}
+
+enum BusinessTxKind {
+  topup
+  campaign_debit
+  ugc_boost_debit
+  refund
+  adjustment
+}
+
+model Campaign {
+  id           String         @id @default(uuid())
+  businessId   String         @map("business_id")
+  type         CampaignType
+  status       CampaignStatus @default(draft)
+  title        String
+  body         String?
+  imageUrl     String?        @map("image_url")
+  pincodes     String[]       @default([])
+  ageRanges    String[]       @default([]) @map("age_ranges")
+  interests    String[]       @default([])
+  budget       Decimal        @default(0) @db.Decimal(10, 2)
+  spent        Decimal        @default(0) @db.Decimal(10, 2)
+  startDate    DateTime?      @map("start_date")
+  endDate      DateTime?      @map("end_date")
+  offerId      String?        @map("offer_id")
+  impressions  Int            @default(0)
+  clicks       Int            @default(0)
+  claims       Int            @default(0)
+  storeVisits  Int            @default(0) @map("store_visits")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  events   CampaignEvent[]
+
+  @@index([businessId, status])
+  @@map("campaigns")
+}
+
+model CampaignEvent {
+  id         String   @id @default(uuid())
+  campaignId String   @map("campaign_id")
+  userId     String?  @map("user_id")
+  kind       String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, kind])
+  @@index([createdAt])
+  @@map("campaign_events")
+}
+
+model BusinessPlan {
+  id                 String           @id @default(uuid())
+  businessId         String           @unique @map("business_id")
+  tier               BusinessPlanTier @default(starter)
+  monthlyCapAmount   Decimal          @default(0) @map("monthly_cap_amount") @db.Decimal(10, 2)
+  pincodeCap         Int              @default(1) @map("pincode_cap")
+  startedAt          DateTime         @default(now()) @map("started_at")
+  status             String           @default("active")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_plans")
+}
+
+model BusinessTransaction {
+  id         String         @id @default(uuid())
+  businessId String         @map("business_id")
+  amount     Decimal        @db.Decimal(10, 2)
+  kind       BusinessTxKind
+  refId      String?        @map("ref_id")
+  note       String?
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt(sort: Desc)])
+  @@map("business_transactions")
 }
