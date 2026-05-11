@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type {
+  BizAudienceBucket,
+  BizAudienceResponse,
   BizBusinessSummary,
   BizCampaign,
   BizCampaignListResponse,
@@ -539,4 +541,109 @@ export async function bizRoutes(app: FastifyInstance) {
       return { reply: { text: created.text, createdAt: created.createdAt.toISOString() } };
     },
   );
+
+  // ---------- Audience aggregation (B5.1) ----------
+
+  // Audience = the set of users who either interacted with content tagged
+  // to this business OR redeemed one of the business's offers. We pull
+  // both sources, dedupe by userId for demographic counts, but keep all
+  // interaction timestamps for peakHours.
+  app.get('/biz/audience', async (request): Promise<BizAudienceResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const business = await requireBusinessOwner(userId);
+
+    const taggedContent = await prisma.content.findMany({
+      where: { businessTagId: business.id, deletedAt: null },
+      select: { id: true },
+    });
+    const taggedIds = taggedContent.map((c) => c.id);
+
+    const businessOffers = await prisma.offer.findMany({
+      where: { businessId: business.id },
+      select: { id: true },
+    });
+    const offerIds = businessOffers.map((o) => o.id);
+
+    const interactions = taggedIds.length
+      ? await prisma.interaction.findMany({
+          where: { contentId: { in: taggedIds } },
+          select: { userId: true, createdAt: true },
+        })
+      : [];
+    const rewards = offerIds.length
+      ? await prisma.userReward.findMany({
+          where: { offerId: { in: offerIds } },
+          select: { userId: true, usedAt: true, createdAt: true },
+        })
+      : [];
+
+    // Distinct userIds for demographic aggregation
+    const userIds = new Set<string>();
+    interactions.forEach((i) => userIds.add(i.userId));
+    rewards.forEach((r) => userIds.add(r.userId));
+
+    const users = userIds.size
+      ? await prisma.user.findMany({
+          where: { id: { in: Array.from(userIds) } },
+          select: { dob: true, primaryPincode: true, interests: true },
+        })
+      : [];
+
+    // Age buckets — bands chosen to match common analytics dashboards.
+    const ageBands: Array<{ label: string; min: number; max: number }> = [
+      { label: '13-17', min: 13, max: 17 },
+      { label: '18-24', min: 18, max: 24 },
+      { label: '25-34', min: 25, max: 34 },
+      { label: '35-44', min: 35, max: 44 },
+      { label: '45-54', min: 45, max: 54 },
+      { label: '55+', min: 55, max: 999 },
+    ];
+    const ageCount = new Map<string, number>();
+    const pincodeCount = new Map<string, number>();
+    const interestCount = new Map<string, number>();
+    const now = Date.now();
+    for (const u of users) {
+      if (u.dob) {
+        const ageYears = Math.floor((now - u.dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+        const band = ageBands.find((b) => ageYears >= b.min && ageYears <= b.max);
+        if (band) ageCount.set(band.label, (ageCount.get(band.label) ?? 0) + 1);
+      }
+      if (u.primaryPincode) {
+        pincodeCount.set(u.primaryPincode, (pincodeCount.get(u.primaryPincode) ?? 0) + 1);
+      }
+      for (const i of u.interests) {
+        interestCount.set(i, (interestCount.get(i) ?? 0) + 1);
+      }
+    }
+
+    // Peak hours: 24-slot count, IST (UTC+5:30) so an Indian audience reads naturally.
+    const peakHours = Array(24).fill(0) as number[];
+    const ISTOffsetMs = 5.5 * 60 * 60 * 1000;
+    for (const i of interactions) {
+      const istHour = new Date(i.createdAt.getTime() + ISTOffsetMs).getUTCHours();
+      peakHours[istHour]++;
+    }
+    for (const r of rewards) {
+      // Prefer the actual redemption time; fall back to claim time so the
+      // hour-of-day reflects when the user engaged, not just when they earned.
+      const when = r.usedAt ?? r.createdAt;
+      const istHour = new Date(when.getTime() + ISTOffsetMs).getUTCHours();
+      peakHours[istHour]++;
+    }
+
+    function toBuckets(map: Map<string, number>, limit = 10): BizAudienceBucket[] {
+      return Array.from(map.entries())
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
+    }
+
+    return {
+      ageBuckets: toBuckets(ageCount),
+      topPincodes: toBuckets(pincodeCount),
+      peakHours,
+      topInterests: toBuckets(interestCount),
+    };
+  });
 }

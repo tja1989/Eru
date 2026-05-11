@@ -53,7 +53,7 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
 
 ## Phase B5 — Audience + Offers + QR scan + Influencers
 
-- [ ] **B5.1** API `GET /biz/audience` — aggregates age buckets / top pincodes / peak hours / interests of users who interacted with this business's content or claimed its offers. Tests in `biz-audience.test.ts`.
+- [x] **B5.1** API `GET /biz/audience` — aggregates age buckets / top pincodes / peak hours / interests of users who interacted with this business's content or claimed its offers. Tests in `biz-audience.test.ts`.
 - [ ] **B5.2** API owner-side offers: `GET /biz/offers`, `POST /biz/offers`, `PATCH /biz/offers/:id` (wrap existing offers logic). Tests in `biz-offers-owner.test.ts`.
 - [ ] **B5.3** API `POST /biz/qrscan` accepts a `claimCode`, marks the corresponding `UserReward` redeemed via the existing reward-redeem flow, writes a `CampaignEvent { kind:'visit' }` if the offer belongs to a campaign. Tests in `biz-qrscan.test.ts`.
 - [ ] **B5.4** Mobile screens `(biz)/audience.tsx`, `(biz)/offers.tsx`, `(biz)/qrscan.tsx` (expo-camera), `(biz)/influencers.tsx` (delegates to `creatorScoreService`).
