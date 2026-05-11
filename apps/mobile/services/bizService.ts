@@ -6,7 +6,9 @@ import type {
   BizCampaignStatus,
   BizDashboardPeriod,
   BizDashboardResponse,
+  BizFeedbackResponse,
   BizMeResponse,
+  BizUgcResponse,
 } from '@eru/shared';
 
 // The owner-side Business Dashboard API client. Each method maps 1:1 to a
@@ -40,4 +42,16 @@ export const bizService = {
 
   launchCampaign: (id: string): Promise<BizCampaign> =>
     api.post(`/biz/campaigns/${id}/launch`).then((r) => r.data),
+
+  getUgc: (): Promise<BizUgcResponse> =>
+    api.get('/biz/ugc').then((r) => r.data),
+
+  boostUgc: (contentId: string, amount: number): Promise<{ proposalId: string }> =>
+    api.post(`/biz/ugc/${contentId}/boost`, { amount }).then((r) => r.data),
+
+  getFeedback: (sentiment?: 'positive' | 'neutral' | 'negative'): Promise<BizFeedbackResponse> =>
+    api.get('/biz/feedback', { params: sentiment ? { sentiment } : {} }).then((r) => r.data),
+
+  replyFeedback: (contentId: string, text: string): Promise<{ reply: { text: string; createdAt: string } }> =>
+    api.post(`/biz/feedback/${contentId}/reply`, { text }).then((r) => r.data),
 };

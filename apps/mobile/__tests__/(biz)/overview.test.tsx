@@ -77,4 +77,18 @@ describe('(biz)/overview', () => {
       expect(queryByTestId('biz-overview-loading')).toBeNull();
     });
   });
+
+  it('still renders the sentiment row when all counts are zero', async () => {
+    mockedGetDashboard.mockResolvedValue({
+      period: 'week',
+      kpis: { impressions: 0, clicks: 0, ctr: 0, claims: 0, visits: 0, spent: 0, costPerVisit: 0 },
+      dailyImpressions: [0, 0, 0, 0, 0, 0, 0],
+      sentiment: { positive: 0, neutral: 0, negative: 0 },
+      recentActivity: [],
+    });
+    const { findByText } = render(<BizOverview />);
+    expect(await findByText('Positive')).toBeTruthy();
+    expect(await findByText('Neutral')).toBeTruthy();
+    expect(await findByText('Negative')).toBeTruthy();
+  });
 });
