@@ -22,7 +22,7 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
 
 - [x] **B1.1** Prisma: add `enum CampaignType`, `enum CampaignStatus`, `model Campaign`, `model CampaignEvent`, `model BusinessPlan`, `model BusinessTransaction`, plus `Business.targetPincodes String[]`. Wire all relations to `Business`. Run `npx prisma db push` + `npx prisma generate`.
   - Files: `apps/api/prisma/schema.prisma`.
-- [ ] **B1.2** Extend `tests/helpers/db.ts#cleanupTestData` to delete in FK-safe order: `CampaignEvent → Campaign → BusinessTransaction → BusinessPlan` for `dev-test-*` owners.
+- [x] **B1.2** Extend `tests/helpers/db.ts#cleanupTestData` to delete in FK-safe order: `CampaignEvent → Campaign → BusinessTransaction → BusinessPlan` for `dev-test-*` owners.
   - Files: `apps/api/tests/helpers/db.ts`.
 - [ ] **B1.3** Create `packages/shared/src/types/biz.ts` with `BizMeResponse`, `BizOnboardingInput`, plus stubs for `BizDashboardResponse`, `BizCampaign`, `BizCampaignListResponse`, `BizCampaignCreateInput`, `BizUgcResponse`, `BizFeedbackResponse`, `BizAudienceResponse`, `BizPlansResponse`, `BizBillingResponse`, `BizTransaction`. Export from `packages/shared/src/types/index.ts` (and `packages/shared/src/index.ts` if used).
   - Files: `packages/shared/src/types/biz.ts`, `packages/shared/src/types/index.ts`.

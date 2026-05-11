@@ -67,6 +67,10 @@ export async function cleanupTestData() {
   await prisma.pointsLedger.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.userBadge.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.sponsorshipProposal.deleteMany({ where: { creator: { firebaseUid: { startsWith: 'dev-test-' } } } });
+  await prisma.campaignEvent.deleteMany({ where: { campaign: { business: { owner: { firebaseUid: { startsWith: 'dev-test-' } } } } } });
+  await prisma.campaign.deleteMany({ where: { business: { owner: { firebaseUid: { startsWith: 'dev-test-' } } } } });
+  await prisma.businessTransaction.deleteMany({ where: { business: { owner: { firebaseUid: { startsWith: 'dev-test-' } } } } });
+  await prisma.businessPlan.deleteMany({ where: { business: { owner: { firebaseUid: { startsWith: 'dev-test-' } } } } });
   await prisma.storyView.deleteMany({ where: { viewer: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.story.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
   await prisma.watchlist.deleteMany({ where: { user: { firebaseUid: { startsWith: 'dev-test-' } } } });
