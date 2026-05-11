@@ -16,6 +16,10 @@ import type {
   BizOfferItem,
   BizOfferType,
   BizOffersResponse,
+  BizOnboardingSetupResponse,
+  BizPaymentResponse,
+  BizPlanResponse,
+  BizPlanTier,
   BizQrScanResponse,
   BizUgcContentItem,
   BizUgcResponse,
@@ -27,6 +31,10 @@ import { Errors } from '../utils/errors.js';
 import {
   bizOfferCreateSchema,
   bizOfferPatchSchema,
+  bizOnboardingSetupSchema,
+  bizPaymentSchema,
+  bizPincodesSchema,
+  bizPlanSchema,
   bizQrScanSchema,
   campaignCreateSchema,
   campaignListQuerySchema,
@@ -818,6 +826,125 @@ export async function bizRoutes(app: FastifyInstance) {
         username: reward.user.username,
       },
       campaignEventId: result.eventId,
+    };
+  });
+
+  // ---------- Onboarding (B6.1) ----------
+
+  // POST /biz/onboarding/setup — creates a Business owned by the caller
+  // if none exists yet, otherwise updates the existing one. The mobile
+  // onboarding chain hits this first to land an owner on the rest of
+  // the flow, so it can't be gated by requireBusinessOwner.
+  app.post('/biz/onboarding/setup', async (request): Promise<BizOnboardingSetupResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizOnboardingSetupSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const data = parsed.data;
+
+    const existing = await prisma.business.findFirst({ where: { ownerId: userId } });
+    const business = existing
+      ? await prisma.business.update({
+          where: { id: existing.id },
+          data: {
+            name: data.name,
+            category: data.category,
+            pincode: data.pincode,
+            address: data.address ?? existing.address,
+            phone: data.phone ?? existing.phone,
+          },
+        })
+      : await prisma.business.create({
+          data: {
+            name: data.name,
+            category: data.category,
+            pincode: data.pincode,
+            address: data.address ?? null,
+            phone: data.phone ?? null,
+            ownerId: userId,
+          },
+        });
+    return { business: serializeBusiness(business) };
+  });
+
+  // POST /biz/onboarding/pincodes — persists the reach pincodes the
+  // owner picks. Requires an existing business.
+  app.post('/biz/onboarding/pincodes', async (request): Promise<BizOnboardingSetupResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizPincodesSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+    const updated = await prisma.business.update({
+      where: { id: business.id },
+      data: { targetPincodes: parsed.data.pincodes },
+    });
+    return { business: serializeBusiness(updated) };
+  });
+
+  // POST /biz/onboarding/plan — upserts the BusinessPlan tier.
+  // Tier defaults: Starter (₹500 cap, 1 pincode), Growth (₹5K, 5),
+  // Pro (₹12K, 20). The mobile screen shows the user the same numbers.
+  app.post('/biz/onboarding/plan', async (request): Promise<BizPlanResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizPlanSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+
+    const tierDefaults: Record<BizPlanTier, { monthlyCapAmount: number; pincodeCap: number }> = {
+      starter: { monthlyCapAmount: 500, pincodeCap: 1 },
+      growth: { monthlyCapAmount: 5000, pincodeCap: 5 },
+      pro: { monthlyCapAmount: 12000, pincodeCap: 20 },
+    };
+    const def = tierDefaults[parsed.data.tier];
+
+    const plan = await prisma.businessPlan.upsert({
+      where: { businessId: business.id },
+      create: {
+        businessId: business.id,
+        tier: parsed.data.tier,
+        monthlyCapAmount: def.monthlyCapAmount,
+        pincodeCap: def.pincodeCap,
+      },
+      update: {
+        tier: parsed.data.tier,
+        monthlyCapAmount: def.monthlyCapAmount,
+        pincodeCap: def.pincodeCap,
+      },
+    });
+
+    return {
+      tier: plan.tier,
+      monthlyCapAmount: asNumber(plan.monthlyCapAmount),
+      pincodeCap: plan.pincodeCap,
+      startedAt: plan.startedAt.toISOString(),
+    };
+  });
+
+  // POST /biz/onboarding/payment — mock top-up. Writes a positive
+  // BusinessTransaction credit; no real gateway is wired yet. The
+  // dashboard's billing screen sums these against debits to show balance.
+  app.post('/biz/onboarding/payment', async (request): Promise<BizPaymentResponse> => {
+    const userId = request.userId;
+    if (!userId) throw Errors.unauthorized('Authentication required');
+    const parsed = bizPaymentSchema.safeParse(request.body);
+    if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
+    const business = await requireBusinessOwner(userId);
+
+    const tx = await prisma.businessTransaction.create({
+      data: {
+        businessId: business.id,
+        amount: parsed.data.amount,
+        kind: 'topup',
+        note: 'mock topup',
+      },
+    });
+    const newBalance = await getBalance(business.id);
+    return {
+      transactionId: tx.id,
+      amount: asNumber(tx.amount),
+      newBalance,
     };
   });
 }

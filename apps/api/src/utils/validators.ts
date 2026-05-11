@@ -241,3 +241,23 @@ export const bizOfferPatchSchema = bizOfferCreateSchema.partial().extend({
 export const bizQrScanSchema = z.object({
   claimCode: z.string().trim().min(1).max(100),
 });
+
+export const bizOnboardingSetupSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  category: z.string().trim().min(1).max(100),
+  pincode: z.string().length(6),
+  address: z.string().max(500).optional(),
+  phone: z.string().max(20).optional(),
+});
+
+export const bizPincodesSchema = z.object({
+  pincodes: z.array(z.string().length(6)).max(50),
+});
+
+export const bizPlanSchema = z.object({
+  tier: z.enum(['starter', 'growth', 'pro']),
+});
+
+export const bizPaymentSchema = z.object({
+  amount: z.number().positive(),
+});

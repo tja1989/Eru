@@ -56,7 +56,7 @@ export interface BizMeResponse {
   business: BizBusinessSummary | null;
 }
 
-// ---------- B6.1: POST /biz/onboarding/setup ----------
+// ---------- B6.1: onboarding ----------
 
 export interface BizOnboardingInput {
   name: string;
@@ -64,6 +64,35 @@ export interface BizOnboardingInput {
   pincode: string;
   address?: string;
   phone?: string;
+}
+
+export interface BizPincodesInput {
+  pincodes: string[];
+}
+
+export interface BizPlanInput {
+  tier: BizPlanTier;
+}
+
+export interface BizPaymentInput {
+  amount: number;
+}
+
+export interface BizOnboardingSetupResponse {
+  business: BizBusinessSummary;
+}
+
+export interface BizPlanResponse {
+  tier: BizPlanTier;
+  monthlyCapAmount: number;
+  pincodeCap: number;
+  startedAt: string;
+}
+
+export interface BizPaymentResponse {
+  transactionId: string;
+  amount: number;
+  newBalance: number;
 }
 
 // ---------- B2.1: GET /biz/dashboard ----------
@@ -303,4 +332,10 @@ type _BizExportsAssertion = [
   BizOffersResponse,
   BizOfferCreateInput,
   BizQrScanResponse,
+  BizPincodesInput,
+  BizPlanInput,
+  BizPaymentInput,
+  BizOnboardingSetupResponse,
+  BizPlanResponse,
+  BizPaymentResponse,
 ];
