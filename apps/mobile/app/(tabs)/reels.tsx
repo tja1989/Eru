@@ -128,8 +128,21 @@ function ReelItem({
   }, [isActive]);
 
   const togglePlayPause = useCallback(() => {
-    setUserPaused((prev) => !prev);
-  }, []);
+    // Imperatively command the player AND flip the state so the UI doesn't
+    // depend on the effect re-running. On Android the effect-driven path was
+    // unreliable: the first tap (pause) worked but the second (resume) often
+    // didn't, because the play-arrow overlay rendered as a child of Pressable
+    // and confused the touch hit-test.
+    setUserPaused((prev) => {
+      const next = !prev;
+      try {
+        if (next) player.pause(); else player.play();
+      } catch {
+        // disposed player throws — fine, the effect will catch up
+      }
+      return next;
+    });
+  }, [player]);
 
   // Meter only the active reel — preloaded neighbours haven't actually
   // played anything yet, so their stats would skew TTFF / rebuffer numbers.
@@ -213,22 +226,30 @@ function ReelItem({
           resizeMode="cover"
         />
       ) : null}
-      {/* Video — Pressable wrapper gives tap-to-pause. VideoView itself doesn't
-          fire onPress, so the touchable lives outside it. */}
+      {/* Video + tap-to-pause. Pressable is a transparent sibling layered on
+          top of VideoView, not a wrapper — wrapping caused Android's touch
+          routing to drop the second tap whenever the play-arrow overlay
+          rendered as a Pressable child. */}
       {videoUrl ? (
-        <Pressable style={styles.videoOnTop} onPress={togglePlayPause} accessibilityLabel={userPaused ? 'Play' : 'Pause'}>
+        <View style={styles.videoOnTop}>
           <VideoView
             style={styles.video}
             player={player}
             contentFit="cover"
             nativeControls={false}
           />
-          {userPaused ? (
-            <View style={styles.pauseOverlay} pointerEvents="none">
-              <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
-            </View>
-          ) : null}
-        </Pressable>
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            onPress={togglePlayPause}
+            accessibilityLabel={userPaused ? 'Play' : 'Pause'}
+          >
+            {userPaused ? (
+              <View style={styles.pauseOverlay}>
+                <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
       ) : !posterUrl ? (
         <View style={[styles.video, styles.videoPlaceholder]}>
           <Text style={{ fontSize: 48 }}>🎬</Text>
