@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { colors, spacing, radius } from '@/constants/theme';
 import { bizService } from '@/services/bizService';
 import { leaderboardService } from '@/services/leaderboardService';
+import { messagesService } from '@/services/messagesService';
 
 interface Creator {
   id: string;
@@ -33,6 +35,7 @@ const TIERS: { key: TierKey; label: string }[] = [
 ];
 
 export default function BizInfluencers() {
+  const router = useRouter();
   const [pincode, setPincode] = useState<string | null>(null);
   const [items, setItems] = useState<Creator[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,6 +124,19 @@ export default function BizInfluencers() {
               {typeof c.points === 'number' ? <Text style={styles.meta}>{c.points.toLocaleString('en-IN')} pts</Text> : null}
               {c.tier ? <Text style={styles.meta}>{c.tier}</Text> : null}
             </View>
+            <TouchableOpacity
+              style={styles.msgBtn}
+              onPress={async () => {
+                try {
+                  const conv = await messagesService.createConversation(c.id);
+                  router.push(`/messages/${conv.id}` as Href);
+                } catch (err) {
+                  Alert.alert('Could not start message', err instanceof Error ? err.message : 'Try again');
+                }
+              }}
+            >
+              <Text style={styles.msgBtnText}>Message</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -147,6 +163,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 12, color: colors.g500 },
   metaRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs },
   meta: { fontSize: 12, color: colors.g600 },
+  msgBtn: { alignSelf: 'flex-start', marginTop: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.blue },
+  msgBtnText: { fontSize: 13, fontWeight: '700', color: colors.blue },
 
   empty: { fontSize: 14, color: colors.g400, fontStyle: 'italic', textAlign: 'center', marginTop: spacing.xl },
 });

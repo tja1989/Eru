@@ -1,23 +1,33 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import Constants from 'expo-constants';
 import { colors, spacing, radius } from '@/constants/theme';
 import { bizService } from '@/services/bizService';
 import type { BizQrScanResponse } from '@eru/shared';
 
-// Manual claim-code entry for B5.4. Camera-based scanning (expo-camera /
-// CameraView) is a follow-up once `expo install expo-camera` lands; the
-// API surface is identical so swapping the input layer is a one-screen
-// change.
+// `executionEnvironment === 'storeClient'` is true when running under
+// Expo Go (no native modules). Camera renders only outside Expo Go;
+// Expo Go users fall back to the manual claim-code TextInput so the
+// screen never crashes when expo-camera's native module isn't linked.
+const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
+
 export default function BizQrScan() {
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<BizQrScanResponse | null>(null);
+  const [scanned, setScanned] = useState(false);
 
-  async function submit() {
-    if (!code.trim() || submitting) return;
+  // expo-camera is required only when we know the native module exists.
+  // Avoid the top-level import so Jest + Expo Go never load it.
+  const CameraView = !IS_EXPO_GO ? require('expo-camera').CameraView : null;
+  const useCameraPermissions = !IS_EXPO_GO ? require('expo-camera').useCameraPermissions : null;
+  const [permission, requestPermission] = useCameraPermissions ? useCameraPermissions() : [null, null];
+
+  async function submitCode(payload: string) {
+    if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await bizService.scanQr(code.trim());
+      const res = await bizService.scanQr(payload);
       setResult(res);
       setCode('');
     } catch (err) {
@@ -34,13 +44,44 @@ export default function BizQrScan() {
         <Text style={styles.row}>{result.reward.offerTitle}</Text>
         <Text style={styles.row}>@{result.reward.username}</Text>
         {result.campaignEventId ? <Text style={styles.row}>Visit logged to campaign</Text> : null}
-        <TouchableOpacity style={styles.btnPrimary} onPress={() => setResult(null)}>
+        <TouchableOpacity style={styles.btnPrimary} onPress={() => { setResult(null); setScanned(false); }}>
           <Text style={styles.btnPrimaryText}>Scan next</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  // Camera path (dev build).
+  if (!IS_EXPO_GO && CameraView) {
+    if (!permission) {
+      return <View style={styles.center}><Text>Requesting camera…</Text></View>;
+    }
+    if (!permission.granted) {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.title}>Camera permission required</Text>
+          <TouchableOpacity style={styles.btnPrimary} onPress={requestPermission}>
+            <Text style={styles.btnPrimaryText}>Grant</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.cameraContainer}>
+        <CameraView
+          style={styles.camera}
+          onBarcodeScanned={scanned ? undefined : ({ data }: { data: string }) => {
+            setScanned(true);
+            submitCode(data);
+          }}
+          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+        />
+        <Text style={styles.hint}>Point at the customer's reward QR</Text>
+      </View>
+    );
+  }
+
+  // Manual-input fallback (Expo Go).
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Redeem a reward</Text>
@@ -54,7 +95,7 @@ export default function BizQrScan() {
       />
       <TouchableOpacity
         style={[styles.btnPrimary, (!code.trim() || submitting) && styles.btnDisabled]}
-        onPress={submit}
+        onPress={() => submitCode(code.trim())}
         disabled={!code.trim() || submitting}
       >
         <Text style={styles.btnPrimaryText}>{submitting ? 'Redeeming…' : 'Redeem'}</Text>
@@ -66,6 +107,10 @@ export default function BizQrScan() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.xl, gap: spacing.md, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md, backgroundColor: colors.bg },
+
+  cameraContainer: { flex: 1, backgroundColor: '#000' },
+  camera: { flex: 1 },
+  hint: { position: 'absolute', bottom: 60, left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 14 },
 
   title: { fontSize: 20, fontWeight: '700', color: colors.g800 },
   helper: { fontSize: 13, color: colors.g500 },

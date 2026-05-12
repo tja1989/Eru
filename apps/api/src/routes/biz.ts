@@ -25,6 +25,7 @@ import type {
   BizUgcResponse,
 } from '@eru/shared';
 import { sponsorshipService } from '../services/sponsorshipService.js';
+import { verifySignedCode } from '../utils/hmac.js';
 import { prisma } from '../utils/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { Errors } from '../utils/errors.js';
@@ -777,8 +778,19 @@ export async function bizRoutes(app: FastifyInstance) {
     if (!parsed.success) throw Errors.badRequest(parsed.error.issues[0].message);
     const business = await requireBusinessOwner(userId);
 
+    // The QR payload may be a raw claimCode (legacy) or a signed token
+    // `${claimCode}.${hmac}` (post-HMAC rollout). verifySignedCode handles
+    // both: returns the underlying claimCode for the DB lookup, and throws
+    // 400 on a present-but-invalid signature (tamper detection).
+    let claimCodeForLookup: string;
+    try {
+      claimCodeForLookup = verifySignedCode(parsed.data.claimCode).claimCode;
+    } catch (err) {
+      throw Errors.badRequest(err instanceof Error ? err.message : 'Invalid QR payload');
+    }
+
     const reward = await prisma.userReward.findUnique({
-      where: { claimCode: parsed.data.claimCode },
+      where: { claimCode: claimCodeForLookup },
       include: {
         offer: { select: { id: true, title: true, businessId: true } },
         user: { select: { id: true, username: true } },
