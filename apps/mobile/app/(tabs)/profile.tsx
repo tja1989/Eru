@@ -149,13 +149,16 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* App header */}
       <View style={styles.appHeader}>
-        <Text style={styles.logo}>Eru</Text>
+        <Text style={styles.logo}>Yeru</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity onPress={() => router.push('/my-content' as any)} accessibilityLabel="My content">
             <Ionicons name="list-outline" size={26} color="#262626" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/leaderboard' as any)} accessibilityLabel="Leaderboard">
             <Ionicons name="trophy-outline" size={26} color="#262626" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(biz)/overview' as any)} accessibilityLabel="Switch to Business">
+            <Ionicons name="briefcase-outline" size={26} color="#262626" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/settings' as any)} accessibilityLabel="Settings">
             <Ionicons name="settings-outline" size={26} color="#262626" />

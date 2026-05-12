@@ -1,6 +1,7 @@
 import api from './api';
 import type {
   BizAudienceResponse,
+  BizBillingResponse,
   BizCampaign,
   BizCampaignCreateInput,
   BizCampaignListResponse,
@@ -17,6 +18,7 @@ import type {
   BizPaymentResponse,
   BizPlanResponse,
   BizPlanTier,
+  BizPlansResponse,
   BizQrScanResponse,
   BizUgcResponse,
 } from '@eru/shared';
@@ -91,4 +93,10 @@ export const bizService = {
 
   onboardingPayment: (amount: number): Promise<BizPaymentResponse> =>
     api.post('/biz/onboarding/payment', { amount }).then((r) => r.data),
+
+  getPlans: (): Promise<BizPlansResponse> =>
+    api.get('/biz/plans').then((r) => r.data),
+
+  getBilling: (): Promise<BizBillingResponse> =>
+    api.get('/biz/billing').then((r) => r.data),
 };

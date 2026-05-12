@@ -243,6 +243,22 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
+        {/* Business — entry point into the (biz) dashboard. The layout
+            gate at /(biz)/_layout.tsx routes the owner to the onboarding
+            chain automatically if they haven't set up a Business yet. */}
+        <Text style={styles.sectionHeader}>Business</Text>
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.fieldRow}
+            onPress={() => router.push('/(biz)/overview' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Switch to Business dashboard"
+          >
+            <Text style={[styles.fieldLabel, { width: undefined, flex: 1 }]}>Switch to Business</Text>
+            <Text style={{ fontSize: 17, color: colors.g400 }}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Appearance — minimal toggle for theme mode. Full Settings rebuild
             happens in PR-E (per spec docs/superpowers/specs/2026-05-05-eru-ig-aesthetic-design.md). */}
         <Text style={styles.sectionHeader}>Appearance</Text>
@@ -609,7 +625,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Eru Account stats — lifetime + engagement totals */}
-        <Text style={styles.sectionHeader}>Eru Account</Text>
+        <Text style={styles.sectionHeader}>Yeru Account</Text>
         <View style={styles.section}>
           <View style={styles.infoRow}>
             <Text style={styles.fieldLabel}>Username</Text>
