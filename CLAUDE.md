@@ -38,6 +38,9 @@ The repo root has `package.json` workspaces + `turbo.json`. Turbo pipelines (`tu
 | `npm test -- <pattern>` | Single file, e.g. `npm test -- PostCard`; RegExp-matched against `__tests__/**` |
 | `npm run test:watch` | Watch mode |
 | `npx tsc --noEmit` | Type-check (6 pre-existing errors in CommentInput / SponsorshipCard / useNotifications — document, don't "fix" unless asked) |
+| `eas build --profile preview --platform <android\|ios\|all>` | Cut a native build. Required when **app.config.js**, **assets/**, **package.json native deps**, or **any native module** changes — see lane rule below |
+| `eas update --branch <preview\|production> --message "…"` | Ship JS-only changes over-the-air to already-installed builds whose runtime fingerprint matches the working tree |
+| `eas channel:view <name>` / `eas update:list --branch <name>` | Inspect what fingerprint each channel/branch is targeting (use after every push to confirm both `ios` and `android` groups were published) |
 
 ### Verifying a mobile bundle actually assembles (useful when Expo Go shows a 500)
 
@@ -151,6 +154,47 @@ The app works in Expo Go for most smoke-testing, but a **development build is re
 - Custom app icon / splash / `scheme: "eru"` deep links
 
 Until a dev build exists, run `npx expo start --tunnel --clear` to avoid LAN/firewall issues. A dev build uses the same Metro dev server with `--dev-client`.
+
+## EAS Update vs native rebuild — the lane rule
+
+EAS Update ships **JavaScript bundles** to already-installed apps over-the-air. EAS Build creates a **new native binary** (`.apk` / `.ipa`). They are not interchangeable.
+
+The lane is gated by the runtime fingerprint (`runtimeVersion: { policy: 'fingerprint' }` in [apps/mobile/app.config.js](apps/mobile/app.config.js)). An OTA bundle only flows to an installed app whose fingerprint matches exactly. Any native change shifts the fingerprint and orphans every installed build from future OTAs until those apps are rebuilt and reinstalled.
+
+**Use the table to decide which lane you're in:**
+
+| Change | Lane | Why |
+|---|---|---|
+| Edit `.ts` / `.tsx` files | OTA | JS only — runtime fingerprint unchanged |
+| Strings, colors, layouts, copy | OTA | JS only |
+| Add/remove React components, hooks, stores | OTA | JS only |
+| Edit `apps/mobile/app.config.js` (name, scheme, bundleId, plugins, splash, backgroundColor) | **Native rebuild** | Becomes Info.plist / AndroidManifest entries — baked at build time |
+| Replace `apps/mobile/assets/*.png` (icon, adaptive-icon, splash) | **Native rebuild** | Native build embeds the PNGs |
+| Add an `expo-*` or `react-native-*` dependency to `apps/mobile/package.json` | **Native rebuild** | New native module = new fingerprint |
+| Edit `eas.json` build profiles or `plugins` array | **Native rebuild** | Native build inputs changed |
+| API-only changes (`apps/api/**`) | Neither — Railway redeploys on push | No mobile impact |
+
+**Standard publishing cycle for OTA changes:**
+```
+git push origin main
+cd apps/mobile
+eas update --branch preview    --platform all --message "What changed"
+eas update --branch production --platform all --message "What changed"
+eas update:list --branch preview --limit 2  # confirm BOTH ios + android groups present
+```
+
+Always pass `--platform all` (or run paired `--platform android` / `--platform ios`). Without it, `eas update` can silently skip one platform if its fingerprint is unstable, and `channel:view` shows only the latest update group per channel — which can mask a half-published rollout. Verify with `eas update:list --limit 2` and confirm you see one `ios` + one `android` entry per "Message".
+
+**Standard publishing cycle for native changes:**
+```
+git push origin main
+cd apps/mobile
+eas build --profile preview --platform all   # ~15–45 min queue + build
+# When done: install new .apk on Android testers; eas submit -p ios --latest for TestFlight
+eas update --branch preview --platform all --message "…"   # optional — only if more JS landed after the build
+```
+
+**The trap to avoid:** stacking multiple native-rebuild commits without an intervening build. Every Yeru pilot bug-fix sprint hit this — the icon swap, rebrand, and bg-color commits were each OTA-incompatible, but OTAs were published between them, orphaning installed apps from every subsequent fix. Cut one rebuild per batch of native changes, not one per change.
 
 ## External services
 
