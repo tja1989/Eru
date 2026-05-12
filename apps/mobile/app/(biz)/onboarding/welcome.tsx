@@ -29,6 +29,6 @@ const styles = StyleSheet.create({
   hero: { flex: 1, justifyContent: 'center', gap: spacing.md },
   title: { fontSize: 28, fontWeight: '700', color: colors.g800 },
   subtitle: { fontSize: 15, color: colors.g600, lineHeight: 22 },
-  btnPrimary: { backgroundColor: colors.navy, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center' },
+  btnPrimary: { backgroundColor: colors.blue, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center' },
   btnPrimaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

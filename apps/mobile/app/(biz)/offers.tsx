@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: colors.g200, borderRadius: radius.sm, padding: spacing.md, fontSize: 14, color: colors.g800, backgroundColor: '#fff' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
 
-  btnPrimary: { backgroundColor: colors.navy, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignSelf: 'flex-start' },
+  btnPrimary: { backgroundColor: colors.blue, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignSelf: 'flex-start' },
   btnPrimaryText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   btnGhost: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.g200 },
   btnGhostText: { color: colors.g700, fontSize: 13, fontWeight: '700' },

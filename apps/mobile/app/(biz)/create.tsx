@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
 
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   typeChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.lg, backgroundColor: colors.g100 },
-  typeChipActive: { backgroundColor: colors.navy },
+  typeChipActive: { backgroundColor: colors.blue },
   typeChipText: { fontSize: 12, fontWeight: '600', color: colors.g600 },
   typeChipTextActive: { color: '#fff' },
 
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: 13, color: colors.g800, flex: 1, textAlign: 'right', fontWeight: '600' },
 
   navBar: { flexDirection: 'row', justifyContent: 'space-between', padding: spacing.lg, borderTopWidth: 0.5, borderTopColor: colors.g200, backgroundColor: '#fff', gap: spacing.md },
-  btnPrimary: { flex: 1, backgroundColor: colors.navy, padding: spacing.md, borderRadius: radius.sm, alignItems: 'center' },
+  btnPrimary: { flex: 1, backgroundColor: colors.blue, padding: spacing.md, borderRadius: radius.sm, alignItems: 'center' },
   btnPrimaryText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   btnGhost: { flex: 1, padding: spacing.md, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.g200, alignItems: 'center' },
   btnGhostText: { color: colors.g700, fontSize: 14, fontWeight: '700' },

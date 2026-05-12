@@ -122,6 +122,6 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, borderWidth: 1 },
   badgeText: { fontSize: 10, fontWeight: '700' },
 
-  btnPrimary: { backgroundColor: colors.navy, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignSelf: 'flex-start' },
+  btnPrimary: { backgroundColor: colors.blue, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignSelf: 'flex-start' },
   btnPrimaryText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });

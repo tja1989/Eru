@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: colors.g800, marginBottom: spacing.sm },
   input: { borderWidth: 1, borderColor: colors.g200, borderRadius: radius.sm, padding: spacing.md, fontSize: 15, color: colors.g800, backgroundColor: '#fff' },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
-  btnPrimary: { backgroundColor: colors.navy, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
+  btnPrimary: { backgroundColor: colors.blue, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
   btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
 });

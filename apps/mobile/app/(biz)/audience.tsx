@@ -78,9 +78,9 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, color: colors.g600, width: 80 },
   count: { fontSize: 13, color: colors.g800, fontWeight: '700', width: 40, textAlign: 'right' },
   barTrack: { flex: 1, height: 10, backgroundColor: colors.g100, borderRadius: radius.sm, overflow: 'hidden' },
-  bar: { height: '100%', backgroundColor: colors.navy, borderRadius: radius.sm },
+  bar: { height: '100%', backgroundColor: colors.blue, borderRadius: radius.sm },
 
   peakRow: { flexDirection: 'row', height: 60, alignItems: 'flex-end', gap: 2 },
   peakCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
-  peakBar: { width: '80%', backgroundColor: colors.orange, borderRadius: 1 },
+  peakBar: { width: '80%', backgroundColor: colors.g800, borderRadius: 1 },
 });

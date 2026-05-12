@@ -48,7 +48,7 @@ export function PincodeMultiSelect({ value, onChange, max = 10 }: Props) {
 const styles = StyleSheet.create({
   container: { gap: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { backgroundColor: colors.navy, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.lg },
+  chip: { backgroundColor: colors.blue, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.lg },
   chipText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   warn: { fontSize: 12, color: colors.orange },
 });

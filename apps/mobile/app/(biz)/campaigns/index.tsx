@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   tabRow: { flexDirection: 'row', padding: spacing.md, gap: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.g200 },
   tab: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.g100 },
-  tabActive: { backgroundColor: colors.navy },
+  tabActive: { backgroundColor: colors.blue },
   tabText: { fontSize: 13, fontWeight: '600', color: colors.g600 },
   tabTextActive: { color: '#fff' },
 

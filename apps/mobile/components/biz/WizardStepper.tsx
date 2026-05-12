@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm },
   step: { flex: 1, alignItems: 'center', gap: spacing.xs },
   dot: { width: 28, height: 28, borderRadius: radius.lg, backgroundColor: colors.g100, alignItems: 'center', justifyContent: 'center' },
-  dotActive: { backgroundColor: colors.navy },
+  dotActive: { backgroundColor: colors.blue },
   dotDone: { backgroundColor: colors.green },
   dotText: { fontSize: 12, fontWeight: '700', color: colors.g500 },
   dotTextActive: { color: '#fff' },

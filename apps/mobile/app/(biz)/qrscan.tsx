@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
 
   input: { borderWidth: 1, borderColor: colors.g200, borderRadius: radius.sm, padding: spacing.md, fontSize: 16, color: colors.g800, backgroundColor: '#fff' },
 
-  btnPrimary: { backgroundColor: colors.navy, padding: spacing.md, borderRadius: radius.sm, alignItems: 'center' },
+  btnPrimary: { backgroundColor: colors.blue, padding: spacing.md, borderRadius: radius.sm, alignItems: 'center' },
   btnPrimaryText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
 });

@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
 
   card: { backgroundColor: colors.card, padding: spacing.lg, borderRadius: radius.md, borderWidth: 1, borderColor: colors.g100, gap: spacing.sm },
   sectionTitle: { fontSize: 12, fontWeight: '700', color: colors.g500, textTransform: 'uppercase', letterSpacing: 0.5 },
-  tierLabel: { fontSize: 22, fontWeight: '700', color: colors.navy },
+  tierLabel: { fontSize: 22, fontWeight: '700', color: colors.blue },
   tierMeta: { fontSize: 13, color: colors.g600 },
   balance: { fontSize: 28, fontWeight: '700', color: colors.g800 },
 

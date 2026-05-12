@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.xl, gap: spacing.md, backgroundColor: colors.bg },
   title: { fontSize: 22, fontWeight: '700', color: colors.g800 },
   helper: { fontSize: 13, color: colors.g500, marginBottom: spacing.sm },
-  btnPrimary: { backgroundColor: colors.navy, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
+  btnPrimary: { backgroundColor: colors.blue, padding: spacing.lg, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
   btnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
 });

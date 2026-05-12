@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.md },
 
-  btnPrimary: { backgroundColor: colors.navy, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm },
+  btnPrimary: { backgroundColor: colors.blue, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm },
   btnPrimaryText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   btnGhost: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.g200 },
   btnGhostText: { color: colors.g700, fontSize: 14, fontWeight: '700' },

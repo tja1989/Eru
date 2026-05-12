@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   tabRow: { flexDirection: 'row', padding: spacing.md, gap: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.g200 },
   tab: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.g100 },
-  tabActive: { backgroundColor: colors.navy },
+  tabActive: { backgroundColor: colors.blue },
   tabText: { fontSize: 12, fontWeight: '600', color: colors.g600 },
   tabTextActive: { color: '#fff' },
 
@@ -144,13 +144,13 @@ const styles = StyleSheet.create({
 
   body: { fontSize: 14, color: colors.g700 },
 
-  reply: { borderLeftWidth: 3, borderLeftColor: colors.navy, paddingLeft: spacing.md, marginTop: spacing.sm },
-  replyLabel: { fontSize: 10, fontWeight: '700', color: colors.navy, textTransform: 'uppercase' },
+  reply: { borderLeftWidth: 3, borderLeftColor: colors.blue, paddingLeft: spacing.md, marginTop: spacing.sm },
+  replyLabel: { fontSize: 10, fontWeight: '700', color: colors.blue, textTransform: 'uppercase' },
   replyText: { fontSize: 13, color: colors.g700, marginTop: 2 },
 
   replyForm: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
   input: { flex: 1, borderWidth: 1, borderColor: colors.g200, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: 13, backgroundColor: '#fff' },
-  btnPrimary: { backgroundColor: colors.navy, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
+  btnPrimary: { backgroundColor: colors.blue, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
   btnPrimaryText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
 

@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
 
   periodRow: { flexDirection: 'row', gap: spacing.sm },
   periodChip: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.g100 },
-  periodChipActive: { backgroundColor: colors.navy },
+  periodChipActive: { backgroundColor: colors.blue },
   periodChipText: { fontSize: 13, fontWeight: '600', color: colors.g600 },
   periodChipTextActive: { color: '#fff' },
 
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
 
   chart: { flexDirection: 'row', height: 100, alignItems: 'flex-end', gap: spacing.xs },
   barColumn: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
-  bar: { width: '70%', backgroundColor: colors.orange, borderRadius: radius.sm },
+  bar: { width: '70%', backgroundColor: colors.g800, borderRadius: radius.sm },
 
   sentimentRow: { flexDirection: 'row', justifyContent: 'space-between' },
   sentimentItem: { alignItems: 'center', flex: 1 },
