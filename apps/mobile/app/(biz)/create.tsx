@@ -13,8 +13,19 @@ const CAMPAIGN_TYPES: { key: BizCampaignType; label: string }[] = [
   { key: 'promotion', label: 'Promotion' },
   { key: 'brand_awareness', label: 'Brand Awareness' },
   { key: 'new_launch', label: 'New Launch' },
+  { key: 'poll', label: 'Poll' },
   { key: 'event', label: 'Event' },
+  { key: 'contest', label: 'Contest' },
+  { key: 'seasonal', label: 'Seasonal' },
   { key: 'review_request', label: 'Review Request' },
+  { key: 'restock', label: 'Restock' },
+  { key: 'hiring', label: 'Hiring' },
+];
+
+const BUDGET_PRESETS: { label: string; amount: number; tier: string }[] = [
+  { label: '₹500', amount: 500, tier: 'Starter' },
+  { label: '₹5,000', amount: 5000, tier: 'Growth' },
+  { label: '₹12,000', amount: 12000, tier: 'Pro' },
 ];
 
 interface WizardState {
@@ -149,7 +160,23 @@ export default function BizCreate() {
         {step === 2 ? (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Budget</Text>
-            <Text style={styles.fieldLabel}>Total budget (₹)</Text>
+            <Text style={styles.fieldLabel}>Pick a preset or enter your own</Text>
+            <View style={styles.tierRow}>
+              {BUDGET_PRESETS.map((p) => {
+                const active = state.budgetText === String(p.amount);
+                return (
+                  <TouchableOpacity
+                    key={p.amount}
+                    onPress={() => update('budgetText', String(p.amount))}
+                    style={[styles.tierCard, active && styles.tierCardActive]}
+                  >
+                    <Text style={[styles.tierAmount, active && styles.tierAmountActive]}>{p.label}</Text>
+                    <Text style={[styles.tierName, active && styles.tierNameActive]}>{p.tier}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={styles.fieldLabel}>Custom amount (₹)</Text>
             <TextInput
               style={styles.input}
               value={state.budgetText}
@@ -218,6 +245,14 @@ const styles = StyleSheet.create({
   typeChipActive: { backgroundColor: colors.blue },
   typeChipText: { fontSize: 12, fontWeight: '600', color: colors.g600 },
   typeChipTextActive: { color: '#fff' },
+
+  tierRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  tierCard: { flex: 1, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.g200, backgroundColor: '#fff', alignItems: 'center', gap: spacing.xs },
+  tierCardActive: { borderColor: colors.blue, backgroundColor: colors.blue + '11' },
+  tierAmount: { fontSize: 16, fontWeight: '700', color: colors.g800 },
+  tierAmountActive: { color: colors.blue },
+  tierName: { fontSize: 11, color: colors.g500, fontWeight: '600' },
+  tierNameActive: { color: colors.blue },
 
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.md, paddingVertical: spacing.xs },
   rowLabel: { fontSize: 12, color: colors.g500 },

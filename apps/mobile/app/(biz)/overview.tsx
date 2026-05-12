@@ -1,8 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import { colors, spacing, radius } from '@/constants/theme';
 import { bizService } from '@/services/bizService';
-import type { BizDashboardPeriod, BizDashboardResponse } from '@eru/shared';
+import type { BizDashboardActivityItem, BizDashboardPeriod, BizDashboardResponse } from '@eru/shared';
+
+// Activity rows surface state changes from across the dashboard. Map each
+// kind to its natural deep-link target so a tap takes the owner to the
+// thing that just happened. Unknown kinds fall back to overview (no-op
+// effectively — caller checks for null and skips push).
+function activityDestination(a: BizDashboardActivityItem): Href | null {
+  switch (a.kind) {
+    case 'launch':
+    case 'campaign_paused':
+    case 'campaign_completed':
+      return '/(biz)/campaigns' as Href;
+    case 'claim':
+    case 'visit':
+      return '/(biz)/offers' as Href;
+    case 'tag':
+    case 'boost':
+      return '/(biz)/ugc' as Href;
+    case 'review':
+      return '/(biz)/feedback' as Href;
+    default:
+      return null;
+  }
+}
 
 const PERIODS: { key: BizDashboardPeriod; label: string }[] = [
   { key: 'week', label: '7d' },
@@ -42,6 +66,7 @@ function BarChart({ data }: { data: number[] }) {
 }
 
 export default function BizOverview() {
+  const router = useRouter();
   const [period, setPeriod] = useState<BizDashboardPeriod>('week');
   const [data, setData] = useState<BizDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,11 +144,20 @@ export default function BizOverview() {
         {data.recentActivity.length === 0 ? (
           <Text style={styles.empty}>No activity yet</Text>
         ) : (
-          data.recentActivity.map((a, i) => (
-            <View key={i} style={styles.activityRow}>
-              <Text style={styles.activityMessage}>{a.message}</Text>
-            </View>
-          ))
+          data.recentActivity.map((a, i) => {
+            const dest = activityDestination(a);
+            return (
+              <TouchableOpacity
+                key={i}
+                style={styles.activityRow}
+                disabled={!dest}
+                onPress={() => dest && router.push(dest)}
+              >
+                <Text style={styles.activityMessage}>{a.message}</Text>
+                {dest ? <Text style={styles.activityChevron}>›</Text> : null}
+              </TouchableOpacity>
+            );
+          })
         )}
       </View>
     </ScrollView>
@@ -160,8 +194,9 @@ const styles = StyleSheet.create({
   sentimentLabel: { fontSize: 12, fontWeight: '600' },
   sentimentValue: { fontSize: 20, fontWeight: '700', color: colors.g800, marginTop: spacing.xs },
 
-  activityRow: { paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.g100 },
-  activityMessage: { fontSize: 13, color: colors.g700 },
+  activityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.g100 },
+  activityMessage: { fontSize: 13, color: colors.g700, flex: 1 },
+  activityChevron: { fontSize: 18, color: colors.g400, marginLeft: spacing.sm },
 
   empty: { fontSize: 13, color: colors.g400, fontStyle: 'italic' },
 });
