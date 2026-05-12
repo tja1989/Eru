@@ -68,13 +68,27 @@ jest.mock('expo-video', () => {
       play: jest.fn(),
       pause: jest.fn(),
       replace: jest.fn(),
-      // usePlayerMetrics subscribes via addListener — return a no-op
-      // unsubscribe so tests that don't care about metrics still mount.
-      addListener: () => () => {},
+      currentTime: 0,
+      // expo-video subscriptions return an object with .remove(); some
+      // helpers (older usePlayerMetrics) still call the returned value as a
+      // function, so make it dual-callable.
+      addListener: () => {
+        const unsub = () => {};
+        (unsub as any).remove = () => {};
+        return unsub;
+      },
     }),
     VideoView: (props: any) => React.createElement(View, props),
   };
 });
+
+// @react-navigation/native's useIsFocused needs a NavigationContainer in the
+// React tree, which jest doesn't provide. Default to `true` so screens render
+// in their focused/active state. Tests that exercise blur behavior can
+// override this at the file level.
+jest.mock('@react-navigation/native', () => ({
+  useIsFocused: () => true,
+}));
 
 // NetInfo native module is unavailable in jest. Default to a wifi state so
 // hooks that call useNetInfo() resolve to "online + plenty of bandwidth".

@@ -7,6 +7,7 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Dimensions,
   ActivityIndicator,
@@ -14,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { reelsService } from '../../services/reelsService';
 import { contentService } from '../../services/contentService';
 import { usePointsStore } from '../../stores/pointsStore';
@@ -55,11 +57,13 @@ function ReelItem({
   item,
   isActive,
   isWarmed,
+  isFocused,
   currentUserId,
 }: {
   item: Reel;
   isActive: boolean;
   isWarmed: boolean;
+  isFocused: boolean;
   currentUserId?: string;
 }) {
   const { earn } = usePointsStore();
@@ -87,14 +91,45 @@ function ReelItem({
     },
   );
 
+  const [userPaused, setUserPaused] = useState(false);
+
+  // Pause on three independent conditions: the reel scrolled out of view
+  // (isActive=false), the user navigated to another tab (isFocused=false),
+  // or the user tapped to pause (userPaused=true).
   useEffect(() => {
     if (!videoUrl) return;
-    if (isActive) {
+    if (isActive && isFocused && !userPaused) {
       player.play();
     } else {
       player.pause();
     }
-  }, [isActive, videoUrl, player]);
+  }, [isActive, isFocused, userPaused, videoUrl, player]);
+
+  // Belt-and-suspenders looping. `player.loop = true` should restart on
+  // playToEnd, but some streams (HLS in particular) fire the event without
+  // auto-restarting. Force a seek-to-zero + play here.
+  useEffect(() => {
+    if (!videoUrl) return;
+    const sub = player.addListener('playToEnd', () => {
+      try {
+        player.currentTime = 0;
+        if (isActive && isFocused && !userPaused) player.play();
+      } catch {
+        // ignore — disposed players throw, which is fine
+      }
+    });
+    return () => sub.remove();
+  }, [player, videoUrl, isActive, isFocused, userPaused]);
+
+  // Reset user-paused state when the reel scrolls out of view, so the next
+  // time it becomes active it autoplays (matches IG/TikTok behavior).
+  useEffect(() => {
+    if (!isActive) setUserPaused(false);
+  }, [isActive]);
+
+  const togglePlayPause = useCallback(() => {
+    setUserPaused((prev) => !prev);
+  }, []);
 
   // Meter only the active reel — preloaded neighbours haven't actually
   // played anything yet, so their stats would skew TTFF / rebuffer numbers.
@@ -178,14 +213,22 @@ function ReelItem({
           resizeMode="cover"
         />
       ) : null}
-      {/* Video */}
+      {/* Video — Pressable wrapper gives tap-to-pause. VideoView itself doesn't
+          fire onPress, so the touchable lives outside it. */}
       {videoUrl ? (
-        <VideoView
-          style={styles.videoOnTop}
-          player={player}
-          contentFit="cover"
-          nativeControls={false}
-        />
+        <Pressable style={styles.videoOnTop} onPress={togglePlayPause} accessibilityLabel={userPaused ? 'Play' : 'Pause'}>
+          <VideoView
+            style={styles.video}
+            player={player}
+            contentFit="cover"
+            nativeControls={false}
+          />
+          {userPaused ? (
+            <View style={styles.pauseOverlay} pointerEvents="none">
+              <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
+            </View>
+          ) : null}
+        </Pressable>
       ) : !posterUrl ? (
         <View style={[styles.video, styles.videoPlaceholder]}>
           <Text style={{ fontSize: 48 }}>🎬</Text>
@@ -257,6 +300,9 @@ function ReelItem({
 export default function ReelsScreen() {
   const { earn } = usePointsStore();
   const currentUserId = useAuthStore((s) => s.user?.id);
+  // True only when the Reels tab is the active screen. Used to pause
+  // playback when the user switches tabs.
+  const isFocused = useIsFocused();
   // reelId is set when the user taps a reel thumbnail from Explore. We fetch
   // that specific reel and prepend it so it's the first thing they see.
   const { reelId } = useLocalSearchParams<{ reelId?: string }>();
@@ -375,6 +421,7 @@ export default function ReelsScreen() {
             item={item}
             isActive={index === activeIndex}
             isWarmed={indicesToPreload.includes(index)}
+            isFocused={isFocused}
             currentUserId={currentUserId}
           />
         )}
@@ -436,6 +483,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#111',
+  },
+  pauseOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pointsIndicator: {
     position: 'absolute',

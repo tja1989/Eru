@@ -21,7 +21,8 @@ jest.mock('expo-video', () => ({
     pause: jest.fn(),
     loop: false,
     muted: false,
-    addListener: () => () => {},
+    currentTime: 0,
+    addListener: () => ({ remove: () => {} }),
   }),
   VideoView: () => null,
 }));
