@@ -291,9 +291,8 @@ describe('<PostCard /> variants (PWA parity)', () => {
     (contentService.undislike as jest.Mock).mockResolvedValue({});
   });
 
-  it('V1 creator photo: ✓ CREATOR + location + +8 pts + 5,124 likes + 342 comments + 32m', () => {
+  it('V1 creator photo: location + +8 pts + 5,124 likes + 342 comments + 32m', () => {
     const { getByText } = render(<PostCard post={variantBase} />);
-    expect(getByText('✓ CREATOR')).toBeTruthy();
     expect(getByText('Munnar, Kerala')).toBeTruthy();
     expect(getByText(/🪙 \+8/)).toBeTruthy();
     expect(getByText(/5,124 likes/i)).toBeTruthy();
@@ -332,7 +331,7 @@ describe('<PostCard /> variants (PWA parity)', () => {
     expect(getByRole('button', { name: /Claim Offer/i })).toBeTruthy();
   });
 
-  it('V4 UGC carousel: ✓ USER CREATED + ✓ APPROVED + 3 dots', () => {
+  it('V4 UGC carousel: 3 dots indicator (badges removed per pilot feedback)', () => {
     const ugc = {
       ...variantBase,
       ugcBadge: 'user_created' as const,
@@ -346,9 +345,10 @@ describe('<PostCard /> variants (PWA parity)', () => {
         { id: 'm3', type: 'image', originalUrl: 'x', thumbnailUrl: 'x', sortOrder: 2 },
       ],
     };
-    const { getByText, getByLabelText, getAllByLabelText } = render(<PostCard post={ugc} />);
-    expect(getByText('✓ USER CREATED')).toBeTruthy();
-    expect(getByText('✓ APPROVED')).toBeTruthy();
+    const { getByLabelText, getAllByLabelText, queryByText } = render(<PostCard post={ugc} />);
+    // Badges intentionally hidden — IG-style clean post card.
+    expect(queryByText('✓ USER CREATED')).toBeNull();
+    expect(queryByText('✓ APPROVED')).toBeNull();
     expect(getByLabelText('carousel indicator')).toBeTruthy();
     expect(getAllByLabelText(/carousel dot/)).toHaveLength(3);
   });

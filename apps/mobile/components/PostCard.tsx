@@ -6,8 +6,6 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Avatar } from './Avatar';
 import { ShareButton } from './ShareButton';
 import { PostActionSheet } from './PostActionSheet';
-import { UgcBadge } from './UgcBadge';
-import { ModerationBadge } from './ModerationBadge';
 import { PostPointsBadge } from './PostPointsBadge';
 import { RelativeTime } from './RelativeTime';
 import { SponsoredCtaBar } from './SponsoredCtaBar';
@@ -240,12 +238,6 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
             </View>
             {post.locationLabel ? (
               <Text style={styles.location}>{post.locationLabel}</Text>
-            ) : null}
-            {(post.ugcBadge && !isSponsoredRow) || post.moderationBadge ? (
-              <View style={styles.badgeRow}>
-                <UgcBadge variant={isSponsoredRow ? null : post.ugcBadge ?? null} />
-                <ModerationBadge variant={post.moderationBadge ?? null} />
-              </View>
             ) : null}
           </View>
         </TouchableOpacity>
