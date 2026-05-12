@@ -278,6 +278,17 @@ export interface BizOffersResponse {
   items: BizOfferItem[];
 }
 
+export interface BizAiCopyRequest {
+  type: BizCampaignType;
+  description: string;
+  tone?: 'friendly' | 'urgent' | 'professional';
+}
+
+export interface BizAiCopyResponse {
+  title: string;
+  body: string;
+}
+
 export interface BizQrScanReward {
   id: string;
   status: 'active' | 'used' | 'expired';
@@ -338,4 +349,6 @@ type _BizExportsAssertion = [
   BizOnboardingSetupResponse,
   BizPlanResponse,
   BizPaymentResponse,
+  BizAiCopyRequest,
+  BizAiCopyResponse,
 ];

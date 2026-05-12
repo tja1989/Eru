@@ -35,6 +35,7 @@ import { webhookRoutes } from './routes/webhooks.js';
 import { watchlistRoutes } from './routes/watchlist.js';
 import { bizRoutes } from './routes/biz.js';
 import { bizBillingRoutes } from './routes/biz-billing.js';
+import { bizAiRoutes } from './routes/biz-ai.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -130,6 +131,7 @@ export function buildApp(): FastifyInstance {
   app.register(watchlistRoutes, { prefix: '/api/v1' });
   app.register(bizRoutes, { prefix: '/api/v1' });
   app.register(bizBillingRoutes, { prefix: '/api/v1' });
+  app.register(bizAiRoutes, { prefix: '/api/v1' });
 
   app.register(fastifyStatic, {
     root: join(__dirname, 'admin-panel'),

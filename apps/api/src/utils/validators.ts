@@ -261,3 +261,9 @@ export const bizPlanSchema = z.object({
 export const bizPaymentSchema = z.object({
   amount: z.number().positive(),
 });
+
+export const bizAiCopySchema = z.object({
+  type: campaignTypeEnum,
+  description: z.string().trim().min(1).max(500),
+  tone: z.enum(['friendly', 'urgent', 'professional']).optional(),
+});

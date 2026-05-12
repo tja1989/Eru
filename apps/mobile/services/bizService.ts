@@ -1,5 +1,7 @@
 import api from './api';
 import type {
+  BizAiCopyRequest,
+  BizAiCopyResponse,
   BizAudienceResponse,
   BizBillingResponse,
   BizCampaign,
@@ -99,4 +101,7 @@ export const bizService = {
 
   getBilling: (): Promise<BizBillingResponse> =>
     api.get('/biz/billing').then((r) => r.data),
+
+  generateAiCopy: (input: BizAiCopyRequest): Promise<BizAiCopyResponse> =>
+    api.post('/biz/ai/copy', input).then((r) => r.data),
 };

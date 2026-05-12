@@ -35,6 +35,7 @@ interface WizardState {
   imageUrl: string;
   pincodes: string[];
   budgetText: string;
+  aiDescription: string;
 }
 
 const initialState: WizardState = {
@@ -44,6 +45,7 @@ const initialState: WizardState = {
   imageUrl: '',
   pincodes: [],
   budgetText: '500',
+  aiDescription: '',
 };
 
 export default function BizCreate() {
@@ -51,6 +53,23 @@ export default function BizCreate() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>(initialState);
   const [launching, setLaunching] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  async function onGenerate() {
+    if (!state.aiDescription.trim() || generating) return;
+    setGenerating(true);
+    try {
+      const res = await bizService.generateAiCopy({
+        type: state.type,
+        description: state.aiDescription.trim(),
+      });
+      setState((s) => ({ ...s, title: res.title, body: res.body }));
+    } catch (err) {
+      Alert.alert('AI copy failed', err instanceof Error ? err.message : 'Try again');
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   function update<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setState((s) => ({ ...s, [key]: value }));
@@ -120,6 +139,22 @@ export default function BizCreate() {
                 </TouchableOpacity>
               ))}
             </View>
+            <Text style={styles.fieldLabel}>Describe your offer (for AI)</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              placeholder="e.g. 20% off all coffee orders this weekend"
+              value={state.aiDescription}
+              onChangeText={(v) => update('aiDescription', v)}
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.btnAi, (!state.aiDescription.trim() || generating) && styles.btnDisabled]}
+              onPress={onGenerate}
+              disabled={!state.aiDescription.trim() || generating}
+            >
+              <Text style={styles.btnAiText}>{generating ? 'Generating…' : '✨ Generate with AI'}</Text>
+            </TouchableOpacity>
+
             <Text style={styles.fieldLabel}>Title</Text>
             <TextInput
               style={styles.input}
@@ -253,6 +288,9 @@ const styles = StyleSheet.create({
   tierAmountActive: { color: colors.blue },
   tierName: { fontSize: 11, color: colors.g500, fontWeight: '600' },
   tierNameActive: { color: colors.blue },
+
+  btnAi: { backgroundColor: colors.g100, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm, alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.g200 },
+  btnAiText: { color: colors.g800, fontSize: 13, fontWeight: '700' },
 
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.md, paddingVertical: spacing.xs },
   rowLabel: { fontSize: 12, color: colors.g500 },
