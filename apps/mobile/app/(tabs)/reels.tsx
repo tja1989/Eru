@@ -209,7 +209,7 @@ function ReelItem({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleDislike} accessibilityLabel="Not for me" accessibilityState={{ selected: disliked }}>
-          <Ionicons name={disliked ? 'close-circle' : 'close-circle-outline'} size={32} color={disliked ? '#E53E3E' : '#fff'} />
+          <Ionicons name={disliked ? 'thumbs-down' : 'thumbs-down-outline'} size={32} color={disliked ? '#E53E3E' : '#fff'} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleSave} accessibilityLabel="Save post" accessibilityState={{ selected: saved }}>

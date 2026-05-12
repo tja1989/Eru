@@ -335,13 +335,11 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
             accessibilityHint="Not for me — helps us improve your feed and affects creator score"
             accessibilityState={{ selected: disliked }}
           >
-            {/* Eru-specific (not IG). close-circle reads as "dismiss/not for
-                me" and is visually distinct from the heart-outline beside it —
-                some iOS bundles failed to load the thumbs-down-outline glyph
-                and rendered the heart fallback, making like/dislike look
-                identical. */}
+            {/* Eru-specific (not IG). Thumbs-down reads as "not for me" —
+                visually distinct from the heart beside it as long as the
+                Ionicons font is current. */}
             <Ionicons
-              name={disliked ? 'close-circle' : 'close-circle-outline'}
+              name={disliked ? 'thumbs-down' : 'thumbs-down-outline'}
               size={26}
               color={disliked ? '#E53E3E' : '#262626'}
             />
