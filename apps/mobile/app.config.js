@@ -38,7 +38,7 @@ module.exports = {
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#EF403F',
   },
   ios: {
     supportsTablet: false,
@@ -59,7 +59,7 @@ module.exports = {
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FAFAFA',
+      backgroundColor: '#EF403F',
     },
     package: 'app.eru.consumer',
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
