@@ -11,7 +11,7 @@
 
 /** @type {import('@expo/config-types').ExpoConfig} */
 module.exports = {
-  name: 'Eru',
+  name: 'Yeru',
   slug: 'eru',
   version: '1.0.0',
   orientation: 'portrait',

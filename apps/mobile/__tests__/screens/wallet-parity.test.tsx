@@ -32,9 +32,9 @@ describe('<WalletScreen /> — PWA parity', () => {
     (walletService.getHistory as jest.Mock).mockResolvedValue({ data: [], total: 0 });
   });
 
-  it('header reads "Eru Wallet"', async () => {
+  it('header reads "Yeru Wallet"', async () => {
     const { findByText } = render(<WalletScreen />);
-    expect(await findByText(/Eru Wallet/i)).toBeTruthy();
+    expect(await findByText(/Yeru Wallet/)).toBeTruthy();
   });
 
   it('renders the daily goal hint copy from the API', async () => {

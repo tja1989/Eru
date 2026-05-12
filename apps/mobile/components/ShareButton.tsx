@@ -33,9 +33,9 @@ export function ShareButton({
   onShared,
 }: ShareButtonProps) {
   const handlePress = async () => {
-    const url = `https://eru.app/post/${contentId}`;
+    const url = `https://yeru.app/post/${contentId}`;
     const handle = formatHandle(creatorUsername) || '@unknown';
-    const message = `${handle} on Eru: ${caption ?? ''}\n${url}`;
+    const message = `${handle} on Yeru: ${caption ?? ''}\n${url}`;
     try {
       const result = await Share.share({ url, message });
       if (result.action === Share.sharedAction) {

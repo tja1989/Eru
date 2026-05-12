@@ -81,7 +81,7 @@ describe('<RedeemScreen /> — PWA parity', () => {
     expect(getByText('Books for Kids')).toBeTruthy();
     expect(getByText('Local Cause')).toBeTruthy();
     // All three show a match copy line
-    expect(getByText(/Eru adds \+100 pts match/)).toBeTruthy();
+    expect(getByText(/Yeru adds \+100 pts match/)).toBeTruthy();
   });
 
   it('tapping a tab switches categories', () => {

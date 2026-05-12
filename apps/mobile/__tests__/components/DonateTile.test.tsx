@@ -9,7 +9,7 @@ describe('<DonateTile />', () => {
         emoji="🌳"
         title="Plant a Tree"
         costCopy="500 pts = 1 tree"
-        matchCopy="Eru adds +100 pts match"
+        matchCopy="Yeru adds +100 pts match"
         onPress={jest.fn()}
       />,
     );
@@ -24,11 +24,11 @@ describe('<DonateTile />', () => {
         emoji="📚"
         title="Books for Kids"
         costCopy="1,000 pts = 3 books"
-        matchCopy="Eru adds +200 pts match"
+        matchCopy="Yeru adds +200 pts match"
         onPress={jest.fn()}
       />,
     );
-    expect(getByText('Eru adds +200 pts match')).toBeTruthy();
+    expect(getByText('Yeru adds +200 pts match')).toBeTruthy();
   });
 
   it('calls onPress when tapped', () => {
@@ -38,7 +38,7 @@ describe('<DonateTile />', () => {
         emoji="🤝"
         title="Local Cause"
         costCopy="200 pts"
-        matchCopy="Eru adds +40 pts match"
+        matchCopy="Yeru adds +40 pts match"
         onPress={onPress}
       />,
     );
