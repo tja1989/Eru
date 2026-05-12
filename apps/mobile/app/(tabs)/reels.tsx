@@ -226,30 +226,33 @@ function ReelItem({
           resizeMode="cover"
         />
       ) : null}
-      {/* Video + tap-to-pause. Pressable is a transparent sibling layered on
-          top of VideoView, not a wrapper — wrapping caused Android's touch
-          routing to drop the second tap whenever the play-arrow overlay
-          rendered as a Pressable child. */}
+      {/* Video + tap-to-pause. Pressable must WRAP VideoView (not sit on top
+          as a sibling) because expo-video uses ExoPlayer's SurfaceView on
+          Android, which sits above every React Native view in the window
+          layer regardless of JSX order. A sibling overlay never receives
+          touches; a parent wrapper does, via RN's gesture-bubbling path.
+          The play-arrow overlay lives outside Pressable as a sibling so it
+          doesn't compete for the hit-test. */}
       {videoUrl ? (
-        <View style={styles.videoOnTop}>
-          <VideoView
-            style={styles.video}
-            player={player}
-            contentFit="cover"
-            nativeControls={false}
-          />
+        <>
           <Pressable
-            style={StyleSheet.absoluteFillObject}
+            style={styles.videoOnTop}
             onPress={togglePlayPause}
             accessibilityLabel={userPaused ? 'Play' : 'Pause'}
           >
-            {userPaused ? (
-              <View style={styles.pauseOverlay}>
-                <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
-              </View>
-            ) : null}
+            <VideoView
+              style={styles.video}
+              player={player}
+              contentFit="cover"
+              nativeControls={false}
+            />
           </Pressable>
-        </View>
+          {userPaused ? (
+            <View style={styles.pauseOverlay} pointerEvents="none">
+              <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
+            </View>
+          ) : null}
+        </>
       ) : !posterUrl ? (
         <View style={[styles.video, styles.videoPlaceholder]}>
           <Text style={{ fontSize: 48 }}>🎬</Text>
