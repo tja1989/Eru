@@ -43,6 +43,15 @@ const stylesFactory = (c: ThemeColors) => ({
     alignItems: 'center' as const,
     gap: 12,
   },
+  emptyState: {
+    paddingVertical: 64,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  emptyText: {
+    color: c.g500,
+    fontSize: 14,
+  },
 });
 
 export default function HomeFeedScreen() {
@@ -78,7 +87,7 @@ export default function HomeFeedScreen() {
   const renderHeader = () => (
     <>
       <View style={styles.appHeader}>
-        <Text style={styles.logo}>Eru</Text>
+        <Text style={styles.logo}>Yeru</Text>
         <View style={styles.headerActions}>
           <PointsBadge />
           <NotificationBell />
@@ -91,7 +100,18 @@ export default function HomeFeedScreen() {
     </>
   );
 
-  if (loading && posts.length === 0) return <LoadingSpinner />;
+  // Render the shell (header + tab bar) immediately and let the FlatList show
+  // its own empty/loading state inline. A full-screen gate here would block
+  // navigation when the feed call is slow or the user has zero published posts.
+  const renderEmpty = () => (
+    <View style={styles.emptyState}>
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <Text style={styles.emptyText}>No posts yet. Pull down to refresh.</Text>
+      )}
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -102,6 +122,7 @@ export default function HomeFeedScreen() {
         )}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         onRefresh={refresh}
