@@ -43,7 +43,7 @@ describe('<PostCard /> dislike button', () => {
     (contentService.unsave as jest.Mock).mockResolvedValue({});
   });
 
-  it('renders 👎 when post is not disliked', () => {
+  it('renders the dislike button when post is not disliked', () => {
     const { getByLabelText } = render(<PostCard post={{ ...basePost, isDisliked: false }} />);
     const btn = getByLabelText('Not for me');
     expect(btn).toBeTruthy();
