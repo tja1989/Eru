@@ -62,7 +62,7 @@ Reuse audit + architecture: see the approved ultraplan in the conversation that 
 
 - [x] **B6.1** API `POST /biz/onboarding/setup`, `POST /biz/onboarding/pincodes`, `POST /biz/onboarding/plan`, `POST /biz/onboarding/payment` (mock topup). Tests in `biz-onboarding.test.ts` (extends B1.4 file).
 - [x] **B6.2** Mobile onboarding chain: `welcome.tsx`, `bizinfo.tsx`, `pincodes.tsx`, `plans.tsx`, `payment.tsx`. OTP screen ROUTES to existing `/(auth)/otp.tsx` — no duplicate auth.
-- [ ] **B6.3** API `GET /biz/plans`, `GET /biz/billing`. Tests in `biz-billing.test.ts`.
+- [x] **B6.3** API `GET /biz/plans`, `GET /biz/billing`. Tests in `biz-billing.test.ts`.
 - [ ] **B6.4** Mobile `(biz)/billing.tsx` + "Switch to Business" entry in `(tabs)/profile.tsx` and `settings/index.tsx`.
 
 ---
