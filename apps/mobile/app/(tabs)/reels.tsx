@@ -115,8 +115,13 @@ function ReelItem({
       setLiked(false);
       setLikeCount((c) => c - 1);
     } else {
+      const wasDisliked = disliked;
       setLiked(true);
       setLikeCount((c) => c + 1);
+      if (wasDisliked) {
+        setDisliked(false);
+        contentService.undislike(item.id).catch(() => { setDisliked(true); });
+      }
       earn('like', item.id);
     }
     try {
@@ -133,7 +138,13 @@ function ReelItem({
       setDisliked(false);
       await contentService.undislike(item.id).catch(() => { setDisliked(true); });
     } else {
+      const wasLiked = liked;
       setDisliked(true);
+      if (wasLiked) {
+        setLiked(false);
+        setLikeCount((c) => c - 1);
+        contentService.unlike(item.id).catch(() => { setLiked(true); setLikeCount((c) => c + 1); });
+      }
       await contentService.dislike(item.id).catch((err: any) => {
         // 409 = already disliked — optimistic state is correct, keep it
         if (err?.response?.status === 409) return;

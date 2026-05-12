@@ -114,7 +114,12 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
       setLiked(false); setLikeCount((c: number) => c - 1);
       await contentService.unlike(post.id).catch(() => { setLiked(true); setLikeCount((c: number) => c + 1); });
     } else {
+      const wasDisliked = disliked;
       setLiked(true); setLikeCount((c: number) => c + 1);
+      if (wasDisliked) {
+        setDisliked(false);
+        contentService.undislike(post.id).catch(() => { setDisliked(true); });
+      }
       await contentService.like(post.id).catch(() => { setLiked(false); setLikeCount((c: number) => c - 1); });
       earn('like', post.id);
     }
@@ -125,7 +130,12 @@ export function PostCard({ post, isActive = true, onDeleted }: PostCardProps) {
       setDisliked(false);
       await contentService.undislike(post.id).catch(() => { setDisliked(true); });
     } else {
+      const wasLiked = liked;
       setDisliked(true);
+      if (wasLiked) {
+        setLiked(false); setLikeCount((c: number) => c - 1);
+        contentService.unlike(post.id).catch(() => { setLiked(true); setLikeCount((c: number) => c + 1); });
+      }
       await contentService.dislike(post.id).catch((err: any) => {
         if (err?.response?.status === 409) return;
         setDisliked(false);
