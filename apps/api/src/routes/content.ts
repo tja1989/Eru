@@ -119,17 +119,17 @@ export async function contentRoutes(app: FastifyInstance) {
       }
     }
 
-    // AUTO_APPROVE_CONTENT=true bypasses the moderation queue and publishes
-    // immediately. Used for demos / dev environments where every upload should
-    // go straight to the feed. Production must leave this unset.
-    if (process.env.AUTO_APPROVE_CONTENT === 'true') {
+    // Phase-1 Kerala pilot: posts auto-publish so pilot testers see their
+    // content immediately. Set AUTO_APPROVE_CONTENT=false on the env to
+    // re-enable the moderation queue once a moderator-review UI exists.
+    if (process.env.AUTO_APPROVE_CONTENT === 'false') {
+      await prisma.moderationQueue.create({
+        data: { contentId: content.id },
+      });
+    } else {
       await prisma.content.update({
         where: { id: content.id },
         data: { moderationStatus: 'published', publishedAt: new Date() },
-      });
-    } else {
-      await prisma.moderationQueue.create({
-        data: { contentId: content.id },
       });
     }
 
