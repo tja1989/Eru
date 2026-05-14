@@ -91,7 +91,26 @@ function ReelItem({
     },
   );
 
+  // userPaused = user explicitly tapped to pause. Gates auto-resume on
+  // (isActive && isFocused) — without it, scrolling back to a reel the user
+  // had paused would auto-restart it.
   const [userPaused, setUserPaused] = useState(false);
+  // isPlaying = ground-truth from the player's native layer. Drives the
+  // play-arrow overlay. We don't infer it from userPaused because the player
+  // can be not-playing for reasons other than the user tapping pause
+  // (buffering, end-of-stream, loading), and our overlay should reflect what
+  // the user actually sees, not what we *think* the player is doing.
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Subscribe to native playingChange events so isPlaying stays in sync with
+  // whatever ExoPlayer / AVPlayer is actually doing.
+  useEffect(() => {
+    if (!videoUrl) return;
+    const sub = player.addListener('playingChange', (e: { isPlaying: boolean }) => {
+      setIsPlaying(e.isPlaying);
+    });
+    return () => sub.remove();
+  }, [player, videoUrl]);
 
   // Pause on three independent conditions: the reel scrolled out of view
   // (isActive=false), the user navigated to another tab (isFocused=false),
@@ -106,20 +125,20 @@ function ReelItem({
   }, [isActive, isFocused, userPaused, videoUrl, player]);
 
   // Belt-and-suspenders looping. `player.loop = true` should restart on
-  // playToEnd, but some streams (HLS in particular) fire the event without
-  // auto-restarting. Force a seek-to-zero + play here.
+  // playToEnd, but some HLS streams fire the event without auto-restarting.
+  // The replay() in togglePlayPause covers user-initiated cases; this covers
+  // the autoplay case where the user hasn't touched the screen.
   useEffect(() => {
     if (!videoUrl) return;
     const sub = player.addListener('playToEnd', () => {
       try {
         player.currentTime = 0;
-        if (isActive && isFocused && !userPaused) player.play();
       } catch {
         // ignore — disposed players throw, which is fine
       }
     });
     return () => sub.remove();
-  }, [player, videoUrl, isActive, isFocused, userPaused]);
+  }, [player, videoUrl]);
 
   // Reset user-paused state when the reel scrolls out of view, so the next
   // time it becomes active it autoplays (matches IG/TikTok behavior).
@@ -128,21 +147,32 @@ function ReelItem({
   }, [isActive]);
 
   const togglePlayPause = useCallback(() => {
-    // Imperatively command the player AND flip the state so the UI doesn't
-    // depend on the effect re-running. On Android the effect-driven path was
-    // unreliable: the first tap (pause) worked but the second (resume) often
-    // didn't, because the play-arrow overlay rendered as a child of Pressable
-    // and confused the touch hit-test.
-    setUserPaused((prev) => {
-      const next = !prev;
-      try {
-        if (next) player.pause(); else player.play();
-      } catch {
-        // disposed player throws — fine, the effect will catch up
+    if (!videoUrl) return;
+    try {
+      // Query the player's actual state instead of inferring from React
+      // state — they can drift (player paused for buffering, ended, etc.).
+      if (player.playing) {
+        player.pause();
+        setUserPaused(true);
+      } else {
+        setUserPaused(false);
+        player.play();
+        // expo-video's play() is a no-op when the player has reached
+        // end-of-stream (the most-likely cause of the Android tap-to-resume
+        // failure). After a short delay, if play() didn't take effect, fall
+        // back to replay() which seeks to zero and plays from any state.
+        setTimeout(() => {
+          try {
+            if (!player.playing) player.replay();
+          } catch {
+            // disposed; ignore
+          }
+        }, 80);
       }
-      return next;
-    });
-  }, [player]);
+    } catch {
+      // disposed player; ignore
+    }
+  }, [player, videoUrl]);
 
   // Meter only the active reel — preloaded neighbours haven't actually
   // played anything yet, so their stats would skew TTFF / rebuffer numbers.
@@ -238,7 +268,7 @@ function ReelItem({
           <Pressable
             style={styles.videoOnTop}
             onPress={togglePlayPause}
-            accessibilityLabel={userPaused ? 'Play' : 'Pause'}
+            accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
           >
             <VideoView
               style={styles.video}
@@ -247,7 +277,7 @@ function ReelItem({
               nativeControls={false}
             />
           </Pressable>
-          {userPaused ? (
+          {isActive && !isPlaying ? (
             <View style={styles.pauseOverlay} pointerEvents="none">
               <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
             </View>
