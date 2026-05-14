@@ -275,6 +275,16 @@ function ReelItem({
               player={player}
               contentFit="cover"
               nativeControls={false}
+              // Android-only: TextureView integrates with the RN view
+              // hierarchy so touches propagate from VideoView up to the
+              // Pressable wrapper. The default SurfaceView is rendered in a
+              // separate window layer that swallows all touches before RN
+              // sees them — three previous touch-handler "fixes" all failed
+              // because no view hierarchy can route around SurfaceView.
+              // TextureView trades a small amount of GPU efficiency for the
+              // ability to layer UI / handle touches over the video. Per
+              // expo-video docs: "for example, overlapping video views".
+              surfaceType="textureView"
             />
           </Pressable>
           {isActive && !isPlaying ? (
