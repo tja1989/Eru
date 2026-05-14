@@ -149,25 +149,25 @@ function ReelItem({
   const togglePlayPause = useCallback(() => {
     if (!videoUrl) return;
     try {
-      // Query the player's actual state instead of inferring from React
-      // state — they can drift (player paused for buffering, ended, etc.).
       if (player.playing) {
         player.pause();
         setUserPaused(true);
       } else {
         setUserPaused(false);
-        player.play();
-        // expo-video's play() is a no-op when the player has reached
-        // end-of-stream (the most-likely cause of the Android tap-to-resume
-        // failure). After a short delay, if play() didn't take effect, fall
-        // back to replay() which seeks to zero and plays from any state.
-        setTimeout(() => {
-          try {
-            if (!player.playing) player.replay();
-          } catch {
-            // disposed; ignore
-          }
-        }, 80);
+        // play() is a no-op only at true end-of-stream. Check duration vs
+        // currentTime directly instead of using a setTimeout fallback — on
+        // Android, ExoPlayer's transition from paused→playing takes ~100-300ms,
+        // and a timeout-based check fires DURING that transition, mistakes
+        // it for a no-op, and triggers replay() unnecessarily, snapping the
+        // user back to 0.
+        const duration = player.duration ?? 0;
+        const currentTime = player.currentTime ?? 0;
+        const atEnd = duration > 0 && duration - currentTime < 0.3;
+        if (atEnd) {
+          player.replay();
+        } else {
+          player.play();
+        }
       }
     } catch {
       // disposed player; ignore
